@@ -29,7 +29,8 @@ const PLANETS = ['dune', 'ice', 'dark', 'water', 'jungle', 'robo', 'space', 'hea
 const page = path.join(__dirname, 'index.html');
 const server = http.createServer(async (req, res) => {
   if (await accounts.handle(req, res)) return;
-  if (req.url === '/' || req.url.startsWith('/index.html')) {
+  const pathOnly = req.url.split('?')[0];
+  if (pathOnly === '/' || pathOnly === '/index.html') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     fs.createReadStream(page).pipe(res);
   } else if (req.url === '/health') {

@@ -36,9 +36,23 @@ To test sign-in without Google: `DEV_LOGIN=1 node server.js` (never enable this 
 | `GOOGLE_CLIENT_ID` | the Client ID from step 2 |
 | `DATABASE_URL` | the Neon connection string |
 | `SESSION_SECRET` | any long random text (keeps players signed in) |
+| `STRIPE_SECRET_KEY` | your Stripe secret key (`sk_test_...` to test, `sk_live_...` for real money); turns on real checkout |
+| `STRIPE_WEBHOOK_SECRET` | optional: the `whsec_...` signing secret of a Stripe webhook pointing at `/api/stripe/webhook` |
 | `ADMIN_KEY` | any long random text; lets you read player and bug reports at `/api/reports?key=YOUR_KEY` |
 
 Also check **Settings → Build Command** is `npm install`. Save. Render redeploys automatically.
+
+## Payments (Stripe)
+With `STRIPE_SECRET_KEY` set, the store's packs, premium aliens and gifts open Stripe Checkout. Prices come from
+`catalog.json` on the server, never from the browser. Paid items are delivered to the buyer's Google account (or a
+friend's, for gifts) and premium aliens can only be kept by accounts that paid for them. Without the key the store
+stays a free demo.
+
+Webhook (recommended, so purchases arrive even if the player closes the tab): Stripe Dashboard → Developers →
+Webhooks → Add endpoint `https://YOUR-APP.onrender.com/api/stripe/webhook`, events `checkout.session.completed`
+and `checkout.session.async_payment_succeeded`. Put its signing secret in `STRIPE_WEBHOOK_SECRET`.
+
+Test with a `sk_test_` key and card 4242 4242 4242 4242 before switching to `sk_live_`.
 
 ## Reports
 Players can report a player or a bug from the main menu or the pause menu. Reports are stored in the database

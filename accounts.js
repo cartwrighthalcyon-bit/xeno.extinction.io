@@ -13,6 +13,30 @@ const path = require('path');
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const DEV_LOGIN = process.env.DEV_LOGIN === '1';
+// Stripe payments: set STRIPE_SECRET_KEY (sk_test_... or sk_live_...) on the server. STRIPE_WEBHOOK_SECRET (whsec_...) is optional but recommended.
+const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || '', STRIPE_WH = process.env.STRIPE_WEBHOOK_SECRET || '';
+const CATALOG = (() => { try { return require('./catalog.json'); } catch (e) { return { packs: [], aliens: [] }; } })();
+const PREMIUM_IDS = new Set(CATALOG.aliens.map(a => a.id));
+function catalogItem(item) {
+  const [type, id] = String(item || '').split(':');
+  if (type === 'pack') { const p = CATALOG.packs.find(x => x.id === id); return p && { key: 'pack:' + p.id, name: p.name, cents: p.cents, grant: { type: 'pack', cur: p.cur, n: p.n } }; }
+  if (type === 'alien') { const a = CATALOG.aliens.find(x => x.id === id); return a && { key: 'alien:' + a.id, name: a.name, cents: a.cents, grant: { type: 'alien', id: a.id } }; }
+  return null;
+}
+async function stripe(method, pathName, form) {
+  const r = await fetch((process.env.STRIPE_API_BASE || 'https://api.stripe.com/v1/') + pathName, { method, headers: { Authorization: 'Bearer ' + STRIPE_KEY, 'Content-Type': 'application/x-www-form-urlencoded' }, body: form ? new URLSearchParams(form).toString() : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((j.error && j.error.message) || 'Payment provider error');
+  return j;
+}
+function verifyStripeSig(raw, header) {
+  if (!STRIPE_WH) return false;
+  const parts = Object.fromEntries(String(header || '').split(',').map(kv => kv.split('=')).filter(x => x.length === 2).map(([k, v]) => [k, v]));
+  const sigs = String(header || '').split(',').filter(x => x.startsWith('v1=')).map(x => x.slice(3)), t = +parts.t;
+  if (!t || Math.abs(Date.now() / 1000 - t) > 300) return false;
+  const want = crypto.createHmac('sha256', STRIPE_WH).update(t + '.' + raw).digest('hex');
+  return sigs.some(v => v.length === want.length && crypto.timingSafeEqual(Buffer.from(v), Buffer.from(want)));
+}
 let SECRET = process.env.SESSION_SECRET;
 if (!SECRET) {
   SECRET = crypto.randomBytes(32).toString('hex');
@@ -141,12 +165,30 @@ function profileOut(rec) { return { code: rec.code || friendCode(rec.id), gifts:
 const lastScore = new Map();
 const lastReports = new Map();
 
+function readRaw(req) {
+  return new Promise((resolve, reject) => { let n = 0; const chunks = []; req.on('data', c => { n += c.length; if (n > 512 * 1024) { reject(new Error('Body too large')); req.destroy(); } else chunks.push(c); }); req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8'))); req.on('error', reject); });
+}
+// A paid Stripe checkout session becomes a gift in the recipient's inbox (the buyer, or the friend they bought for).
+async function grantSession(sess) {
+  if (!sess || sess.payment_status !== 'paid') return { ok: false, status: sess ? sess.payment_status : 'missing' };
+  const md = sess.metadata || {}, it = catalogItem(md.item); if (!it) return { ok: false, status: 'unknown item' };
+  const buyer = await store.get(md.uid); if (!buyer) return { ok: false, status: 'unknown buyer' };
+  const to = md.to ? await store.byCode(md.to) : buyer; if (!to) return { ok: false, status: 'unknown recipient' };
+  to.purchases = to.purchases || [];
+  if (to.purchases.some(x => x.id === sess.id)) return { ok: true, status: 'already granted' };
+  to.purchases.push({ id: sess.id, item: it.key, cents: sess.amount_total, at: Date.now(), from: buyer.id }); to.purchases = to.purchases.slice(-500);
+  if (it.grant.type === 'alien') { to.entitled = [...new Set([...(to.entitled || []), it.grant.id])]; }
+  to.gifts = (to.gifts || []).slice(-49); to.gifts.push({ from: to === buyer ? 'Store purchase' : publicName(buyer), item: it.grant, at: Date.now(), paid: true });
+  await store.put(to.id, to);
+  console.log('[pay] granted', it.key, 'session', sess.id, to === buyer ? '' : '(gift)');
+  return { ok: true, status: 'granted' };
+}
 async function handle(req, res) {
   const url = new URL(req.url, 'http://x');
   if (!url.pathname.startsWith('/api/')) return false;
   try {
     const route = req.method + ' ' + url.pathname;
-    if (route === 'GET /api/config') return send(res, 200, { login: !!CLIENT_ID || DEV_LOGIN, googleClientId: CLIENT_ID, dev: DEV_LOGIN, storage: store.kind }), true;
+    if (route === 'GET /api/config') return send(res, 200, { login: !!CLIENT_ID || DEV_LOGIN, googleClientId: CLIENT_ID, dev: DEV_LOGIN, storage: store.kind, payments: !!STRIPE_KEY, testMode: STRIPE_KEY.startsWith('sk_test_') }), true;
 
     if (route === 'POST /api/login') {
       const body = await readBody(req);
@@ -161,6 +203,13 @@ async function handle(req, res) {
       return send(res, 200, { token: sign({ uid: sub, exp: Date.now() + 30 * 864e5 }), ...profileOut(rec) }), true;
     }
 
+    if (route === 'POST /api/stripe/webhook') {
+      const raw = await readRaw(req);
+      if (!verifyStripeSig(raw, req.headers['stripe-signature'])) return send(res, 400, { error: 'Bad signature' }), true;
+      const ev = JSON.parse(raw);
+      if (ev.type === 'checkout.session.completed' || ev.type === 'checkout.session.async_payment_succeeded') await grantSession(ev.data.object);
+      return send(res, 200, { received: true }), true;
+    }
     const auth = readToken(req);
     // Reports: players can report another player or a game bug. Works signed in or not; rate limited per address.
     if (route === 'POST /api/report') {
@@ -195,10 +244,33 @@ async function handle(req, res) {
 
     if (route === 'GET /api/me') return send(res, 200, profileOut(rec)), true;
 
+    if (route === 'POST /api/checkout') {
+      if (!STRIPE_KEY) return send(res, 503, { error: 'Payments are not set up on this server yet' }), true;
+      const body = await readBody(req), it = catalogItem(body.item); if (!it) return send(res, 400, { error: 'Unknown item' }), true;
+      let to = '';
+      if (body.to) { to = String(body.to).toUpperCase().replace(/[^0-9A-F]/g, '').slice(0, 8); if (to.length !== 8) return send(res, 400, { error: 'Enter an 8-character friend code' }), true; if (to === (rec.code || friendCode(rec.id))) return send(res, 400, { error: 'You cannot gift yourself' }), true; if (!(await store.byCode(to))) return send(res, 404, { error: 'No player has that friend code' }), true; }
+      const base = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || ('https://' + req.headers.host)).replace(/\/$/, '');
+      const sess = await stripe('POST', 'checkout/sessions', {
+        mode: 'payment', 'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': 'usd', 'line_items[0][price_data][unit_amount]': String(it.cents),
+        'line_items[0][price_data][product_data][name]': 'XENO.IO: ' + it.name + (to ? ' (gift)' : ''),
+        success_url: base + '/?checkout=success&session_id={CHECKOUT_SESSION_ID}', cancel_url: base + '/?checkout=cancel',
+        client_reference_id: rec.id.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 200), 'metadata[uid]': rec.id, 'metadata[item]': it.key, 'metadata[to]': to,
+      });
+      return send(res, 200, { url: sess.url }), true;
+    }
+    if (route === 'POST /api/checkout/confirm') { // backup path when the webhook is not set up: ask Stripe directly
+      if (!STRIPE_KEY) return send(res, 503, { error: 'Payments are not set up' }), true;
+      const body = await readBody(req), id = String(body.session || ''); if (!/^cs_[A-Za-z0-9_]{10,200}$/.test(id)) return send(res, 400, { error: 'Bad session' }), true;
+      const sess = await stripe('GET', 'checkout/sessions/' + id);
+      if ((sess.metadata || {}).uid !== rec.id) return send(res, 403, { error: 'Not your purchase' }), true;
+      return send(res, 200, await grantSession(sess)), true;
+    }
+
     if (route === 'POST /api/save') {
       const body = await readBody(req);
       const sv = cleanSave(body.save);
       if (!sv) return send(res, 400, { error: 'Bad save' }), true;
+      if (STRIPE_KEY) { const ent = new Set(rec.entitled || []); sv.owned = sv.owned.filter(id => !PREMIUM_IDS.has(id) || ent.has(id)); }
       rec.save = sv; rec.stats.collected = sv.owned.length; if (sv.equipped) rec.stats.alien = sv.equipped;
       await store.put(rec.id, rec);
       return send(res, 200, { ok: true }), true;
@@ -220,6 +292,7 @@ async function handle(req, res) {
 
     // Gifts: send a bought item to another player by their friend code; they claim it next time they sign in.
     if (route === 'POST /api/gift') {
+      if (STRIPE_KEY) return send(res, 402, { error: 'Gifts are bought through checkout now' }), true;
       const body = await readBody(req), code = String(body.to || '').toUpperCase().replace(/[^0-9A-F]/g, '').slice(0, 8), it = body.item || {};
       if (code.length !== 8) return send(res, 400, { error: 'Enter an 8-character friend code' }), true;
       if (code === (rec.code || friendCode(rec.id))) return send(res, 400, { error: 'You cannot gift yourself' }), true;

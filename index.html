@@ -4010,7 +4010,8 @@ function todaysMissions() {
 }
 function rewardText(r) { return [r.dna ? Math.round(r.dna * DNA_RATE) + ' DNA' : '', r.adna ? r.adna + ' Ancient DNA' : '', r.mdna ? r.mdna + ' Mutated DNA' : ''].filter(Boolean).join(' + '); }
 const DNA_RATE = 0.8; // DNA is a little harder to earn: 80% of match, mission and daily rewards
-function grant(r) { save.dna += Math.round((r.dna || 0) * DNA_RATE); save.adna += r.adna || 0; save.mdna = (save.mdna || 0) + (r.mdna || 0); persist(); sfx(880, 0.25); }
+// grant(r, full): full = bought, traded or gifted currency, which is never reduced
+function grant(r, full) { save.dna += Math.round((r.dna || 0) * (full ? 1 : DNA_RATE)); save.adna += r.adna || 0; save.mdna = (save.mdna || 0) + (r.mdna || 0); persist(); sfx(880, 0.25); }
 function missionsAfterMatch(win) {
   if (!G || G.mode === 'tutorial') return; todaysMissions();
   const P = save.missions.prog, m = G.mstat || {}, add = (k, v) => { P[k] = (P[k] || 0) + v; };
@@ -4396,11 +4397,11 @@ function renderStore() {
   }
   h += `<h3 style="margin:18px 0 6px">Exchange (no money needed)</h3><div class="sub">Trade between currencies any time. Bigger trades get a better rate.</div>`;
   EXCHANGE.forEach((x, i) => { const ok = (save[x.from] || 0) >= x.fn; h += `<div class="pill" style="display:flex;justify-content:space-between;align-items:center;border-radius:12px;margin:6px 0;padding:10px 12px"><span><b style="color:${CUR[x.from].col}">${x.fn.toLocaleString('en-US')} ${CUR[x.from].name}</b> → <b style="color:${CUR[x.to].col}">${x.tn} ${CUR[x.to].name}</b></span><button class="btn small green" data-ex="${i}" ${ok ? '' : 'disabled'}>Trade</button></div>`; });
-  h += `<p class="note" style="margin-top:12px">Demo store: no payment system is connected yet, so packs are free to try. Connect Stripe on your server before charging real money.</p>`;
+  h += PAY() ? `<p class="note" style="margin-top:12px">Payments are processed securely by Stripe. Purchases are saved to your Google account.${Cloud.cfg.testMode ? ' <b style="color:#ffd25a">Test mode: no real money is charged.</b>' : ''}</p>` : `<p class="note" style="margin-top:12px">Demo store: no payment system is connected yet, so packs are free to try. Connect Stripe on your server before charging real money.</p>`;
   $('storeBody').innerHTML = h;
-  $('storeBody').querySelectorAll('[data-pack]').forEach(b => b.onclick = () => { const p = STORE_PACKS[+b.dataset.pack]; modal(`Buy ${p.n.toLocaleString('en-US')} ${CUR[p.cur].name} — ${p.price}`, 'This page has no payment system connected, so this is a <b>demo store</b>: no money is charged. In a released version this button would open Stripe, Google Play or App Store checkout.', [['Get it (demo, free)', () => { grant({ [p.cur]: p.n }); renderStore(); }], ['Cancel', null]]); });
+  $('storeBody').querySelectorAll('[data-pack]').forEach(b => b.onclick = () => { const p = STORE_PACKS[+b.dataset.pack]; if (PAY()) return modal(`Buy ${p.n.toLocaleString('en-US')} ${CUR[p.cur].name} — ${p.price}`, 'Pay securely with Stripe. The currency is added to your account as soon as payment goes through.' + (Cloud.cfg.testMode ? '<br><small style="color:#ffd25a">Test mode: use card 4242 4242 4242 4242, any future date, any CVC.</small>' : ''), [['Pay ' + p.price, () => payCheckout('pack:pack' + b.dataset.pack)], ['Cancel', null]]); modal(`Buy ${p.n.toLocaleString('en-US')} ${CUR[p.cur].name} — ${p.price}`, 'This page has no payment system connected, so this is a <b>demo store</b>: no money is charged. In a released version this button would open Stripe, Google Play or App Store checkout.', [['Get it (demo, free)', () => { grant({ [p.cur]: p.n }, true); renderStore(); }], ['Cancel', null]]); });
   $('storeBody').querySelectorAll('[data-gift]').forEach(b => b.onclick = () => { const p = STORE_PACKS[+b.dataset.gift]; giftDialog({ type: 'pack', cur: p.cur, n: p.n }, p.n.toLocaleString('en-US') + ' ' + CUR[p.cur].name + ' (' + p.price + ')'); });
-  $('storeBody').querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { const x = EXCHANGE[+b.dataset.ex]; if ((save[x.from] || 0) < x.fn) return; save[x.from] -= x.fn; grant({ [x.to]: x.tn }); renderStore(); });
+  $('storeBody').querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { const x = EXCHANGE[+b.dataset.ex]; if ((save[x.from] || 0) < x.fn) return; save[x.from] -= x.fn; grant({ [x.to]: x.tn }, true); renderStore(); });
 }
 let STAT_MAX = null, storeFrom = 'menu';
 function statBar(label, v, max, colr) { return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0;font-size:13px"><span style="width:84px;text-align:left;color:#bbb">${label}</span><div style="flex:1;height:8px;background:#2a2238;border-radius:4px"><div style="height:8px;border-radius:4px;background:${colr};width:${Math.round(clamp(v / max, 0.04, 1) * 100)}%"></div></div><span style="width:42px;text-align:right">${v}</span></div>`; }
@@ -4535,14 +4536,16 @@ function renderBag() {
   $('bagBody').querySelectorAll('[data-forge]').forEach(x => x.onclick = () => { const pid = x.dataset.forge; if ((b.parts[pid] || 0) < 5) return; b.parts[pid] -= 5; save.shards[pid] = shardCount(pid) + 1; persist(); sfx(660, 0.2); renderBag(); });
   const cl = $('bagClaim'); if (cl) cl.onclick = claimGifts;
 }
-async function claimGifts() {
-  try { const r = await api('/api/gifts/claim', {}); const g = r.gifts || []; if (!g.length) return modal('No gifts yet', 'Nothing is waiting for you right now.', [['OK', null]]);
-    const lines = g.map(x => { if (x.item.type === 'pack') { grant({ [x.item.cur]: x.item.n }); return `${x.item.n.toLocaleString('en-US')} ${CUR[x.item.cur].name} from <b>${esc(x.from)}</b>`; } if (x.item.type === 'alien' && ALIEN[x.item.id]) { const fresh = unlock(x.item.id); if (!fresh) grant({ mdna: 2 }); return `${ALIEN[x.item.id].name} from <b>${esc(x.from)}</b>${fresh ? '' : ' (already owned: converted to 2 Mutated DNA)'}`; } return ''; }).filter(Boolean);
-    persist(); modal('Gifts received!', lines.join('<br>'), [['Great', () => renderBag()]]);
-  } catch (e) { modal('Could not reach the server', 'Gifts need the game server and a Google sign-in. ' + esc(e.message || ''), [['OK', null]]); }
+async function claimGifts(quiet, title) {
+  try { const r = await api('/api/gifts/claim', {}); const g = r.gifts || []; if (!g.length) return quiet ? (title ? modal(title, 'Thanks! Your payment went through. If your item is not here yet, it will arrive within a minute: reopen the game to collect it.', [['OK', null]]) : null) : modal('No gifts yet', 'Nothing is waiting for you right now.', [['OK', null]]);
+    const lines = g.map(x => { if (x.item.type === 'pack') { grant({ [x.item.cur]: x.item.n }, true); return `${x.item.n.toLocaleString('en-US')} ${CUR[x.item.cur].name} from <b>${esc(x.from)}</b>`; } if (x.item.type === 'alien' && ALIEN[x.item.id]) { const fresh = unlock(x.item.id); if (!fresh) grant({ mdna: 2 }); return `${ALIEN[x.item.id].name} from <b>${esc(x.from)}</b>${fresh ? '' : ' (already owned: converted to 2 Mutated DNA)'}`; } return ''; }).filter(Boolean);
+    persist(); cloudSaveNow(); modal(title || 'Gifts received!', lines.join('<br>'), [['Great', () => renderBag()]]);
+  } catch (e) { if (quiet) return; modal('Could not reach the server', 'Gifts need the game server and a Google sign-in. ' + esc(e.message || ''), [['OK', null]]); }
 }
 function giftDialog(item, label) {
   if (!Cloud.token) return modal('Sign in to gift', 'Gifting needs a Google sign-in on the game server, so we know who sent it and who receives it.', [['OK', null]]);
+  if (PAY()) { const key = item.type === 'alien' ? 'alien:' + item.id : 'pack:pack' + STORE_PACKS.findIndex(p => p.cur === item.cur && p.n === item.n);
+    return modal('Gift ' + label, `Enter your friend's 8-character friend code (they can find it in their Bag). You pay now; they receive it next time they sign in.<br><input id="giftTo" maxlength="8" placeholder="e.g. 3FA9C21B" style="margin-top:8px;text-transform:uppercase">`, [['Pay and send', () => payCheckout(key, ($('giftTo') && $('giftTo').value || '').trim())], ['Cancel', null]]); }
   modal('Gift ' + label, `Enter your friend's 8-character friend code (they can find it in their Bag).<br><input id="giftTo" maxlength="8" placeholder="e.g. 3FA9C21B" style="margin-top:8px;text-transform:uppercase">`, [['Send gift (demo, free)', async () => { const to = ($('giftTo') && $('giftTo').value || '').trim(); try { const r = await api('/api/gift', { to, item }); modal('Gift sent!', label + ' is on its way to <b>' + esc(r.to) + '</b>. They will receive it next time they check their Bag.', [['Nice', null]]); } catch (e) { modal('Gift not sent', esc(e.message || 'Server error'), [['OK', null]]); } }], ['Cancel', null]]);
 }
 // ---------- skins & primordial forms
@@ -5068,6 +5071,7 @@ async function cloudInit() {
   if (Cloud.token) { try { applyProfile(await api('/api/me'), false); } catch (e) { if (e.status === 401) { Cloud.token = null; try { localStorage.removeItem('xenoio_token'); } catch (e2) {} } } }
   if (Cloud.cfg.googleClientId) loadGoogle();
   renderAcct();
+  if (!(await checkoutReturn()) && Cloud.token && Cloud.cfg.payments) claimGifts(true);
 }
 function loadGoogle() {
   if (window.google && google.accounts) return initGoogle();
@@ -5077,7 +5081,7 @@ function loadGoogle() {
 }
 function initGoogle() { google.accounts.id.initialize({ client_id: Cloud.cfg.googleClientId, callback: r => doLogin({ credential: r.credential }) }); Cloud.gisReady = true; renderAcct(); }
 async function doLogin(body) {
-  try { const res = await api('/api/login', body); Cloud.token = res.token; try { localStorage.setItem('xenoio_token', res.token); } catch (e) {} applyProfile(res, true); }
+  try { const res = await api('/api/login', body); Cloud.token = res.token; try { localStorage.setItem('xenoio_token', res.token); } catch (e) {} applyProfile(res, true); if (Cloud.cfg && Cloud.cfg.payments) setTimeout(() => claimGifts(true), 1500); }
   catch (e) { modal('Sign-in failed', esc(e.message), [['OK', null]]); }
 }
 function mergeSaves(local, cloud) { // first sign-in on a device: keep the best of guest progress and cloud
@@ -5321,7 +5325,22 @@ function renderLab() {
   if (pages > 1) Gd.appendChild(nav.cloneNode(true)).querySelectorAll('button').forEach((bt, i) => bt.onclick = i ? next.onclick : prev.onclick);
 }
 function buy(a, pay) { pay(); unlock(a.id); save.equipped = a.id; persist(); sfx(880, 0.2); renderLab(); modal('New alien!', a.name + ' has joined your lab and is now equipped.', [['Nice', null]]); }
+const PAY = () => !!(Cloud.cfg && Cloud.cfg.payments);
+async function payCheckout(item, to) {
+  if (!Cloud.token) return modal('Sign in to buy', 'Purchases are saved to your Google account, so you keep them on every device. Sign in from the main menu, then come back to the store.', [['OK', null]]);
+  try { modal('Opening secure checkout…', 'Taking you to Stripe to pay. You will come straight back to the game afterwards.', []); const r = await api('/api/checkout', { item, to }); location.href = r.url; }
+  catch (e) { modal('Checkout unavailable', esc(e.message || 'Please try again.'), [['OK', null]]); }
+}
+async function checkoutReturn() {
+  const q = new URLSearchParams(location.search), st = q.get('checkout'); if (!st) return false;
+  history.replaceState(null, '', location.pathname);
+  if (st === 'cancel') { modal('Checkout cancelled', 'No payment was taken.', [['OK', null]]); return true; }
+  const sid = q.get('session_id');
+  if (Cloud.token && sid) { try { await api('/api/checkout/confirm', { session: sid }); } catch (e) {} await claimGifts(true, 'Purchase complete!'); }
+  return true;
+}
 function premiumBuy(a) {
+  if (PAY()) return modal('Buy ' + a.name + ' — ' + a.cost.usd, `Pay securely with Stripe. ${a.name} is added to your account on every device.${Cloud.cfg.testMode ? '<br><small style="color:#ffd25a">Test mode: use card 4242 4242 4242 4242, any future date, any CVC.</small>' : ''}`, [['Buy ' + a.cost.usd, () => payCheckout('alien:' + a.id)], ['🎁 Buy as a gift', () => giftDialog({ type: 'alien', id: a.id }, a.name + ' (' + a.cost.usd + ')')], ['Cancel', null]]);
   modal('Buy ' + a.name + ' — ' + a.cost.usd,  'This page has no payment system connected, so this is a <b>demo store</b>: no money is charged. In a released version this button would open Google Play / App Store / Stripe checkout.', [['🎁 Gift to a friend', () => giftDialog({ type: 'alien', id: a.id }, a.name + ' (' + a.cost.usd + ')')], ['Unlock (demo, free)', () => { unlock(a.id); save.equipped = a.id; persist(); renderLab(); }], ['Cancel', null]]);
 }
 function modal(title, html, btns) {

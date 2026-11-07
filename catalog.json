@@ -1,0 +1,139 @@
+{
+ "packs": [
+  {
+   "id": "pack0",
+   "cur": "dna",
+   "n": 2000,
+   "cents": 99,
+   "name": "2,000 DNA"
+  },
+  {
+   "id": "pack1",
+   "cur": "dna",
+   "n": 11000,
+   "cents": 499,
+   "name": "11,000 DNA"
+  },
+  {
+   "id": "pack2",
+   "cur": "dna",
+   "n": 25000,
+   "cents": 999,
+   "name": "25,000 DNA"
+  },
+  {
+   "id": "pack3",
+   "cur": "adna",
+   "n": 5,
+   "cents": 299,
+   "name": "5 Ancient DNA"
+  },
+  {
+   "id": "pack4",
+   "cur": "adna",
+   "n": 15,
+   "cents": 799,
+   "name": "15 Ancient DNA"
+  },
+  {
+   "id": "pack5",
+   "cur": "adna",
+   "n": 40,
+   "cents": 1799,
+   "name": "40 Ancient DNA"
+  },
+  {
+   "id": "pack6",
+   "cur": "mdna",
+   "n": 3,
+   "cents": 399,
+   "name": "3 Mutated DNA"
+  },
+  {
+   "id": "pack7",
+   "cur": "mdna",
+   "n": 10,
+   "cents": 1199,
+   "name": "10 Mutated DNA"
+  },
+  {
+   "id": "pack8",
+   "cur": "mdna",
+   "n": 30,
+   "cents": 2999,
+   "name": "30 Mutated DNA"
+  }
+ ],
+ "aliens": [
+  {
+   "id": "celestialleviathan",
+   "name": "Celestial Leviathan",
+   "cents": 199
+  },
+  {
+   "id": "goldenxenarch",
+   "name": "Golden Xenarch",
+   "cents": 299
+  },
+  {
+   "id": "phantomemperor",
+   "name": "Phantom Emperor",
+   "cents": 399
+  },
+  {
+   "id": "solarphoenix",
+   "name": "Solar Phoenix",
+   "cents": 499
+  },
+  {
+   "id": "galaxydevourer",
+   "name": "Galaxy Devourer",
+   "cents": 999
+  },
+  {
+   "id": "voidbehemoth",
+   "name": "Void Behemoth",
+   "cents": 599
+  },
+  {
+   "id": "stormwyvern",
+   "name": "Storm Wyvern",
+   "cents": 699
+  },
+  {
+   "id": "psionicovermind",
+   "name": "Psionic Overmind",
+   "cents": 799
+  },
+  {
+   "id": "abyssalleviathan",
+   "name": "Abyssal Leviathan",
+   "cents": 999
+  },
+  {
+   "id": "auroraseraph",
+   "name": "Aurora Seraph",
+   "cents": 799
+  },
+  {
+   "id": "magmatitan",
+   "name": "Magma Titan",
+   "cents": 899
+  },
+  {
+   "id": "chronoserpent",
+   "name": "Chrono Serpent",
+   "cents": 999
+  },
+  {
+   "id": "verdantcolossus",
+   "name": "Verdant Colossus",
+   "cents": 1199
+  },
+  {
+   "id": "sphinxpharaoh",
+   "name": "Sphinx Pharaoh",
+   "cents": 1499
+  }
+ ]
+}
