@@ -17,6 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const accounts = require('./accounts');
+const ChatFilter = require('./chatfilter');
 
 const PORT = +process.env.PORT || 8080;
 const ROUND_MS = 300 * 1000;
@@ -111,7 +112,7 @@ function onMessage(c, m) {
   if (m.t === 'join' && !c.room) {
     const r = findRoom(m.mode);
     c.id = nextId++; c.room = r;
-    c.state = { id: c.id, n: String(m.name || 'Alien').slice(0, 14), al: String(m.alien || 'blipling').slice(0, 30), x: 0, y: 0, a: 0, l: 1, hp: 1, mh: 1, s: 0, alive: true, inv: false };
+    c.state = { id: c.id, n: (ChatFilter.clean(String(m.name || 'Alien'), 14).replace(/\*+/g, '') || 'Alien').slice(0, 14), al: String(m.alien || 'blipling').slice(0, 30), x: 0, y: 0, a: 0, l: 1, hp: 1, mh: 1, s: 0, alive: true, inv: false };
     r.players.set(c.id, c);
     send(c, { t: 'welcome', id: c.id, mode: r.open ? 'open' : 'ffa', planet: r.planet, seed: r.seed, left: r.open ? 0 : (r.endsAt - Date.now()) / 1000, count: r.players.size });
     return;
@@ -130,6 +131,14 @@ function onMessage(c, m) {
     const dx = target.state.x - c.state.x, dy = target.state.y - c.state.y;
     if (dx * dx + dy * dy > 500 * 500) return;
     send(target, { t: 'hurt', from: c.id, dmg: Math.min(300, Math.max(0, +m.dmg || 0)) });
+  } else if (m.t === 'chat') {
+    // room chat: rate limited and filtered on the server, so nobody can bypass the filter
+    const now = Date.now(); c.chatT = (c.chatT || []).filter(t => now - t < 20000);
+    if (c.chatT.length >= 8 || now - (c.chatLast || 0) < 1200) return send(c, { t: 'chat', id: 0, n: 'Server', text: 'Slow down: you are sending messages too fast.' });
+    const text = ChatFilter.clean(m.text, 80); if (!text || /^[*\s]+$/.test(text)) return;
+    c.chatT.push(now); c.chatLast = now;
+    const msg = { t: 'chat', id: c.id, n: ChatFilter.clean(c.state.n, 14) || 'Alien', text };
+    for (const o of c.room.players.values()) send(o, msg);
   } else if (m.t === 'titanPass') {
     // a Titan was slain by another player: the killer inherits the Titan evolution
     const target = c.room.players.get(m.to); if (target && c.state.ti) { c.state.ti = false; send(target, { t: 'titanGain', from: c.state.n }); }

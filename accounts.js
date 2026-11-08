@@ -127,7 +127,8 @@ function readToken(req) {
 
 // ------------------------------------------------------------------ validation
 const int = (v, max) => Math.max(0, Math.min(max, Math.floor(+v || 0)));
-const cleanName = s => String(s || '').replace(/[<>&"'`\u0000-\u001f]/g, '').trim().slice(0, 14);
+const ChatFilter = require('./chatfilter');
+const cleanName = s => ChatFilter.clean(String(s || '').replace(/[<>&"'`\u0000-\u001f]/g, ''), 14).replace(/\*+/g, '').trim().slice(0, 14);
 function cleanSave(s) {
   if (!s || typeof s !== 'object') return null;
   const tokens = {};
