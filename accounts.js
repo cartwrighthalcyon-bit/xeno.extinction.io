@@ -333,7 +333,7 @@ async function handle(req, res) {
       if (body.to) { to = String(body.to).toUpperCase().replace(/[^0-9A-F]/g, '').slice(0, 8); if (to.length !== 8) return send(res, 400, { error: 'Enter an 8-character friend code' }), true; if (to === (rec.code || friendCode(rec.id))) return send(res, 400, { error: 'You cannot gift yourself' }), true; if (!(await store.byCode(to))) return send(res, 404, { error: 'No player has that friend code' }), true; }
       const base = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || ('https://' + req.headers.host)).replace(/\/$/, '');
       if (PROVIDER === 'lemonsqueezy') {
-        const back = base + '/?checkout=success&provider=ls';
+        const back = base + '/?checkout=success&provider=ls' + (body.embed ? '&embed=1' : '');
         const co = await lemon('POST', 'checkouts', { data: { type: 'checkouts', attributes: {
           custom_price: it.cents,
           product_options: { name: 'XENO.IO: ' + it.name + (to ? ' (gift)' : ''), description: to ? 'A gift for another player. It arrives in their game inbox.' : 'Delivered to your XENO.IO account as soon as payment goes through.', redirect_url: back, receipt_button_text: 'Back to XENO.IO', receipt_link_url: back, enabled_variants: [+LS.variant] },
@@ -346,7 +346,7 @@ async function handle(req, res) {
       const sess = await stripe('POST', 'checkout/sessions', {
         mode: 'payment', 'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': 'usd', 'line_items[0][price_data][unit_amount]': String(it.cents),
         'line_items[0][price_data][product_data][name]': 'XENO.IO: ' + it.name + (to ? ' (gift)' : ''), 'line_items[0][price_data][product_data][tax_code]': process.env.STRIPE_TAX_CODE || 'txcd_10201000', // in-game items; needed for Stripe Managed Payments (Stripe handles sales tax)
-        success_url: base + '/?checkout=success&session_id={CHECKOUT_SESSION_ID}', cancel_url: base + '/?checkout=cancel',
+        success_url: base + '/?checkout=success&session_id={CHECKOUT_SESSION_ID}' + (body.embed ? '&embed=1' : ''), cancel_url: base + '/?checkout=cancel' + (body.embed ? '&embed=1' : ''),
         client_reference_id: rec.id.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 200), 'metadata[uid]': rec.id, 'metadata[item]': it.key, 'metadata[to]': to,
       });
       return send(res, 200, { url: sess.url }), true;

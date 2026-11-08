@@ -6674,14 +6674,23 @@ const IN_PLAY_APP = (() => { try { if (document.referrer.startsWith('android-app
 const PAY = () => !!(Cloud.cfg && Cloud.cfg.payments) && !IN_PLAY_APP;
 const PAY_LS = () => !!(Cloud.cfg && Cloud.cfg.provider === 'lemonsqueezy');
 const PAY_HOW = () => PAY_LS() ? 'Secure checkout by Lemon Squeezy: pay by card, PayPal and more.' : 'Pay securely by card, Google Pay or Apple Pay (via Stripe).';
+const FRAMED = (() => { try { return window.top !== window.self; } catch (e) { return true; } })(); // running inside another site's page, e.g. itch.io
 async function payCheckout(item, to) {
   if (!Cloud.token) return modal('Sign in to buy', 'Purchases are saved to your Google account, so you keep them on every device. Sign in from the main menu, then come back to the store.', [['OK', null]]);
-  try { modal('Opening secure checkout…', 'Taking you to our secure checkout. You will come straight back to the game afterwards.', []); const r = await api('/api/checkout', { item, to }); location.href = r.url; }
+  try { modal('Opening secure checkout…', 'Taking you to our secure checkout. You will come straight back to the game afterwards.', []); const r = await api('/api/checkout', { item, to, embed: FRAMED });
+    if (!FRAMED) { location.href = r.url; return; }
+    // checkout pages can't open inside another site's frame: pay in a new tab, and the items arrive here
+    const w = window.open(r.url, '_blank', 'noopener');
+    modal('Finish paying in the new tab', `Your checkout opened in a new tab. Your items appear here automatically as soon as payment goes through.${w ? '' : `<br><br><a href="${esc(r.url)}" target="_blank" rel="noopener" style="color:#7dffb2;font-weight:800">Open checkout</a>`}`, [['OK', null]]);
+    let have = 0; try { have = ((await api('/api/gifts')).gifts || []).length; } catch (e) {}
+    for (let k = 0; k < 150; k++) { await new Promise(res => setTimeout(res, 4000)); try { if (((await api('/api/gifts')).gifts || []).length > have) { await claimGifts(true, 'Purchase complete!'); break; } } catch (e) {} }
+  }
   catch (e) { modal('Checkout unavailable', esc(e.message || 'Please try again.'), [['OK', null]]); }
 }
 async function checkoutReturn() {
   const q = new URLSearchParams(location.search), st = q.get('checkout'); if (!st) return false;
   history.replaceState(null, '', location.pathname);
+  if (q.get('embed') === '1') { modal(st === 'cancel' ? 'Checkout cancelled' : 'Payment complete!', st === 'cancel' ? 'No payment was taken. You can close this tab.' : 'Thanks! Go back to the game tab: your items appear there automatically. You can close this tab.', [['OK', null]]); return true; }
   if (st === 'cancel') { modal('Checkout cancelled', 'No payment was taken.', [['OK', null]]); return true; }
   const sid = q.get('session_id');
   if (Cloud.token && sid) { try { await api('/api/checkout/confirm', { session: sid }); } catch (e) {} await claimGifts(true, 'Purchase complete!'); }
