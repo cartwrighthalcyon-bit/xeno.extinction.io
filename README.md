@@ -40,6 +40,8 @@ To test sign-in without Google: `DEV_LOGIN=1 node server.js` (never enable this 
 | `STRIPE_WEBHOOK_SECRET` | optional: the `whsec_...` signing secret of a Stripe webhook pointing at `/api/stripe/webhook` |
 | `ADSENSE_CLIENT` | optional: your AdSense publisher id (`ca-pub-...`) to show an ad after a player is defeated |
 | `ADSENSE_TEST` | optional: `1` shows Google test ads while your AdSense account is being approved |
+| `ANDROID_PACKAGE` | the Google Play app's package name (for example `io.onrender.xeno_extinction_io.twa`) |
+| `ANDROID_SHA256` | the app signing certificate SHA-256 fingerprint(s) from Play Console, comma-separated; served at `/.well-known/assetlinks.json` |
 | `ADMIN_KEY` | any long random text; lets you read player and bug reports at `/api/reports?key=YOUR_KEY` |
 
 Also check **Settings → Build Command** is `npm install`. Save. Render redeploys automatically.
@@ -55,6 +57,11 @@ Webhooks → Add endpoint `https://YOUR-APP.onrender.com/api/stripe/webhook`, ev
 and `checkout.session.async_payment_succeeded`. Put its signing secret in `STRIPE_WEBHOOK_SECRET`.
 
 Test with a `sk_test_` key and card 4242 4242 4242 4242 before switching to `sk_live_`.
+
+## Google Play
+The site is an installable web app (manifest, icons, offline service worker). Package it at pwabuilder.com → Android,
+upload the `.aab` to Play Console, then set `ANDROID_PACKAGE` and `ANDROID_SHA256` so Android trusts the site and hides the browser bar.
+Inside the Play app, real-money purchases are switched off: Google Play requires its own billing for digital items.
 
 ## Reports
 Players can report a player or a bug from the main menu or the pause menu. Reports are stored in the database

@@ -34,6 +34,12 @@ const server = http.createServer(async (req, res) => {
   if (pathOnly === '/' || pathOnly === '/index.html') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     fs.createReadStream(page).pipe(res);
+  } else if (pathOnly === '/manifest.webmanifest' || pathOnly === '/sw.js' || /^\/icons\/[a-z0-9-]+\.png$/.test(pathOnly)) { // installable web app files
+    const f = path.join(__dirname, pathOnly.slice(1)); const type = pathOnly.endsWith('.png') ? 'image/png' : pathOnly.endsWith('.js') ? 'text/javascript' : 'application/manifest+json';
+    fs.readFile(f, (err, buf) => { if (err) { res.writeHead(404); return res.end('Not found'); } res.writeHead(200, { 'Content-Type': type, 'Cache-Control': pathOnly === '/sw.js' ? 'no-cache' : 'public, max-age=86400' }); res.end(buf); });
+  } else if (pathOnly === '/.well-known/assetlinks.json') { // proves to Android that the Google Play app and this website belong together
+    const pkg = process.env.ANDROID_PACKAGE || '', fps = String(process.env.ANDROID_SHA256 || '').split(',').map(x => x.trim()).filter(Boolean);
+    res.writeHead(pkg && fps.length ? 200 : 404, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(pkg && fps.length ? [{ relation: ['delegate_permission/common.handle_all_urls'], target: { namespace: 'android_app', package_name: pkg, sha256_cert_fingerprints: fps } }] : []));
   } else if (pathOnly === '/ads.txt') { // AdSense publisher verification
     const pub = String(process.env.ADSENSE_CLIENT || '').replace(/^ca-/, '');
     res.writeHead(pub ? 200 : 404, { 'Content-Type': 'text/plain' }); res.end(pub ? `google.com, ${pub}, DIRECT, f08c47fec0942fa0\n` : 'not configured\n');

@@ -1,0 +1,19 @@
+{
+  "name": "XENO.IO — Alien Survival",
+  "short_name": "XENO.IO",
+  "description": "Hatch as a baby alien, eat, grow and evolve through 1,200+ creatures across 11 worlds. Free multiplayer .io game.",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#07060c",
+  "theme_color": "#07060c",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
