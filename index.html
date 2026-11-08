@@ -1485,10 +1485,10 @@ function drawLeg(c, ax, ay, side, P, r, st, t, ph, moving, k, col, pairIdx, fill
   let kx, ky, fx, fy;
   if (P.arch === 'insect' || P.arch === 'beetle') { const fwd = (pairIdx - (P.pairs - 1) / 2) * 0.55; kx = ax + r * (0.15 + fwd * 0.4) * lk; ky = ay + side * r * 0.42 * lk; fx = kx + r * (0.1 + fwd * 0.6) * lk + gait * r * 0.15; fy = ky + side * r * 0.38 * lk; }
   else if (P.arch === 'toad') { const front = k === 0; if (front) { kx = ax + r * 0.12 * lk; ky = ay + side * r * 0.28 * lk; fx = kx + r * 0.12 * lk + gait * r * 0.1; fy = ky + side * r * 0.1 * lk; } else { kx = ax - r * 0.3 * lk; ky = ay + side * r * 0.55 * lk; fx = kx + r * 0.38 * lk + gait * r * 0.12; fy = ky + side * r * 0.12 * lk; } }
-  else if (P.arch === 'lizard') { const front = k === 0; kx = ax + r * (front ? 0.12 : -0.08) * lk; ky = ay + side * r * 0.38 * lk; fx = kx + r * (front ? 0.18 : -0.1) * lk + gait * r * 0.2; fy = ky + side * r * 0.12 * lk; }
+  else if (P.arch === 'lizard') { const front = k === 0; kx = ax + r * (front ? 0.14 : -0.1) * lk; ky = ay + side * r * 0.44 * lk; fx = kx + r * (front ? 0.22 : -0.12) * lk + gait * r * 0.22; fy = ky + side * r * 0.16 * lk; }
   else if (P.tuck) { // real animals seen from above: legs sit under the body and swing fore and aft, feet just peeking out
     const front = k === 0, sw = gait * r * 0.26 * lk; kx = ax + r * (front ? 0.04 : -0.06) * lk + sw * 0.45; ky = ay + side * r * 0.09 * lk; fx = kx + r * (front ? 0.06 : 0.02) * lk + sw * 0.75; fy = ky + side * r * 0.08 * lk; }
-  else { const front = k === 0; kx = ax + r * (front ? 0.06 : -0.1) * lk + gait * r * 0.14; ky = ay + side * r * 0.22 * lk; fx = kx + r * (front ? 0.12 : 0.06) * lk + gait * r * 0.22; fy = ky + side * r * 0.15 * lk; }
+  else { const front = k === 0; kx = ax + r * (front ? 0.08 : -0.12) * lk + gait * r * 0.15; ky = ay + side * r * 0.28 * lk; fx = kx + r * (front ? 0.15 : 0.08) * lk + gait * r * 0.24; fy = ky + side * r * 0.2 * lk; }
   c.strokeStyle = col; c.lineCap = 'round'; c.lineJoin = 'round';
   const thin = P.arch === 'insect' || P.arch === 'beetle';
   if (thin) { c.fillStyle = col; c.beginPath(); c.ellipse(ax, ay, thick * 0.75, thick * 0.55, 0, 0, 7); c.fill(); c.lineWidth = Math.max(1.2, thick * 0.55); c.beginPath(); c.moveTo(ax, ay); c.lineTo(kx, ky); c.stroke(); if (LOD_HI) { c.beginPath(); c.arc(kx, ky, Math.max(1, thick * 0.32), 0, 7); c.fill(); } c.lineWidth = Math.max(1, thick * 0.4); c.beginPath(); c.moveTo(kx, ky); c.lineTo(fx, fy); c.stroke(); }
@@ -1498,11 +1498,11 @@ function drawLeg(c, ax, ay, side, P, r, st, t, ph, moving, k, col, pairIdx, fill
     const rx = ax - (kx - ax) * 0.15, ry = ay - side * thick * 1.5, dx = kx - rx, dy = ky - ry, dl = Math.hypot(dx, dy) || 1, nx = -dy / dl, ny = dx / dl, W1 = thick * (P.arch === 'quad' || P.arch === 'humanoid' ? 1.05 : P.arch === 'toad' ? 1.2 : 1.4), W2 = thick * 0.58, mx = (rx + kx) / 2, my = (ry + ky) / 2;
     const thigh = (inf) => { c.beginPath(); c.moveTo(rx + nx * (W1 + inf), ry + ny * (W1 + inf)); c.quadraticCurveTo(mx + nx * (W1 * 1.02 + inf), my + ny * (W1 * 1.02 + inf), kx + nx * (W2 + inf), ky + ny * (W2 + inf)); c.arc(kx, ky, W2 + inf, Math.atan2(ny, nx), Math.atan2(-ny, -nx), side < 0); c.quadraticCurveTo(mx - nx * (W1 * 0.8 + inf), my - ny * (W1 * 0.8 + inf), rx - nx * (W1 + inf), ry - ny * (W1 + inf)); c.closePath(); };
     c.fillStyle = col; thigh(o); c.fill();
-    c.lineWidth = thick * 0.75 + o; c.beginPath(); c.moveTo(kx, ky); c.lineTo(fx, fy); c.stroke();
+    const calf = [[kx, ky], [kx * 0.62 + fx * 0.38 + side * 0 , ky * 0.62 + fy * 0.38], [fx, fy]], cw = [W2 * 0.92, thick * 0.46, thick * 0.3]; tube(c, calf, cw.map(w => w + o), col);
     c.beginPath(); c.ellipse(fx + r * 0.03, fy, thick * 0.65 + o * 0.5, thick * 0.5 + o * 0.5, 0, 0, 7); c.fillStyle = col; c.fill();
     c.fillStyle = tc; thigh(0); c.fill();
     if (LOD_FULL) { const g = c.createLinearGradient(mx + nx * W1, my + ny * W1, mx - nx * W1, my - ny * W1); g.addColorStop(0, 'rgba(255,250,235,.22)'); g.addColorStop(0.45, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(0,0,0,.3)'); c.fillStyle = g; thigh(0); c.fill(); }
-    c.strokeStyle = fc; if (P.coat === 'socks') c.strokeStyle = col; c.lineWidth = thick * 0.75; c.beginPath(); c.moveTo(kx, ky); c.lineTo(fx, fy); c.stroke();
+    tube(c, calf, cw, P.coat === 'socks' ? col : fc); if (LOD_HI) { const ddx = fx - kx, ddy = fy - ky, dd = Math.hypot(ddx, ddy) || 1; tube(c, calf.map(([x, y], i) => [x - ddy / dd * cw[i] * 0.45, y + ddx / dd * cw[i] * 0.45]), cw.map(w => w * 0.3), 'rgba(255,255,255,.14)'); }
     c.fillStyle = tc; c.beginPath(); c.arc(kx, ky, W2 * 0.92, 0, 7); c.fill();
   }
   if (!thin && P.foot) { // feet that match the animal: hooves, elephant pads, soft paws, clawed paws
@@ -1774,18 +1774,32 @@ function tube(c, pts, ws, fill, stroke) { // tapered body along a polyline: pts 
   for (let i = n - 1; i > 0; i--) { const m = [(R[i - 1][0] + R[i][0]) / 2, (R[i - 1][1] + R[i][1]) / 2]; c.quadraticCurveTo(R[i][0], R[i][1], m[0], m[1]); } c.lineTo(R[0][0], R[0][1]); c.closePath();
   if (fill) { c.fillStyle = fill; c.fill(); } if (stroke) { c.strokeStyle = stroke; c.lineWidth = Math.max(0.7, ws[0] * 0.08); c.stroke(); }
 }
-function limb(c, pts, w0, w1, col, outline) { // jointed limb: shoulder → elbow → wrist, tapering, with round joints
-  const ws = pts.map((_, i) => w0 + (w1 - w0) * i / (pts.length - 1));
-  if (outline) tube(c, pts, ws.map(w => w + outline), 'rgba(0,0,0,.35)');
-  tube(c, pts, ws, col); c.fillStyle = col; for (let i = 1; i < pts.length - 1; i++) { c.beginPath(); c.arc(pts[i][0], pts[i][1], ws[i] * 1.12, 0, 7); c.fill(); }
+function limb(c, pts, w0, w1, col, outline) { // jointed limb: shoulder → elbow → wrist, with muscle bulges, rim light and shaded joints
+  const n0 = pts.length, P2 = [], W2 = [];
+  for (let i = 0; i < n0; i++) { const w = w0 + (w1 - w0) * i / (n0 - 1); P2.push(pts[i]); W2.push(w);
+    if (i < n0 - 1) { const q = pts[i + 1], wn = w0 + (w1 - w0) * (i + 1) / (n0 - 1), bulge = i === 0 ? 1.22 : i === 1 ? 1.1 : 1.02; // thigh/upper-arm muscle, then calf/forearm
+      P2.push([pts[i][0] * 0.55 + q[0] * 0.45, pts[i][1] * 0.55 + q[1] * 0.45]); W2.push((w + wn) / 2 * bulge); } }
+  if (outline) tube(c, P2, W2.map(w => w + outline), 'rgba(0,0,0,.35)');
+  tube(c, P2, W2, col);
+  if (LOD_HI && W2[0] > 1.2) { // rim light on one flank, shadow on the other: reads as a rounded limb, not a flat ribbon
+    const side = (k, sc) => P2.map((p, i) => { const a = P2[Math.max(0, i - 1)], b = P2[Math.min(P2.length - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy) || 1; return [p[0] - dy / d * W2[i] * k, p[1] + dx / d * W2[i] * k]; });
+    tube(c, side(-0.5, 1), W2.map(w => w * 0.32), 'rgba(255,255,255,.13)'); tube(c, side(0.55, 1), W2.map(w => w * 0.3), 'rgba(0,0,0,.16)'); }
+  for (let i = 1; i < n0 - 1; i++) { const [x, y] = pts[i], r = (w0 + (w1 - w0) * i / (n0 - 1)) * 1.14; c.fillStyle = col; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+    if (LOD_HI && r > 1.4) { c.fillStyle = 'rgba(255,255,255,.12)'; c.beginPath(); c.arc(x - r * 0.3, y - r * 0.3, r * 0.5, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.18)'; c.lineWidth = Math.max(0.5, r * 0.14); c.beginPath(); c.arc(x, y, r * 0.92, 0.4, 2.2); c.stroke(); } }
 }
-function clawFoot(c, x, y, a, s, col, n, claw, web) { // foot with splayed toes and claws, pointing along angle a
-  const spread = n >= 5 ? 1.5 : n === 4 ? 1.2 : 0.95;
-  if (web) { c.fillStyle = col; c.globalAlpha *= 0.75; c.beginPath(); c.moveTo(x, y); for (let k = 0; k < n; k++) { const ta = a + (k / (n - 1) - 0.5) * spread; c.lineTo(x + Math.cos(ta) * s * 1.05, y + Math.sin(ta) * s * 1.05); } c.closePath(); c.fill(); c.globalAlpha /= 0.75; }
-  for (let k = 0; k < n; k++) { const ta = a + (n === 1 ? 0 : (k / (n - 1) - 0.5) * spread), len = s * (k === Math.floor(n / 2) ? 1.1 : 0.85), tx = x + Math.cos(ta) * len, ty = y + Math.sin(ta) * len;
-    c.strokeStyle = col; c.lineCap = 'round'; c.lineWidth = Math.max(1, s * 0.32); c.beginPath(); c.moveTo(x, y); c.lineTo(tx, ty); c.stroke();
-    if (claw) { c.strokeStyle = claw; c.lineWidth = Math.max(0.8, s * 0.16); c.beginPath(); c.moveTo(tx, ty); c.lineTo(tx + Math.cos(ta) * s * 0.35, ty + Math.sin(ta) * s * 0.35); c.stroke(); } }
-  c.fillStyle = col; c.beginPath(); c.arc(x, y, s * 0.42, 0, 7); c.fill();
+function clawFoot(c, x, y, a, s, col, n, claw, web) { // foot: a padded palm, tapered jointed toes and hooked claws, pointing along angle a
+  const spread = n >= 5 ? 1.5 : n === 4 ? 1.2 : 0.95, toes = [];
+  for (let k = 0; k < n; k++) { const ta = a + (n === 1 ? 0 : (k / (n - 1) - 0.5) * spread), len = s * (k === Math.floor(n / 2) ? 1.1 : n >= 4 && (k === 0 || k === n - 1) ? 0.7 : 0.88), bend = (n === 1 ? 0 : (k / (n - 1) - 0.5)) * 0.35;
+    const kx = x + Math.cos(ta) * len * 0.55, ky = y + Math.sin(ta) * len * 0.55, tx = kx + Math.cos(ta + bend) * len * 0.5, ty = ky + Math.sin(ta + bend) * len * 0.5; toes.push([ta + bend, kx, ky, tx, ty]); }
+  if (web) { c.fillStyle = col; c.globalAlpha *= 0.7; c.beginPath(); c.moveTo(x, y); for (const t of toes) c.lineTo(t[3], t[4]); c.closePath(); c.fill(); c.globalAlpha /= 0.7; }
+  const tw = Math.max(0.6, s * 0.17);
+  for (const [ta, kx, ky, tx, ty] of toes) {
+    tube(c, [[x, y], [kx, ky], [tx, ty]], [tw * 1.15, tw, tw * 0.75], col);
+    if (LOD_HI && s > 3) { c.fillStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.arc(kx, ky, tw * 0.55, 0, 7); c.fill(); }
+    if (claw) { const cl = s * 0.42, nx = -Math.sin(ta), ny = Math.cos(ta), ex = tx + Math.cos(ta) * cl, ey = ty + Math.sin(ta) * cl; c.fillStyle = claw; c.beginPath(); c.moveTo(tx + nx * tw * 0.75, ty + ny * tw * 0.75); c.quadraticCurveTo(tx + Math.cos(ta) * cl * 0.7 + nx * tw * 0.6, ty + Math.sin(ta) * cl * 0.7 + ny * tw * 0.6, ex + nx * tw * 0.5, ey + ny * tw * 0.5); c.quadraticCurveTo(tx + Math.cos(ta) * cl * 0.5, ty + Math.sin(ta) * cl * 0.5, tx - nx * tw * 0.75, ty - ny * tw * 0.75); c.closePath(); c.fill(); }
+  }
+  c.fillStyle = col; c.beginPath(); c.ellipse(x, y, s * 0.46, s * 0.4, a, 0, 7); c.fill();
+  if (LOD_HI && s > 3) { c.fillStyle = 'rgba(0,0,0,.2)'; c.beginPath(); c.ellipse(x + Math.cos(a) * s * 0.12, y + Math.sin(a) * s * 0.12, s * 0.24, s * 0.2, a, 0, 7); c.fill(); c.fillStyle = 'rgba(255,255,255,.12)'; c.beginPath(); c.arc(x - s * 0.14, y - s * 0.14, s * 0.16, 0, 7); c.fill(); }
 }
 function alienEyes(c, hx, hy, hr, L, P, t, ph) {
   const n = L.eyes || 2, iris = P.irisCol || `hsl(${L.eyeHue || 60},80%,55%)`, slit = P.pupil === 'slit', glow = L.glow;
@@ -1970,7 +1984,7 @@ function drawAlienBody(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   // legs: shoulder/hip → elbow/knee → wrist/ankle, feet with splayed clawed toes; lizards sprawl with elbows out
   for (const [ax, k] of [[shX * 0.85, 0], [hipX * 0.85, 1]]) for (const s of [-1, 1]) {
     const diag = lizard ? (k ? (s > 0 ? 0 : Math.PI) : (s > 0 ? Math.PI : 0)) : (k ? Math.PI : 0) + (s > 0 ? Math.PI : 0), swing = Math.sin(gt + diag) * r * 0.24 * legL * mv;
-    const ay = yAt(ax) + s * wid * 0.55, out = lizard ? r * 0.38 * legL : r * 0.16 * legL, ex = ax + (k ? -r * 0.05 : r * 0.05) + swing * 0.4, ey = yAt(ax) + s * (wid + out * 0.75), fx = ax + swing + (lizard ? (k ? -r * 0.1 : r * 0.12) : 0), fy = yAt(ax) + s * (wid + out * (lizard ? 1.0 : 0.55));
+    const ay = yAt(ax) + s * wid * 0.55, out = lizard ? r * 0.42 * legL : r * 0.27 * legL, ex = ax + (k ? -r * 0.05 : r * 0.05) + swing * 0.4, ey = yAt(ax) + s * (wid + out * 0.75), fx = ax + swing + (lizard ? (k ? -r * 0.1 : r * 0.12) : 0), fy = yAt(ax) + s * (wid + out * (lizard ? 1.0 : 0.72));
     limb(c, [[ax, ay], [ex, ey], [fx, fy]], r * (lizard ? 0.09 : 0.12) * legT, r * 0.065 * legT, limbCol, Math.max(0.6, r * 0.012));
     clawFoot(c, fx, fy, lizard ? s * (k ? 0.9 : 0.5) + (k ? Math.PI * 0.15 : 0) : s * 0.25, r * (lizard ? 0.1 : 0.09) * legT, limbCol, lizard ? 5 : 4, claw, false); }
   tube(c, tp, tw, bodyFill(hipX - tailL * 0.5, 0, tailL), 'rgba(0,0,0,.3)');
@@ -2293,9 +2307,8 @@ function drawMammal(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   const gal = P.gait === 'gallop' || P.gait === 'sprint';
   for (const [lx, w0, k] of [[chest * 0.62, sh, 0], [rump * 0.62, hp, 1]]) for (const s of [-1, 1]) {
     const phs = gal ? (k ? Math.PI * 0.8 : 0) + (s > 0 ? 0.35 : 0) : (k ? Math.PI : 0) + (s > 0 ? Math.PI : 0), swing = Math.sin(gt + phs) * r * 0.24 * legL * mv, lift = Math.max(0, Math.cos(gt + phs)) * mv;
-    const fx = lx + swing, fy = s * (w0 * breathe + r * 0.05 * legL), th = r * 0.11 * legT * (S.tpl === 'mammoth' ? 1.5 : S.tpl === 'bear' || S.tpl === 'rhino' ? 1.25 : 1);
-    c.strokeStyle = legCol; c.lineCap = 'round'; c.lineWidth = th * 1.6; c.beginPath(); c.moveTo(lx, s * w0 * 0.5); c.lineTo(fx, fy - s * th * 0.4); c.stroke();
-    c.lineWidth = th; c.beginPath(); c.moveTo(fx - swing * 0.2, fy - s * th * 0.6); c.lineTo(fx, fy); c.stroke();
+    const fx = lx + swing, fy = s * (w0 * breathe + r * 0.11 * legL), th = r * 0.12 * legT * (S.tpl === 'mammoth' ? 1.5 : S.tpl === 'bear' || S.tpl === 'rhino' ? 1.25 : 1);
+    limb(c, [[lx - (k ? r * 0.04 : 0), s * w0 * 0.35], [lx + swing * 0.55 + (k ? -r * 0.07 : r * 0.04), s * (w0 * 0.92)], [fx, fy]], th * 0.95, th * 0.55, legCol, LOD_HI ? Math.max(0.8, r * 0.02) : 0);
     const foot = P.foot || (S.tpl === 'hoof' || S.tpl === 'rhino' ? 'hoof' : S.tpl === 'mammoth' ? 'pad' : 'paw'), fs = th * (0.75 - lift * 0.15);
     if (foot === 'hoof') { c.fillStyle = '#231d18'; c.beginPath(); c.ellipse(fx + fs * 0.25, fy, fs * 0.6, fs * 0.55, 0, 0, 7); c.fill(); }
     else if (foot === 'pad') { c.fillStyle = legCol; c.beginPath(); c.arc(fx, fy, fs * 0.9, 0, 7); c.fill(); c.fillStyle = '#e8e0d0'; for (const j of [-1, 0, 1]) { c.beginPath(); c.arc(fx + fs * 0.75, fy + j * fs * 0.4, fs * 0.16, 0, 7); c.fill(); } }
@@ -2701,7 +2714,7 @@ function addXP(e, n) {
 
 function startMatch(cfg) {
   // cfg: {mode:'offline'|'story'|'online', planet, chapter, net, seed}
-  WORLD = cfg.mode === 'tutorial' ? 3400 : cfg.mode === 'open' ? OW_T * OW_N : 6000; CNT = (WORLD / 3400) ** 2; REG = null;
+  WORLD = cfg.mode === 'tutorial' ? 3400 : cfg.mode === 'open' ? OW_T * OW_N : 8000; CNT = (WORLD / 3400) ** 2; REG = null;
   const OPEN = cfg.mode === 'open', homePid = (ALIEN[save.equipped] || ALIEN.blipling).planet;
   let planetId = cfg.planet === 'random' || !cfg.planet ? pick(START_PLANETS) : cfg.planet;
   const seed = cfg.seed || (Math.random() * 1e9) | 0;
@@ -2727,7 +2740,7 @@ function startMatch(cfg) {
   // Wildlife: species native to this planet
   const natives = nativesOf(planetId);
   const TUTM = cfg.mode === 'tutorial';
-  const wildCount = TUTM ? 18 : OPEN ? 230 : cfg.mode === 'offline' ? 140 : 125;
+  const wildCount = TUTM ? 18 : OPEN ? 275 : cfg.mode === 'offline' ? 165 : 150;
   for (let i = 0; i < wildCount; i++) spawnWild(TUTM ? natives.filter(n => n.behavior === 'grazer') : natives, TUTM ? 1 : 0);
   // Alpha boss
   if (OPEN) { placeLairs(wr); for (const L of G.lairs) spawnWorldBoss(L); }
@@ -3473,7 +3486,7 @@ function playerInput() {
   if (keys.a || keys.arrowleft) mx -= 1; if (keys.d || keys.arrowright) mx += 1;
   if (mx || my) { usingMouse = false; const l = Math.hypot(mx, my); return { x: mx / l, y: my / l }; }
   if (joy) { const dx = joy.x - joy.ox, dy = joy.y - joy.oy, l = Math.hypot(dx, dy); if (l < 8) return { x: 0, y: 0 }; const k = Math.min(1, l / 60); return { x: dx / l * k, y: dy / l * k }; }
-  if (usingMouse && mouse) { const dx = mouse.x - VW / 2, dy = mouse.y - VH / 2, l = Math.hypot(dx, dy); if (l < 20) return { x: 0, y: 0 }; const k = Math.min(1, l / 150); return { x: dx / l * k, y: dy / l * k }; }
+  if (usingMouse && mouse) { const PS = plScr(), dx = mouse.x - PS.x, dy = mouse.y - PS.y, l = Math.hypot(dx, dy); if (l < 20) return { x: 0, y: 0 }; const k = Math.min(1, l / 150); return { x: dx / l * k, y: dy / l * k }; }
   return { x: 0, y: 0 };
 }
 
@@ -3527,7 +3540,7 @@ function trialModal(id) {
   const abs = a.elderAbs.map((k, i) => `<b>${i + 1}</b> ${AB[k].name}`).join(' · ');
   const ready = trialsReady(id);
   modal(a.name, `<div style="color:${E.col};font-weight:800;margin-bottom:6px">ELDER GOD · ${PLANETS[a.planet].full}</div><div style="font-size:13px;color:#ccc;margin-bottom:8px">${a.lore}</div><div style="font-size:13px;margin-bottom:8px">Abilities (keys 1-5): ${abs}<br>Warps the world into <b>${WARP_NAME[a.warp]}</b> as it moves.</div>${rows}`,
-    ready && !owns(id) ? [['Awaken', () => buy(a, () => {})], ['Later', null]] : [['Close', null]]);
+    ready && !owns(id) ? [['Awaken', () => buy(a, () => {}, 'all trials completed')], ['Later', null]] : [['Close', null]]);
 }
 function eldersOverview() {
   const rows = ELDERS.map(E => { const own = owns(E.id), d = trialsDone(E.id), n = ELDER_TRIALS[E.id].length; return `<div style="display:flex;justify-content:space-between;gap:8px;margin:5px 0;text-align:left"><span style="color:${E.col};font-weight:800">${E.name}</span><span>${own ? '<b style="color:#7dffb2">AWAKENED</b>' : d + '/' + n + ' trials'}</span></div>`; }).join('');
@@ -4000,11 +4013,17 @@ function aiJudgment(e, others, threat) {
   }
 }
 const AI_HAZ = { quicksand: 'dune', whirl: 'water', thorns: 'jungle', snapjaw: 'jungle', vent: 'hell', geyser: 'ice', fissure: 'earth', dustdevil: 'mars', wildfire: 'hell', magma: 'hell', gravwell: 'space', singularity: 'dark', maelstrom: 'water', worldtree: 'jungle', warp: '-' };
+// ---- spatial buckets for obstacles, zones and lava, rebuilt each tick: each item goes into every 400-unit cell its circle (plus the biggest creature's reach) touches,
+// so a point query only needs its own cell and still sees every item that can touch it, each exactly once
+const SG_CELL = 400, SG_EMPTY = [];
+function sgBuild(arr, M) { const g = new Map(); for (const o of arr) { const R = (o.r || 0) + M, c0 = Math.floor((o.x - R) / SG_CELL), c1 = Math.floor((o.x + R) / SG_CELL), r0 = Math.floor((o.y - R) / SG_CELL), r1 = Math.floor((o.y + R) / SG_CELL);
+  for (let cx = c0; cx <= c1; cx++) for (let cy = r0; cy <= r1; cy++) { const k = cx + cy * 65536; let b = g.get(k); if (!b) g.set(k, b = []); b.push(o); } } return g; }
+function sgNear(arr, g, x, y) { return g ? g.get(Math.floor(x / SG_CELL) + Math.floor(y / SG_CELL) * 65536) || SG_EMPTY : arr; }
 function aiBlocked(e, x, y) {
   if (x < 40 || y < 40 || x > WORLD - 40 || y > WORLD - 40) return 2;
-  for (const o of G.obstacles) { const rr = o.r + e.r * 0.8; if ((x - o.x) ** 2 + (y - o.y) ** 2 < rr * rr) return 2; }
-  for (const z of G.zones) { const hz = AI_HAZ[z.k]; if (!hz || (z.owner && allied(e, z.owner)) || resists(e, hz)) continue; if ((x - z.x) ** 2 + (y - z.y) ** 2 < (z.r + e.r * 0.5) ** 2) return 1; }
-  if (G.lava && !resists(e, 'hell')) for (const lv of G.lava) if ((x - lv.x) ** 2 + (y - lv.y) ** 2 < lv.r * lv.r) return 1;
+  for (const o of sgNear(G.obstacles, G.ogrid, x, y)) { const rr = o.r + e.r * 0.8; if ((x - o.x) ** 2 + (y - o.y) ** 2 < rr * rr) return 2; }
+  for (const z of sgNear(G.zones, G.zgrid, x, y)) { const hz = AI_HAZ[z.k]; if (!hz || (z.owner && allied(e, z.owner)) || resists(e, hz)) continue; if ((x - z.x) ** 2 + (y - z.y) ** 2 < (z.r + e.r * 0.5) ** 2) return 1; }
+  if (G.lava && !resists(e, 'hell')) for (const lv of sgNear(G.lava, G.lgrid, x, y)) if ((x - lv.x) ** 2 + (y - lv.y) ** 2 < lv.r * lv.r) return 1;
   return 0;
 }
 function moveAI(e, dt) {
@@ -4064,6 +4083,7 @@ function update(dt) {
   G.t += dt;
   if (G.foodGone) { G.food = G.food.filter(f => !f.gone); G.foodGone = false; }
   { const FG = new Map(); for (const f of G.food) { const k = (f.x / 256 | 0) + (f.y / 256 | 0) * 4096; let b = FG.get(k); if (!b) FG.set(k, b = []); b.push(f); } G.fgrid = FG; }
+  { let M = 60; for (const e of G.creatures) if (e.alive && e.r > M) M = e.r; M += 40; G.ogrid = sgBuild(G.obstacles, M); G.zgrid = sgBuild(G.zones, M); G.lgrid = G.lava ? sgBuild(G.lava, M) : null; }
   if (G.traps) for (const t of G.traps) { if (t.cd > 0) t.cd -= dt; if (t.fired > 0) t.fired -= dt; }
   if (G.open && G.player) { const bp = biomeAt(G.player.x, G.player.y); if (bp !== G.planet) { G.planet = bp; G.P = PLANETS[bp]; banner('Entering ' + G.P.full, '#9fe3ff'); } }
   updateWorldEvents(dt);
@@ -4133,14 +4153,14 @@ function update(dt) {
     }
     if (!G.noHazard && !e.inCave && !has(e, 'mutant')) sp *= disasterOnEntity(e, dt);
     if (has(e, 'hyperregen')) e.hp = Math.min(e.maxhp, e.hp + e.maxhp * 0.015 * dt);
-    if (bio === 'hell' && !resists(e, 'hell') && !mv.fly) for (const lv of G.lava) if (d2(e, lv) < lv.r * lv.r) { e.hp -= 14 * dt * (hzK || 0.3); if (e === p && Math.random() < dt * 4) floatText(e.x, e.y - e.r, 'LAVA!', '#ff7a3d'); }
+    if (bio === 'hell' && !resists(e, 'hell') && !mv.fly) for (const lv of sgNear(G.lava, G.lgrid, e.x, e.y)) if (d2(e, lv) < lv.r * lv.r) { e.hp -= 14 * dt * (hzK || 0.3); if (e === p && Math.random() < dt * 4) floatText(e.x, e.y - e.r, 'LAVA!', '#ff7a3d'); }
     if (e.fx.burn > 0) { e.hp -= 5 * dt; if (Math.random() < dt * 10) G.parts.push({ x: e.x + rand(-e.r, e.r), y: e.y, vx: 0, vy: -60, life: 0.4, c: '#ff9a2e', s: 4 }); }
     if (e.fx.dot > 0) e.hp -= 4 * dt;
     if (G.royale && Math.hypot(e.x - G.zone.x, e.y - G.zone.y) > G.zone.r) { e.hp -= (6 + e.maxhp * 0.03) * dt; if (Math.random() < dt * 3) G.parts.push({ meteorFx: true, x: e.x + rand(-80, 80), y: e.y + rand(-80, 80), life: 0.5 }); }
     if (e.hp <= 0 && e.alive && !tryRebirth(e)) { kill(e, e.lastHit && e.lastHit.alive ? e.lastHit : null); continue; }
     // terrain zones
     let slippery = false; e.inMist = false;
-    for (const z of G.zones) {
+    for (const z of sgNear(G.zones, G.zgrid, e.x, e.y)) {
       const zx = e.x - z.x, zy = e.y - z.y; if (zx * zx + zy * zy > z.r * z.r) continue;
       if (mv.fly && flyIgnores(z)) continue;
       if (z.k === 'quicksand' && !(e.fx.burrow > 0)) { sp *= resists(e, 'dune') ? 0.7 : 0.4; const d = Math.hypot(zx, zy) || 1; e.x -= zx / d * 40 * dt; e.y -= zy / d * 40 * dt; if (e === p && Math.random() < dt * 1.5) floatText(e.x, e.y - e.r, 'QUICKSAND!', '#e8c48a'); }
@@ -4162,7 +4182,7 @@ function update(dt) {
     const ax = dir.x * sp, ay = dir.y * sp;
     e.vx += (ax - e.vx) * Math.min(1, inert * dt); e.vy += (ay - e.vy) * Math.min(1, inert * dt);
     e.x = clamp(e.x + e.vx * dt, e.r, WORLD - e.r); e.y = clamp(e.y + e.vy * dt, e.r, WORLD - e.r);
-    for (const o of G.obstacles) {
+    for (const o of sgNear(G.obstacles, G.ogrid, e.x, e.y)) {
       const ox = e.x - o.x, oy = e.y - o.y, rr = o.r * 0.92 + e.r * 0.8, dd = ox * ox + oy * oy;
       if (dd < rr * rr) { if (e.fx.burrow > 0 && o.k !== 'volcano') continue; if (!obstacleBlocks(e, o, mv)) continue; const d = Math.sqrt(dd) || 1; e.x = o.x + ox / d * rr; e.y = o.y + oy / d * rr; if (!e.isPlayer) e.wander = Math.atan2(oy, ox) + rand(-1, 1); }
     }
@@ -4170,7 +4190,7 @@ function update(dt) {
     checkTraps(e, mv);
     if (Math.hypot(e.vx, e.vy) > 15) e.ang = Math.atan2(e.vy, e.vx);
     stepPrints(e, bio, mv, dt);
-    if (e.isPlayer && usingMouse && mouse && !(e.fx.charge > 0)) e.ang = Math.atan2(mouse.y - VH / 2, mouse.x - VW / 2);
+    if (e.isPlayer && usingMouse && mouse && !(e.fx.charge > 0)) { const PS = plScr(); e.ang = Math.atan2(mouse.y - PS.y, mouse.x - PS.x); }
     if (e.fx.rad > 0 || e.fx.blizzard > 0) {
       const rad = e.fx.rad > 0, R = (rad ? 160 : 210) + e.r;
       for (const o of G.creatures) if (o.alive && !allied(o, e) && d2(o, e) < R * R) { hurt(o, (rad ? 0.6 : 0.4) * e.dmg * dt, e); if (!rad) o.fx.slow = Math.max(o.fx.slow || 0, 0.3); }
@@ -4939,7 +4959,7 @@ function showHelp() {
 // =====================================================================
 let REG = null, CNT = 1; // region currently being built, and its object-count multiplier
 function R0() { return REG || { x0: 0, y0: 0, x1: WORLD, y1: WORLD }; }
-const OW_T = 2200, OW_N = 4;
+const OW_T = 2800, OW_N = 4;
 function owWave(k, s, vert) { const u = ((s % OW_T) + OW_T) % OW_T; return Math.sin(Math.PI * u / OW_T) * (130 * Math.sin(s / 310 + k * 1.7 + (vert ? 0 : 2.1)) + 60 * Math.sin(s / 97 + k * 3.1)); }
 function biomeAt(x, y) {
   if (!G || !G.open) return G ? G.planet : 'dune';
@@ -5331,7 +5351,7 @@ function renderStore() {
   $('storeBody').innerHTML = h;
   $('storeBody').querySelectorAll('[data-pack]').forEach(b => b.onclick = () => { const p = STORE_PACKS[+b.dataset.pack]; if (IN_PLAY_APP) return modal('Not available yet', 'Purchases are not available in this version of the app yet. You can still trade currencies for free below.', [['OK', null]]); if (PAY()) return modal(`Buy ${p.n.toLocaleString('en-US')} ${CUR[p.cur].name} — ${p.price}`, 'Pay securely with Stripe. The currency is added to your account as soon as payment goes through.' + (Cloud.cfg.testMode ? '<br><small style="color:#ffd25a">Test mode: use card 4242 4242 4242 4242, any future date, any CVC.</small>' : ''), [['Pay ' + p.price, () => payCheckout('pack:pack' + b.dataset.pack)], ['Cancel', null]]); modal(`Buy ${p.n.toLocaleString('en-US')} ${CUR[p.cur].name} — ${p.price}`, 'This page has no payment system connected, so this is a <b>demo store</b>: no money is charged. In a released version this button would open Stripe, Google Play or App Store checkout.', [['Get it (demo, free)', () => { grant({ [p.cur]: p.n }, true); renderStore(); }], ['Cancel', null]]); });
   $('storeBody').querySelectorAll('[data-gift]').forEach(b => b.onclick = () => { const p = STORE_PACKS[+b.dataset.gift]; giftDialog({ type: 'pack', cur: p.cur, n: p.n }, p.n.toLocaleString('en-US') + ' ' + CUR[p.cur].name + ' (' + p.price + ')'); });
-  $('storeBody').querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { const x = EXCHANGE[+b.dataset.ex]; if ((save[x.from] || 0) < x.fn) return; save[x.from] -= x.fn; grant({ [x.to]: x.tn }, true); renderStore(); });
+  $('storeBody').querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { const x = EXCHANGE[+b.dataset.ex]; if ((save[x.from] || 0) < x.fn) return; askConfirm('Confirm trade', `Trade <b style="color:${CUR[x.from].col}">${x.fn.toLocaleString('en-US')} ${CUR[x.from].name}</b> for <b style="color:${CUR[x.to].col}">${x.tn} ${CUR[x.to].name}</b>?<br><small style="color:#aaa">Trades can't be reversed.</small>`, 'Trade', () => { if ((save[x.from] || 0) < x.fn) return; save[x.from] -= x.fn; grant({ [x.to]: x.tn }, true); renderStore(); }); });
 }
 let STAT_MAX = null, storeFrom = 'menu';
 function statBar(label, v, max, colr) { return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0;font-size:13px"><span style="width:84px;text-align:left;color:#bbb">${label}</span><div style="flex:1;height:8px;background:#2a2238;border-radius:4px"><div style="height:8px;border-radius:4px;background:${colr};width:${Math.round(clamp(v / max, 0.04, 1) * 100)}%"></div></div><span style="width:42px;text-align:right">${v}</span></div>`; }
@@ -5499,9 +5519,12 @@ function sacrificeDialog(fodder) {
   const targets = save.owned.filter(id => id !== fodder.id && ALIEN[id]).map(id => ALIEN[id]);
   const rar = fodder.rarity || ({ premium: 'legendary', boss: 'legendary', mutant: 'epic', event: 'rare', foreign: 'epic', prehistoric: 'epic', mutated: 'epic', lucky: 'epic' }[fodder.kind] || 'common');
   modal('Sacrifice ' + fodder.name + '?', `<div style="text-align:left">Offer <b>${fodder.name}</b> at the altar. It will be <b style="color:#ff6b6b">gone for good</b>. In return, one of your aliens gets:<br>• <b>${Math.round(SAC_SKIN[rar] * 100)}%</b> chance of a new skin<br>• <b>${Math.round(SAC_PRIMO[rar] * 100)}%</b> chance of its <b style="color:#d9a86c">Primordial form</b><br>• always +1 Time Fragment<br><br>Empower: <select id="sacTarget" style="max-width:100%">${targets.map(a => `<option value="${a.id}" ${a.id === save.equipped ? 'selected' : ''}>${a.name}</option>`).join('')}</select></div>`,
-    [['Sacrifice', () => { const tid = $('sacTarget') && $('sacTarget').value; const T = ALIEN[tid]; if (!T) return; doSacrifice(fodder, T, rar); }], ['Cancel', null]]);
+    [['Sacrifice', () => { const tid = $('sacTarget') && $('sacTarget').value; const T = ALIEN[tid]; if (!T) return;
+      modal('Are you sure?', `<div style="text-align:center"><div id="cfArt" style="display:flex;justify-content:center"></div><b style="color:#ff6b6b">${fodder.name} will be lost forever.</b><br>This can't be undone.${fodder.id === save.equipped ? '<br><small style="color:#ffd25a">It is your equipped alien; ' + T.name + ' will be equipped instead.</small>' : ''}</div>`, [['Yes, sacrifice ' + fodder.name, () => doSacrifice(fodder, T, rar)], ['Keep it', () => sacrificeDialog(fodder)]]); cfArt(fodder); }], ['Cancel', null]]);
 }
+function cfArt(a) { const el = $('cfArt'); if (el) try { const cv = alienThumb(playerDef(a.id), 120, 4); cv.style.cssText = 'width:120px;height:120px;max-width:120px'; el.appendChild(cv); } catch (e) {} }
 function doSacrifice(f, T, rar) {
+  if (!save.owned.includes(f.id)) return;
   { const S = tstat(); S.sac[rar] = (S.sac[rar] || 0) + 1; S.sacN++; setTimeout(trialCheck, 1200); }
   save.owned = save.owned.filter(id => id !== f.id); if (save.equipped === f.id) save.equipped = T.id;
   save.skins = save.skins || {}; save.primordial = save.primordial || {}; const got = [];
@@ -5521,7 +5544,7 @@ function skinPicker(a) {
   document.querySelectorAll('.skthumb').forEach(el => { try { el.appendChild(alienThumb(variantDef(a, el.dataset.k, false), 84, 4)); } catch (e) {} });
   document.querySelectorAll('[data-skin]').forEach(el => el.onclick = () => {
     const k = el.dataset.skin, has = !k || ((save.skins || {})[a.id] || []).includes(k);
-    if (!has) { const price = skinCost(a, k); if (save.dna < price) return modal('Not enough DNA', `The ${SKINS[k].name} skin costs ${price.toLocaleString('en-US')} DNA.`, [['Back', () => skinPicker(a)]]); save.dna -= price; save.skins = save.skins || {}; save.skins[a.id] = (save.skins[a.id] || []).concat([k]); sfx(880, 0.3); }
+    if (!has) { const price = skinCost(a, k); if (save.dna < price) return modal('Not enough DNA', `The ${SKINS[k].name} skin costs ${price.toLocaleString('en-US')} DNA.`, [['Back', () => skinPicker(a)]]); return askConfirm('Buy ' + SKINS[k].name + ' skin?', `Unlock the <b>${SKINS[k].name}</b> skin for ${a.name} for <b style="color:#ffd25a">${price.toLocaleString('en-US')} DNA</b>?<br><small style="color:#aaa">You have ${save.dna.toLocaleString('en-US')} DNA.</small>`, 'Buy skin', () => { if (save.dna < price) return; save.dna -= price; save.skins = save.skins || {}; save.skins[a.id] = (save.skins[a.id] || []).concat([k]); sfx(880, 0.3); save.skinSel = save.skinSel || {}; save.skinSel[a.id] = k; persist(); skinPicker(a); }, () => skinPicker(a)); }
     save.skinSel = save.skinSel || {}; save.skinSel[a.id] = k; persist(); skinPicker(a); });
 }
 function variantPanel(a) { // Inspect view controls for owned aliens
@@ -5535,8 +5558,8 @@ function variantPanel(a) { // Inspect view controls for owned aliens
 function wireVariantPanel(a) {
   const ss = $('skinSel'); if (ss) ss.onchange = () => { save.skinSel = save.skinSel || {}; save.skinSel[a.id] = ss.value; persist(); };
   const po = $('primoOn'); if (po) po.onchange = () => { save.primoOn = save.primoOn || {}; save.primoOn[a.id] = po.checked; persist(); };
-  const pb = $('primoBuy'); if (pb) pb.onclick = () => { const b = bag(); if (b.pdna < 5) return; b.pdna -= 5; save.primordial = save.primordial || {}; save.primordial[a.id] = true; save.primoOn = save.primoOn || {}; save.primoOn[a.id] = true; persist(); sfx(880, 0.4); showInspect(a); };
-  const tb = $('titanBuy'); if (tb) tb.onclick = () => { const b = bag(); if (b.titanCore < 1 || b.titanParts < 6) return; b.titanCore--; b.titanParts -= 6; save.titan = save.titan || {}; save.titan[a.id] = true; persist(); sfx(880, 0.4); showInspect(a); };
+  const pb = $('primoBuy'); if (pb) pb.onclick = () => askConfirm('Awaken Primordial form?', `Spend <b style="color:#d9a86c">5 Primordial DNA</b> to awaken ${a.name}'s Primordial form?`, 'Awaken', () => { const b = bag(); if (b.pdna < 5) return; b.pdna -= 5; save.primordial = save.primordial || {}; save.primordial[a.id] = true; save.primoOn = save.primoOn || {}; save.primoOn[a.id] = true; persist(); sfx(880, 0.4); showInspect(a); }, () => showInspect(a));
+  const tb = $('titanBuy'); if (tb) tb.onclick = () => askConfirm('Awaken Titan evolution?', `Spend <b style="color:#ffb347">1 Titan Core + 6 Titan Parts</b> to awaken ${a.name}'s hidden Titan evolution?`, 'Awaken', () => { const b = bag(); if (b.titanCore < 1 || b.titanParts < 6) return; b.titanCore--; b.titanParts -= 6; save.titan = save.titan || {}; save.titan[a.id] = true; persist(); sfx(880, 0.4); showInspect(a); }, () => showInspect(a));
 }
 // ---------- Titans
 function becomeTitan(e, why) {
@@ -5735,11 +5758,29 @@ function lit3dEnd(zoom) {
   const ms = performance.now() - tStart; LIT.n = (LIT.n || 0) + 1; LIT.ms = LIT.ms == null ? ms : LIT.ms * 0.85 + ms * 0.15;
   if (LIT.n > 15 && LIT.ms > 9) { LIT.autoOff = true; slowT = 0; frameEMA = 16.7; console.info('3D lighting turned off: ' + LIT.ms.toFixed(1) + ' ms per frame on this device'); }
 }
+function plScr() { return (G && G.scr) || { x: VW / 2, y: VH / 2 }; } // player's position on screen (the camera stops at the world edge, so it is not always the centre)
+function drawWorldEdge(vx0, vy0, vx1, vy1) { // rocky cliffs and an energy barrier outside the playable area
+  if (vx0 > 0 && vy0 > 0 && vx1 < WORLD && vy1 < WORLD) return;
+  const W2 = WORLD, t = G.t, pid = G.open ? 'rock' : G.planet, P = PLANETS[pid] || {};
+  ctx.save(); ctx.beginPath(); ctx.rect(vx0, vy0, vx1 - vx0, vy1 - vy0); ctx.rect(0, W2, W2, -W2); ctx.clip('evenodd');
+  ctx.fillStyle = '#07060c'; ctx.fillRect(vx0, vy0, vx1 - vx0, vy1 - vy0);
+  // jagged cliff rim hugging each edge
+  const rim = (len, place) => { ctx.beginPath(); for (let s = Math.max(-200, 0) - 200; s <= len + 200; s += 40) { const d = 26 + 22 * Math.abs(Math.sin(s * 0.013) + 0.6 * Math.sin(s * 0.047)); const [x, y] = place(s, d); s < -199 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } };
+  const sides = [[(s, d) => [s, -d]], [(s, d) => [s, W2 + d]], [(s, d) => [-d, s]], [(s, d) => [W2 + d, s]]];
+  for (const [f] of sides) { ctx.fillStyle = '#2a2633'; rim(W2, f); const [ex, ey] = f(W2 + 200, 0), [sx, sy] = f(-200, 0); ctx.lineTo(ex, ey); ctx.lineTo(sx, sy); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#4a4458'; ctx.lineWidth = 4; rim(W2, f); ctx.stroke(); }
+  ctx.restore();
+  // barrier glow on the edge itself
+  ctx.save(); const a = 0.45 + 0.2 * Math.sin(t * 2.4), col = P.accent || '#7dd3ff';
+  ctx.strokeStyle = col; ctx.globalAlpha = a; ctx.lineWidth = 6; ctx.shadowColor = col; ctx.shadowBlur = 18; ctx.setLineDash([60, 26]); ctx.lineDashOffset = -t * 40; ctx.strokeRect(0, 0, W2, W2);
+  ctx.setLineDash([]); ctx.globalAlpha = a * 0.35; ctx.lineWidth = 22; ctx.shadowBlur = 0; ctx.strokeRect(0, 0, W2, W2); ctx.restore();
+}
 function render() {
   const p = G.player;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   const zoom = clamp(Math.min(VW, VH) / 480, 0.8, 1.6) * (1.12 - 0.07 * p.lvl);
-  const camX = p.x - VW / 2 / zoom, camY = p.y - VH / 2 / zoom;
+  const EDGE = 90, vw = VW / zoom, vh = VH / zoom;
+  const camX = vw + 2 * EDGE >= WORLD ? WORLD / 2 - vw / 2 : clamp(p.x - vw / 2, -EDGE, WORLD - vw + EDGE), camY = vh + 2 * EDGE >= WORLD ? WORLD / 2 - vh / 2 : clamp(p.y - vh / 2, -EDGE, WORLD - vh + EDGE);
+  G.scr = { x: (p.x - camX) * zoom, y: (p.y - camY) * zoom };
   ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH);
   ctx.save(); ctx.scale(zoom, zoom); ctx.translate(-camX, -camY);
   const vx0 = camX - 200, vy0 = camY - 200, vx1 = camX + VW / zoom + 200, vy1 = camY + VH / zoom + 200;
@@ -5748,7 +5789,7 @@ function render() {
   if (G.open && G.shift) { ctx.fillStyle = primordialPattern(); ctx.fillRect(Math.max(0, vx0), Math.max(0, vy0), Math.min(WORLD, vx1) - Math.max(0, vx0), Math.min(WORLD, vy1) - Math.max(0, vy0)); }
   if (G.open) { for (const t of G.tiles) { if (t.x1 + 220 < vx0 || t.x0 - 220 > vx1 || t.y1 + 220 < vy0 || t.y0 - 220 > vy1) continue; ctx.fillStyle = groundPattern(t.pid); ctx.fill(t.path); } ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 26; for (const t of G.tiles) if (!(t.x1 + 220 < vx0 || t.x0 - 220 > vx1 || t.y1 + 220 < vy0 || t.y0 - 220 > vy1)) ctx.stroke(t.path); }
   else { ctx.fillStyle = groundPattern(G.planet); ctx.fillRect(Math.max(0, vx0), Math.max(0, vy0), Math.min(WORLD, vx1) - Math.max(0, vx0), Math.min(WORLD, vy1) - Math.max(0, vy0)); }
-  drawGroundDetail(vx0, vy0, vx1, vy1);
+  drawGroundDetail(vx0, vy0, vx1, vy1); drawWorldEdge(vx0, vy0, vx1, vy1);
   drawDecals(vx0, vy0, vx1, vy1); drawProps(vx0, vy0, vx1, vy1); drawPrints(vx0, vy0, vx1, vy1);
   // lava
   if (G.rivers) for (const riv of G.rivers) { if (riv.length < 2) continue; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; for (const [w, c, dash] of [[136, 'rgba(255,90,20,.25)'], [124, '#7a1606'], [104, '#d63a0c'], [62, '#ff8a1e'], [26, `rgba(255,220,90,${0.75 + 0.25 * Math.sin(G.t * 3)})`], [12, 'rgba(255,250,200,.85)', true]]) { ctx.strokeStyle = c; ctx.lineWidth = w; if (dash) { ctx.setLineDash([40, 70]); ctx.lineDashOffset = -G.t * 60; } ctx.beginPath(); riv.forEach((pt, i) => i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y)); ctx.stroke(); ctx.setLineDash([]); } }
@@ -5947,7 +5988,7 @@ function drawDarkness(zoom, camX, camY) {
   const p = G.player;
   const see = ((resists(p, 'dark') ? 360 : 120) + (p.fx.echo > 0 ? 400 : 0)) * (G.dis && G.dis.id === 'eclipse' && !inForm(p) ? 0.55 : 1);
   const hole = (sx, sy, r) => { const g = x.createRadialGradient(sx, sy, r * 0.2, sx, sy, r); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.beginPath(); x.arc(sx, sy, r, 0, 7); x.fill(); };
-  hole(VW / 2, VH / 2, see * zoom);
+  hole((p.x - camX) * zoom, (p.y - camY) * zoom, see * zoom);
   for (const l of G.lights) { const sx = (l.x - camX) * zoom, sy = (l.y - camY) * zoom; if (sx > -300 && sx < VW + 300 && sy > -300 && sy < VH + 300) hole(sx, sy, l.r * zoom); }
   for (const e of G.creatures) if (e.alive && e.def.look.glow && e !== p) { const sx = (e.x - camX) * zoom, sy = (e.y - camY) * zoom; if (sx > -50 && sx < VW + 50 && sy > -50 && sy < VH + 50) hole(sx, sy, e.r * 2 * zoom); }
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(darkCv, 0, 0); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -6249,6 +6290,15 @@ function walletHTML() {
 //  CHANGELOG: newest first. Add an entry here with every update; players see it once on the main page.
 // =====================================================================
 const CHANGELOG = [
+  { v: '1.8', date: 'Nov 2026', title: 'Bigger worlds, better limbs', items: [
+    'Bigger maps: single worlds are now 8000 wide (was 6000) and the Open World is 11200 (was 8800), with more wildlife to match',
+    'Fixed the world-border glitch: the camera no longer slides into a black void at the edge; the world now ends at rocky cliffs behind a glowing barrier',
+    'Mouse aiming stays accurate near the border',
+    'Creature limbs redrawn: muscled thighs and upper arms, tapered shins, shaded knees and elbows, padded feet with jointed toes and hooked claws',
+    'Four-legged aliens and big cats now show their legs properly instead of hiding them under the body',
+    'Confirm before you spend: unlocking creatures, buying skins, awakening Primordial and Titan forms, and currency trades now ask first',
+    'Sacrifices now ask "Are you sure?" a second time before a creature is lost forever',
+  ] },
   { v: '1.7', date: 'Nov 2026', title: 'Install it like an app', items: [
     'XENO.IO can now be installed on your phone or computer like an app, with its own icon',
     'The game opens even when you are offline (online modes still need a connection)',
@@ -6503,7 +6553,7 @@ function renderLab() {
     else if (a.kind === 'event') {
       const evId = a.ev || a.id, ev2 = EVENTS.find(e => e.id === evId), live = ev && ev.id === evId, have = save.tokens[evId] || 0;
       if (a.cost && a.cost.holBoss) { b.textContent = live ? 'Defeat the ' + ev2.name + ' boss' : ev2.name + ' boss only'; b.disabled = true; if (!live) b.className += ' red'; }
-      else if (live) { const need = a.cost.tokens; b.textContent = have >= need ? `Claim · ${need} ${ev2.icon} ${ev2.cur}` : `${have}/${need} ${ev2.icon} ${ev2.cur}`; b.disabled = have < need; b.onclick = () => buy(a, () => { save.tokens[evId] -= need; }); }
+      else if (live) { const need = a.cost.tokens; b.textContent = have >= need ? `Claim · ${need} ${ev2.icon} ${ev2.cur}` : `${have}/${need} ${ev2.icon} ${ev2.cur}`; b.disabled = have < need; b.onclick = () => buy(a, () => { save.tokens[evId] -= need; }, `${need} ${ev2.icon} ${ev2.cur}`); }
       else { b.textContent = ev2.name + ' only'; b.disabled = true; b.className += ' red'; }
     }
     else if (a.kind === 'lucky') { b.textContent = 'Encounter in the wild'; b.disabled = true; }
@@ -6513,7 +6563,10 @@ function renderLab() {
   }
   if (pages > 1) Gd.appendChild(nav.cloneNode(true)).querySelectorAll('button').forEach((bt, i) => bt.onclick = i ? next.onclick : prev.onclick);
 }
-function buy(a, pay) { pay(); unlock(a.id); save.equipped = a.id; persist(); sfx(880, 0.2); renderLab(); modal('New alien!', a.name + ' has joined your lab and is now equipped.', [['Nice', null]]); }
+function askConfirm(title, html, yes, fn, back) { modal(title, `<div style="text-align:center">${html}</div>`, [[yes, fn], ['Cancel', back || null]]); }
+function buy(a, pay, price, ok) {
+  if (!ok) { const what = price || costText(a); return askConfirm((a.kind === 'elder' ? 'Awaken ' : 'Unlock ') + a.name + '?', `<div id="cfArt" style="display:flex;justify-content:center"></div>${what ? `This will cost <b style="color:#ffd25a">${what}</b>.<br>` : ''}${a.name} will join your lab and be equipped.`, a.kind === 'elder' ? 'Awaken' : 'Yes, unlock', () => buy(a, pay, price, true)), cfArt(a); }
+  pay(); unlock(a.id); save.equipped = a.id; persist(); sfx(880, 0.2); renderLab(); modal('New alien!', a.name + ' has joined your lab and is now equipped.', [['Nice', null]]); }
 // Inside the Google Play app (a Trusted Web Activity) digital goods must use Google Play Billing, so Stripe is turned off there.
 const IN_PLAY_APP = (() => { try { if (document.referrer.startsWith('android-app://')) sessionStorage.setItem('xenoio_twa', '1'); return sessionStorage.getItem('xenoio_twa') === '1' || /[?&]source=twa\b/.test(location.search); } catch (e) { return false; } })();
 const PAY = () => !!(Cloud.cfg && Cloud.cfg.payments) && !IN_PLAY_APP;
