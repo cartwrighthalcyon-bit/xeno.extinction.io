@@ -165,8 +165,8 @@ function readBody(req) {
 function send(res, code, obj) { res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(obj)); }
 function friendCode(id) { return crypto.createHash('sha256').update('fc:' + id).digest('hex').slice(0, 8).toUpperCase(); }
 const GIFT_ITEMS = { pack: 1, alien: 1 }, lastGifts = new Map();
-function profileOut(rec) { return { code: rec.code || friendCode(rec.id), gifts: (rec.gifts || []).length, acct: crypto.createHash('sha256').update(rec.id).digest('hex').slice(0, 16), name: publicName(rec), given: rec.given || '', save: rec.save || null, stats: rec.stats }; }
-const lastScore = new Map();
+function profileOut(rec) { return { guest: !!rec.guest, code: rec.code || friendCode(rec.id), gifts: (rec.gifts || []).length, acct: crypto.createHash('sha256').update(rec.id).digest('hex').slice(0, 16), name: publicName(rec), given: rec.given || '', save: rec.save || null, stats: rec.stats }; }
+const lastScore = new Map(), guestMade = new Map();
 const lastReports = new Map();
 
 function readRaw(req) {
@@ -192,16 +192,30 @@ async function handle(req, res) {
   if (!url.pathname.startsWith('/api/')) return false;
   try {
     const route = req.method + ' ' + url.pathname;
-    if (route === 'GET /api/config') return send(res, 200, { login: !!CLIENT_ID || DEV_LOGIN, googleClientId: CLIENT_ID, dev: DEV_LOGIN, storage: store.kind, payments: !!STRIPE_KEY, testMode: STRIPE_KEY.startsWith('sk_test_'), ads: ADS_CLIENT ? { client: ADS_CLIENT, test: process.env.ADSENSE_TEST === '1' } : null }), true;
+    if (route === 'GET /api/config') { let servers = []; try { servers = JSON.parse(process.env.SERVERS || '[]').filter(x => x && x.name && /^https?:\/\//.test(x.url)).slice(0, 8); } catch (e) {}
+      res.__servers = [{ name: process.env.REGION_NAME || 'US West', url: '' }].concat(servers); }
+    if (route === 'GET /api/config') return send(res, 200, { servers: res.__servers, guest: true, login: !!CLIENT_ID || DEV_LOGIN, googleClientId: CLIENT_ID, dev: DEV_LOGIN, storage: store.kind, payments: !!STRIPE_KEY, testMode: STRIPE_KEY.startsWith('sk_test_'), ads: ADS_CLIENT ? { client: ADS_CLIENT, test: process.env.ADSENSE_TEST === '1' } : null }), true;
 
     if (route === 'POST /api/login') {
       const body = await readBody(req);
       let sub, given;
       if (body.credential) { const g = await verifyGoogle(body.credential); sub = 'g:' + g.sub; given = cleanName(g.given_name || (g.name || '').split(' ')[0]); }
       else if (DEV_LOGIN && body.dev) { sub = 'dev:' + cleanName(body.dev).toLowerCase(); given = cleanName(body.dev); }
+      else if (body.guest) { // every player gets an account automatically, so scores reach the leaderboards without Google sign-in
+        const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim(), now = Date.now(), h = (guestMade.get(ip) || []).filter(t => now - t < 3600e3);
+        if (h.length >= 20) return send(res, 429, { error: 'Too many new players from this network, try again later' }), true;
+        h.push(now); guestMade.set(ip, h);
+        sub = 'guest:' + crypto.randomBytes(12).toString('hex'); given = cleanName(body.name) || 'Alien';
+        const rec = { id: sub, given, guest: true, created: now, lastLogin: now, save: null, stats: { best: 0, kills: 0, wins: 0, matches: 0, collected: 0, alien: 'blipling' } }; rec.code = friendCode(sub);
+        await store.put(sub, rec);
+        return send(res, 200, { token: sign({ uid: sub, exp: now + 400 * 864e5 }), guest: true, ...profileOut(rec) }), true;
+      }
       else return send(res, 400, { error: 'No credential' }), true;
       let rec = await store.get(sub);
       if (!rec) rec = { id: sub, given, created: Date.now(), save: null, stats: { best: 0, kills: 0, wins: 0, matches: 0, collected: 0, alien: 'blipling' } };
+      const was = readToken(req); if (was && was.uid !== sub && String(was.uid).startsWith('guest:')) { const g = await store.get(was.uid); // first Google sign-in on a device: carry the guest's purchases and records over
+        if (g && !g.mergedInto) { rec.entitled = [...new Set([...(rec.entitled || []), ...(g.entitled || [])])]; for (const k of ['best', 'onlineBest', 'openBest']) rec.stats[k] = Math.max(rec.stats[k] || 0, g.stats[k] || 0); for (const k of ['kills', 'wins', 'matches']) rec.stats[k] = (rec.stats[k] || 0) + (g.stats[k] || 0); rec.gifts = (rec.gifts || []).concat(g.gifts || []); if (!rec.save) rec.save = g.save;
+          g.mergedInto = sub; g.stats = { best: 0, kills: 0, wins: 0, matches: 0, collected: 0, alien: g.stats.alien }; g.gifts = []; await store.put(g.id, g); } }
       rec.given = given || rec.given; rec.lastLogin = Date.now(); rec.code = rec.code || friendCode(sub);
       await store.put(sub, rec);
       return send(res, 200, { token: sign({ uid: sub, exp: Date.now() + 30 * 864e5 }), ...profileOut(rec) }), true;
@@ -306,7 +320,7 @@ async function handle(req, res) {
 
     // Gifts: send a bought item to another player by their friend code; they claim it next time they sign in.
     if (route === 'POST /api/gift') {
-      if (STRIPE_KEY) return send(res, 402, { error: 'Gifts are bought through checkout now' }), true;
+      if (STRIPE_KEY || !DEV_LOGIN) return send(res, 402, { error: 'Gifts are bought through checkout' }), true;
       const body = await readBody(req), code = String(body.to || '').toUpperCase().replace(/[^0-9A-F]/g, '').slice(0, 8), it = body.item || {};
       if (code.length !== 8) return send(res, 400, { error: 'Enter an 8-character friend code' }), true;
       if (code === (rec.code || friendCode(rec.id))) return send(res, 400, { error: 'You cannot gift yourself' }), true;

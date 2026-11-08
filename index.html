@@ -133,7 +133,8 @@ input[type=text]{background:#140f22;border:2px solid #5a46a0;color:#fff;border-r
 <div id="online" class="screen">
   <h2>Play Online</h2>
   <div class="sub" id="onlineInfo"></div>
-  <input type="text" id="srvIn" placeholder="ws://your-server:8080">
+  <div id="srvList" style="width:min(520px,94vw);display:flex;flex-direction:column;gap:6px;margin:6px 0"></div>
+  <details id="srvCustom" style="width:min(520px,94vw);font-size:12px;color:#aaa"><summary style="cursor:pointer">Custom server address</summary><input type="text" id="srvIn" placeholder="wss://your-server" style="width:100%;margin-top:6px"></details>
   <div class="row" style="margin-top:8px">
     <button class="btn green" id="bConnect">Join Free-for-All</button>
     <button class="btn green" id="bConnectOpen">Join Open World</button>
@@ -5358,7 +5359,7 @@ function drawWing(c, def, P, L, B, r, st, t, ph, moving, s, col) {
   c.fillStyle = '#efe6d2'; c.beginPath(); c.moveTo(wx, wy); c.lineTo(wx + r * 0.12, wy + s * r * 0.04); c.lineTo(wx + r * 0.02, wy - s * r * 0.03); c.fill();
 }
 // =====================================================================
-//  STORE (demo checkout), INSPECT VIEW, RARITY DETAIL
+//  STORE (Stripe checkout), INSPECT VIEW, RARITY DETAIL
 // =====================================================================
 const CUR = { dna: { name: 'DNA', col: '#7dffb2' }, adna: { name: 'Ancient DNA', col: '#ffcf5a' }, mdna: { name: 'Mutated DNA', col: '#e05cff' } };
 const STORE_PACKS = [
@@ -5372,14 +5373,14 @@ function renderStore() {
   let h = '';
   for (const c of ['dna', 'adna', 'mdna']) {
     h += `<h3 style="margin:14px 0 6px;color:${CUR[c].col}">${CUR[c].name}</h3><div class="row" style="gap:8px;flex-wrap:wrap;justify-content:center">`;
-    STORE_PACKS.forEach((p, i) => { if (p.cur !== c) return; h += `<div class="pill" style="width:128px;border-radius:14px;padding:10px;text-align:center;position:relative">${p.tag ? `<div style="position:absolute;top:-9px;left:0;right:0;font-size:10px;color:#111;background:${CUR[c].col};border-radius:8px;width:76px;margin:auto">${p.tag}</div>` : ''}<div style="font-size:22px;font-weight:800;color:${CUR[c].col}">${p.n.toLocaleString('en-US')}</div><div style="font-size:12px;color:#ccc">${CUR[c].name}</div><button class="btn small gold" style="min-width:0;width:100%;margin-top:8px" data-pack="${i}">${p.price}</button><button class="btn small" style="min-width:0;width:100%;margin-top:4px;font-size:11px" data-gift="${i}">🎁 Gift</button></div>`; });
+    STORE_PACKS.forEach((p, i) => { if (p.cur !== c) return; h += `<div class="pill" style="width:128px;border-radius:14px;padding:10px;text-align:center;position:relative">${p.tag ? `<div style="position:absolute;top:-9px;left:0;right:0;font-size:10px;color:#111;background:${CUR[c].col};border-radius:8px;width:76px;margin:auto">${p.tag}</div>` : ''}<div style="font-size:22px;font-weight:800;color:${CUR[c].col}">${p.n.toLocaleString('en-US')}</div><div style="font-size:12px;color:#ccc">${CUR[c].name}</div><button class="btn small gold" style="min-width:0;width:100%;margin-top:8px" data-pack="${i}">${p.price}</button>${PAY() ? `<button class="btn small" style="min-width:0;width:100%;margin-top:4px;font-size:11px" data-gift="${i}">🎁 Gift</button>` : ''}</div>`; });
     h += '</div>';
   }
   h += `<h3 style="margin:18px 0 6px">Exchange (no money needed)</h3><div class="sub">Trade between currencies any time. Bigger trades get a better rate.</div>`;
   EXCHANGE.forEach((x, i) => { const ok = (save[x.from] || 0) >= x.fn; h += `<div class="pill" style="display:flex;justify-content:space-between;align-items:center;border-radius:12px;margin:6px 0;padding:10px 12px"><span><b style="color:${CUR[x.from].col}">${x.fn.toLocaleString('en-US')} ${CUR[x.from].name}</b> → <b style="color:${CUR[x.to].col}">${x.tn} ${CUR[x.to].name}</b></span><button class="btn small green" data-ex="${i}" ${ok ? '' : 'disabled'}>Trade</button></div>`; });
-  h += PAY() ? `<p class="note" style="margin-top:12px">Payments are processed securely by Stripe. Purchases are saved to your Google account.${Cloud.cfg.testMode ? ' <b style="color:#ffd25a">Test mode: no real money is charged.</b>' : ''}</p>` : `<p class="note" style="margin-top:12px">Demo store: no payment system is connected yet, so packs are free to try. Connect Stripe on your server before charging real money.</p>`;
+  h += PAY() ? `<p class="note" style="margin-top:12px">Payments are processed securely by Stripe. Purchases are saved to your account.${Cloud.cfg.testMode ? ' <b style="color:#ffd25a">Test mode: no real money is charged.</b>' : ' Pay with card, Google Pay or Apple Pay.'}</p>` : `<p class="note" style="margin-top:12px">Checkout opens soon. Currency trades below work now.</p>`;
   $('storeBody').innerHTML = h;
-  $('storeBody').querySelectorAll('[data-pack]').forEach(b => b.onclick = () => { const p = STORE_PACKS[+b.dataset.pack]; if (IN_PLAY_APP) return modal('Not available yet', 'Purchases are not available in this version of the app yet. You can still trade currencies for free below.', [['OK', null]]); if (PAY()) return modal(`Buy ${p.n.toLocaleString('en-US')} ${CUR[p.cur].name} — ${p.price}`, 'Pay securely with Stripe. The currency is added to your account as soon as payment goes through.' + (Cloud.cfg.testMode ? '<br><small style="color:#ffd25a">Test mode: use card 4242 4242 4242 4242, any future date, any CVC.</small>' : ''), [['Pay ' + p.price, () => payCheckout('pack:pack' + b.dataset.pack)], ['Cancel', null]]); modal(`Buy ${p.n.toLocaleString('en-US')} ${CUR[p.cur].name} — ${p.price}`, 'This page has no payment system connected, so this is a <b>demo store</b>: no money is charged. In a released version this button would open Stripe, Google Play or App Store checkout.', [['Get it (demo, free)', () => { grant({ [p.cur]: p.n }, true); renderStore(); }], ['Cancel', null]]); });
+  $('storeBody').querySelectorAll('[data-pack]').forEach(b => b.onclick = () => { const p = STORE_PACKS[+b.dataset.pack]; if (IN_PLAY_APP) return modal('Not available yet', 'Purchases are not available in this version of the app yet. You can still trade currencies for free below.', [['OK', null]]); if (PAY()) return modal(`Buy ${p.n.toLocaleString('en-US')} ${CUR[p.cur].name} — ${p.price}`, 'Pay securely by card, Google Pay or Apple Pay (via Stripe). The currency is added to your account as soon as payment goes through.' + (Cloud.cfg.testMode ? '<br><small style="color:#ffd25a">Test mode: use card 4242 4242 4242 4242, any future date, any CVC.</small>' : ''), [['Pay ' + p.price, () => payCheckout('pack:pack' + b.dataset.pack)], ['Cancel', null]]); modal('Store opening soon', 'Checkout is being switched on. Packs will be available very soon. You can still trade currencies for free below.', [['OK', null]]); });
   $('storeBody').querySelectorAll('[data-gift]').forEach(b => b.onclick = () => { const p = STORE_PACKS[+b.dataset.gift]; giftDialog({ type: 'pack', cur: p.cur, n: p.n }, p.n.toLocaleString('en-US') + ' ' + CUR[p.cur].name + ' (' + p.price + ')'); });
   $('storeBody').querySelectorAll('[data-ex]').forEach(b => b.onclick = () => { const x = EXCHANGE[+b.dataset.ex]; if ((save[x.from] || 0) < x.fn) return; askConfirm('Confirm trade', `Trade <b style="color:${CUR[x.from].col}">${x.fn.toLocaleString('en-US')} ${CUR[x.from].name}</b> for <b style="color:${CUR[x.to].col}">${x.tn} ${CUR[x.to].name}</b>?<br><small style="color:#aaa">Trades can't be reversed.</small>`, 'Trade', () => { if ((save[x.from] || 0) < x.fn) return; save[x.from] -= x.fn; grant({ [x.to]: x.tn }, true); renderStore(); }); });
 }
@@ -5527,7 +5528,7 @@ function giftDialog(item, label) {
   if (!Cloud.token) return modal('Sign in to gift', 'Gifting needs a Google sign-in on the game server, so we know who sent it and who receives it.', [['OK', null]]);
   if (PAY()) { const key = item.type === 'alien' ? 'alien:' + item.id : 'pack:pack' + STORE_PACKS.findIndex(p => p.cur === item.cur && p.n === item.n);
     return modal('Gift ' + label, `Enter your friend's 8-character friend code (they can find it in their Bag). You pay now; they receive it next time they sign in.<br><input id="giftTo" maxlength="8" placeholder="e.g. 3FA9C21B" style="margin-top:8px;text-transform:uppercase">`, [['Pay and send', () => payCheckout(key, ($('giftTo') && $('giftTo').value || '').trim())], ['Cancel', null]]); }
-  modal('Gift ' + label, `Enter your friend's 8-character friend code (they can find it in their Bag).<br><input id="giftTo" maxlength="8" placeholder="e.g. 3FA9C21B" style="margin-top:8px;text-transform:uppercase">`, [['Send gift (demo, free)', async () => { const to = ($('giftTo') && $('giftTo').value || '').trim(); try { const r = await api('/api/gift', { to, item }); modal('Gift sent!', label + ' is on its way to <b>' + esc(r.to) + '</b>. They will receive it next time they check their Bag.', [['Nice', null]]); } catch (e) { modal('Gift not sent', esc(e.message || 'Server error'), [['OK', null]]); } }], ['Cancel', null]]);
+  modal('Gift ' + label, `Enter your friend's 8-character friend code (they can find it in their Bag).<br><input id="giftTo" maxlength="8" placeholder="e.g. 3FA9C21B" style="margin-top:8px;text-transform:uppercase">`, [['Send gift', async () => { const to = ($('giftTo') && $('giftTo').value || '').trim(); try { const r = await api('/api/gift', { to, item }); modal('Gift sent!', label + ' is on its way to <b>' + esc(r.to) + '</b>. They will receive it next time they check their Bag.', [['Nice', null]]); } catch (e) { modal('Gift not sent', esc(e.message || 'Server error'), [['OK', null]]); } }], ['Cancel', null]]);
 }
 // ---------- skins & primordial forms
 const SKINS = { albino: { name: 'Albino', hue: 0, sat: 4, lig: 88, iris: 0 }, melanistic: { name: 'Melanistic', sat: 18, lig: 13 }, golden: { name: 'Golden', hue: 46, sat: 88, lig: 56, glow: true }, spectral: { name: 'Spectral', hue: 195, sat: 60, lig: 72, glow: true }, ember: { name: 'Ember', hue: 14, sat: 92, lig: 42, glow: true }, abyssal: { name: 'Abyssal', hue: 255, sat: 55, lig: 24, glow: true } };
@@ -6181,6 +6182,7 @@ async function cloudInit() {
   try { Cloud.cfg = await api('/api/config'); } catch (e) { Cloud.cfg = null; return renderAcct(); }
   try { Cloud.token = localStorage.getItem('xenoio_token'); } catch (e) {}
   if (Cloud.token) { try { applyProfile(await api('/api/me'), false); } catch (e) { if (e.status === 401) { Cloud.token = null; try { localStorage.removeItem('xenoio_token'); } catch (e2) {} } } }
+  if (!Cloud.token && Cloud.cfg.guest) await guestLogin();
   if (Cloud.cfg.googleClientId) loadGoogle();
   adsInit();
   renderAcct();
@@ -6193,6 +6195,9 @@ function loadGoogle() {
   document.head.appendChild(sc);
 }
 function initGoogle() { google.accounts.id.initialize({ client_id: Cloud.cfg.googleClientId, callback: r => doLogin({ credential: r.credential }) }); Cloud.gisReady = true; renderAcct(); }
+async function guestLogin() { // automatic account so scores reach the leaderboards; Google sign-in later carries everything over
+  try { const res = await api('/api/login', { guest: true, name: save.name || '' }); Cloud.token = res.token; try { localStorage.setItem('xenoio_token', res.token); } catch (e) {} applyProfile(res, false); cloudSaveSoon(); } catch (e) {}
+}
 async function doLogin(body) {
   try { const res = await api('/api/login', body); Cloud.token = res.token; try { localStorage.setItem('xenoio_token', res.token); } catch (e) {} applyProfile(res, true); if (Cloud.cfg && Cloud.cfg.payments) setTimeout(() => claimGifts(true), 1500); }
   catch (e) { modal('Sign-in failed', esc(e.message), [['OK', null]]); }
@@ -6229,7 +6234,7 @@ function signOut() {
     Cloud.token = null; Cloud.profile = null; try { localStorage.removeItem('xenoio_token'); } catch (e) {}
     if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
     save = { dna: 0, adna: 0, tokens: {}, owned: BASIC_IDS.slice(), equipped: 'blipling', name: '', story: 0, planetPref: 'random', stats: { kills: 0, matches: 0, wins: 0 } };
-    persist(); refreshMenu(); renderAcct();
+    persist(); refreshMenu(); renderAcct(); if (Cloud.cfg && Cloud.cfg.guest) guestLogin().then(renderAcct);
   }], ['Cancel', null]]);
 }
 function cloudSaveSoon() { if (!Cloud.token) return; clearTimeout(Cloud.saveT); Cloud.saveT = setTimeout(cloudSaveNow, 2000); }
@@ -6245,6 +6250,9 @@ function renderAcct() {
   const el = $('acct'); if (!el) return;
   if (!Cloud.cfg) { el.innerHTML = `<span class="note" style="margin:0">${serverHosted() ? 'Account server unavailable: playing as a guest.' : 'Google sign-in, cloud saves and leaderboards work on your hosted website (server.js).'}</span>`; return; }
   if (Cloud.profile) {
+    if (Cloud.profile.guest) { el.innerHTML = `<span class="pill">Playing as <b>${esc(save.name || 'Alien')}</b> · on the leaderboards</span>`;
+      if (Cloud.cfg.googleClientId) { const g = document.createElement('div'); g.id = 'gbtn'; el.appendChild(g); if (Cloud.gisReady) google.accounts.id.renderButton(g, { theme: 'filled_black', size: 'large', shape: 'pill', text: 'signin_with' }); const n = document.createElement('div'); n.className = 'note'; n.style.cssText = 'margin:2px 0 0;width:100%'; n.textContent = 'Sign in with Google to keep your aliens and purchases on every device.'; el.appendChild(n); }
+      return; }
     el.innerHTML = `<span class="pill">Signed in as <b>${esc(save.name || Cloud.profile.given || 'Alien')}</b> · cloud save on</span>`;
     const b = document.createElement('button'); b.className = 'btn small'; b.textContent = 'Sign out'; b.onclick = signOut; el.appendChild(b); return;
   }
@@ -6293,7 +6301,7 @@ async function renderBoard() {
       B.innerHTML = ''; B.appendChild(tbl);
     }
     const me = document.createElement('p'); me.style.marginTop = '8px';
-    me.innerHTML = d.me ? (d.me.rank ? `You: <b>#${d.me.rank}</b> with <b>${d.me.value}</b>` : 'You are not on this board yet. Play a match!') : 'Sign in with Google on the main menu to appear on the leaderboards.';
+    me.innerHTML = d.me ? (d.me.rank ? `You: <b>#${d.me.rank}</b> with <b>${d.me.value}</b>` : 'You are not on this board yet. Play a match!') : 'Play a match to appear on the leaderboards.';
     B.appendChild(me);
   } catch (e) { B.innerHTML = '<p>Could not load the leaderboard: ' + esc(e.message) + '</p>'; }
 }
@@ -6320,6 +6328,12 @@ function walletHTML() {
 //  CHANGELOG: newest first. Add an entry here with every update; players see it once on the main page.
 // =====================================================================
 const CHANGELOG = [
+  { v: '2.0', date: 'Nov 2026', title: 'Full release: worldwide servers', items: [
+    'XENO.IO is out of beta!',
+    'Game servers in US West, US East, Europe and Asia: pick one on the Online screen, which shows live ping and player counts, and the closest server is chosen automatically',
+    'Leaderboards fixed: every player now gets an account automatically, so your scores show up without signing in; signing in with Google later keeps all of your records',
+    'Scores and progress are now kept permanently instead of resetting when the server restarts',
+  ] },
   { v: '1.9', date: 'Nov 2026', title: 'Up and over', items: [
     'Climbers now visibly climb up onto rocks, trees, pillars and cliffs, then perch on top: perched creatures look bigger and cast a shadow on the ground below',
     'Fliers soar over trees, rocks and buildings, drawn above everything on the ground; the HUD shows when you are flying over obstacles',
@@ -6504,15 +6518,39 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && G &
 $('boardBack').onclick = () => showScreen('menu');
 $('labBack').onclick = $('storyBack').onclick = $('onlineBack').onclick = $('resMenu').onclick = () => { G = null; showScreen('menu'); };
 $('resAgain').onclick = () => { const c = G && G.cfg; if (c && c.mode === 'tutorial') startMatch({ mode: 'tutorial', planet: 'dune' }); else if (c && c.mode === 'story') startMatch({ mode: 'story', planet: STORY[c.chapter].planet, chapter: c.chapter }); else if (c && c.mode === 'online' && c.net) { renderOnline(); showScreen('online'); } else startMatch({ mode: c ? c.mode : 'offline', planet: save.planetPref }); };
-$('bConnectOpen').onclick = () => { const u = $('srvIn').value.trim(); if (!u) { $('onlineStatus').textContent = 'Enter a server address first, e.g. ws://192.168.1.20:8080'; return; } try { localStorage.setItem('xenoio_srv', u); } catch (e) {} connectOnline(u, 'open'); };
+$('bConnectOpen').onclick = () => { const u = $('srvIn').value.trim(); if (!u) { $('onlineStatus').textContent = 'Enter a server address first, e.g. ws://192.168.1.20:8080'; return; } if ($('srvCustom').open) try { localStorage.setItem('xenoio_srv', u); } catch (e) {} connectOnline(u, 'open'); };
 $('bPractice').onclick = () => startMatch({ mode: 'online', planet: save.planetPref });
-$('bConnect').onclick = () => { const u = $('srvIn').value.trim(); if (!u) { $('onlineStatus').textContent = 'Enter a server address first, e.g. ws://192.168.1.20:8080'; return; } try { localStorage.setItem('xenoio_srv', u); } catch (e) {} connectOnline(u); };
+$('bConnect').onclick = () => { const u = $('srvIn').value.trim(); if (!u) { $('onlineStatus').textContent = 'Enter a server address first, e.g. ws://192.168.1.20:8080'; return; } if ($('srvCustom').open) try { localStorage.setItem('xenoio_srv', u); } catch (e) {} connectOnline(u); };
+// ---- server picker: every region's game server, with live ping and player counts; the closest is picked automatically
+let srvPick = null;
+function srvWs(u) { return u ? u.replace(/^http/, 'ws') : (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host; }
+function renderServers() {
+  const L = $('srvList'); if (!L) return; const list = (Cloud.cfg && Cloud.cfg.servers) || []; L.innerHTML = '';
+  if (!list.length) { L.style.display = 'none'; $('srvCustom').open = true; return; }
+  L.style.display = 'flex'; let saved = ''; try { saved = localStorage.getItem('xenoio_region') || ''; } catch (e) {}
+  const rows = list.map(sv => { const d = document.createElement('button'); d.className = 'pill'; d.style.cssText = 'display:flex;justify-content:space-between;align-items:center;border-radius:12px;padding:10px 14px;cursor:pointer;border:2px solid transparent;color:inherit;font:inherit;text-align:left';
+    d.innerHTML = `<span><b>${esc(sv.name)}</b> <span class="srvPl" style="color:#aaa;font-size:12px"></span></span><span class="srvPing" style="font-size:12px;color:#aaa">checking…</span>`;
+    d.onclick = () => { srvPick = sv; try { localStorage.setItem('xenoio_region', sv.name); } catch (e) {} $('srvIn').value = srvWs(sv.url); paint(); };
+    L.appendChild(d); return { sv, d }; });
+  const paint = () => rows.forEach(({ sv, d }) => d.style.borderColor = srvPick === sv ? '#7dffb2' : 'transparent');
+  srvPick = list.find(sv => sv.name === saved) || list[0]; $('srvIn').value = srvWs(srvPick.url); paint();
+  let best = null;
+  rows.forEach(async ({ sv, d }) => {
+    const base = sv.url || '', t0 = performance.now(); let ms = null, h = null;
+    for (let k = 0; k < 2; k++) { try { const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), k ? 4000 : 60000); const t = performance.now(); const r = await fetch(base + '/health', { cache: 'no-store', signal: ctl.signal }); clearTimeout(to); h = await r.json(); ms = Math.round(performance.now() - t); } catch (e) { break; } }
+    const P = d.querySelector('.srvPing'), N = d.querySelector('.srvPl');
+    if (ms == null) { P.textContent = 'offline'; P.style.color = '#ff6b6b'; return; }
+    P.textContent = ms + ' ms'; P.style.color = ms < 90 ? '#7dffb2' : ms < 180 ? '#ffd25a' : '#ff9a5a'; N.textContent = `· ${h.players || 0} playing`;
+    if (!saved && (best == null || ms < best)) { best = ms; srvPick = sv; $('srvIn').value = srvWs(sv.url); paint(); }
+  });
+}
 function renderOnline() {
+  renderServers();
   const sameHost = location.protocol.startsWith('http') && !/claude\.ai|claudeusercontent|anthropic/.test(location.hostname) && location.host;
   let saved = ''; try { saved = localStorage.getItem('xenoio_srv') || ''; } catch (e) {}
-  $('srvIn').value = saved || (sameHost ? (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host : '');
+  if (!(Cloud.cfg && (Cloud.cfg.servers || []).length)) $('srvIn').value = saved || (sameHost ? (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host : '');
   $('onlineInfo').innerHTML = '<b>Free-for-All</b>: real-time matches with a <b style="color:#ff6b6b">5-minute Extinction Event</b>; the safe zone shrinks until one survives. <b>Open World</b>: no timer, all eight worlds in one map, and eight world bosses that everyone fights together. Rewards are shared by damage dealt.';
-  $('onlineStatus').textContent = sameHost ? 'This page is being served by a game server, so you can connect directly.' : 'Real multiplayer needs the included server.js running somewhere you can reach. Until then, Quick match puts you in a lobby of bot players.';
+  $('onlineStatus').textContent = sameHost ? 'Pick the server with the lowest ping. Servers that have been idle take up to a minute to wake up.' : 'Real multiplayer needs the included server.js running somewhere you can reach. Until then, Quick match puts you in a lobby of bot players.';
 }
 function renderStory() {
   const L = $('chapList'); L.innerHTML = '';
@@ -6622,8 +6660,8 @@ async function checkoutReturn() {
 }
 function premiumBuy(a) {
   if (IN_PLAY_APP) return modal(a.name + ' — ' + a.cost.usd, 'Purchases are not available in this version of the app yet.', [['OK', null]]);
-  if (PAY()) return modal('Buy ' + a.name + ' — ' + a.cost.usd, `Pay securely with Stripe. ${a.name} is added to your account on every device.${Cloud.cfg.testMode ? '<br><small style="color:#ffd25a">Test mode: use card 4242 4242 4242 4242, any future date, any CVC.</small>' : ''}`, [['Buy ' + a.cost.usd, () => payCheckout('alien:' + a.id)], ['🎁 Buy as a gift', () => giftDialog({ type: 'alien', id: a.id }, a.name + ' (' + a.cost.usd + ')')], ['Cancel', null]]);
-  modal('Buy ' + a.name + ' — ' + a.cost.usd,  'This page has no payment system connected, so this is a <b>demo store</b>: no money is charged. In a released version this button would open Google Play / App Store / Stripe checkout.', [['🎁 Gift to a friend', () => giftDialog({ type: 'alien', id: a.id }, a.name + ' (' + a.cost.usd + ')')], ['Unlock (demo, free)', () => { unlock(a.id); save.equipped = a.id; persist(); renderLab(); }], ['Cancel', null]]);
+  if (PAY()) return modal('Buy ' + a.name + ' — ' + a.cost.usd, `Pay securely by card, Google Pay or Apple Pay (via Stripe). ${a.name} is added to your account on every device.${Cloud.cfg.testMode ? '<br><small style="color:#ffd25a">Test mode: use card 4242 4242 4242 4242, any future date, any CVC.</small>' : ''}`, [['Buy ' + a.cost.usd, () => payCheckout('alien:' + a.id)], ['🎁 Buy as a gift', () => giftDialog({ type: 'alien', id: a.id }, a.name + ' (' + a.cost.usd + ')')], ['Cancel', null]]);
+  modal(a.name + ' — ' + a.cost.usd, 'Checkout is being switched on. ' + a.name + ' will be available to buy very soon.', [['OK', null]]);
 }
 function modal(title, html, btns) {
   $('mTitle').textContent = title; $('mText').innerHTML = html; const B = $('mBtns'); B.innerHTML = '';

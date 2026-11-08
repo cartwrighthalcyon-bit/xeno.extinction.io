@@ -31,6 +31,7 @@ const page = path.join(__dirname, 'index.html');
 const server = http.createServer(async (req, res) => {
   if (await accounts.handle(req, res)) return;
   const pathOnly = req.url.split('?')[0];
+  if (process.env.MAIN_URL && pathOnly !== '/health') { res.writeHead(302, { Location: process.env.MAIN_URL.replace(/\/$/, '') + req.url }); return res.end(); } // regional game servers: the website and accounts live on the main server
   if (pathOnly === '/' || pathOnly === '/index.html') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     fs.createReadStream(page).pipe(res);
@@ -49,9 +50,10 @@ const server = http.createServer(async (req, res) => {
   } else if (pathOnly === '/sitemap.xml') {
     const base = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || ('https://' + req.headers.host)).replace(/\/$/, '');
     res.writeHead(200, { 'Content-Type': 'application/xml' }); res.end(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url></urlset>\n`);
-  } else if (req.url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ rooms: rooms.size, players: [...rooms.values()].reduce((n, r) => n + r.players.size, 0) }));
+  } else if (pathOnly === '/health') { // also used by the game's server picker to measure ping, so other origins may read it
+    let ffa = 0, open = 0; for (const r of rooms.values()) r.open ? open += r.players.size : ffa += r.players.size;
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ region: process.env.REGION_NAME || 'US West', rooms: rooms.size, players: ffa + open, ffa, open }));
   } else { res.writeHead(404); res.end('Not found'); }
 });
 
