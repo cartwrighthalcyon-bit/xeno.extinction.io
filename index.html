@@ -1854,9 +1854,9 @@ function alienSkin(c, clipPath, L, r, C, x0, x1, w, seed) { // pattern + cover i
 }
 function membraneWings(c, root, r, t, ph, moving, col, C) {
   if (RST === 1) { for (const s of [-1, 1]) { c.fillStyle = col; c.beginPath(); c.ellipse(root, s * r * 0.3, r * 0.12, r * 0.06, s * 0.6, 0, 7); c.fill(); } return; } if (RST === 2) r *= 0.6;
-  const fl = Math.sin(t * (moving ? 7 : 1.6) + ph), sp = r * (1.15 + 0.15 * fl);
-  for (const s of [-1, 1]) { c.save(); c.scale(1, s);
-    const fingers = [[root + r * 0.15, sp * 0.95], [root - r * 0.15, sp * 1.0], [root - r * 0.45, sp * 0.85], [root - r * 0.7, sp * 0.55]], arm = [root + r * 0.1, sp * 0.45];
+  const k = AIRK(), fl = Math.sin(t * (moving ? 7 : 1.6) + ph) * k, sp = r * (1.15 + 0.15 * fl), L2 = (a, b) => [a[0] + (b[0] - a[0]) * (1 - k), a[1] + (b[1] - a[1]) * (1 - k)];
+  for (const s of [-1, 1]) { c.save(); c.scale(1, s); // k = 1 spread for flight, 0 folded back along the body
+    const fingers = [[root + r * 0.15, sp * 0.95], [root - r * 0.15, sp * 1.0], [root - r * 0.45, sp * 0.85], [root - r * 0.7, sp * 0.55]].map((f, i) => L2(f, [root - r * (0.5 + i * 0.16), r * (0.44 - i * 0.05)])), arm = L2([root + r * 0.1, sp * 0.45], [root - r * 0.02, r * 0.4]);
     c.fillStyle = hexA('#000000', 0); c.beginPath(); c.moveTo(root, r * 0.15); c.lineTo(arm[0], arm[1]); for (const f of fingers) { c.lineTo(f[0], f[1]); } c.quadraticCurveTo(root - r * 0.5, r * 0.4, root - r * 0.55, r * 0.15); c.closePath();
     c.fillStyle = col; c.globalAlpha *= 0.82; c.fill(); c.globalAlpha /= 0.82;
     c.strokeStyle = C.deep; c.lineCap = 'round'; c.lineWidth = Math.max(1.2, r * 0.035); c.beginPath(); c.moveTo(root, r * 0.15); c.lineTo(arm[0], arm[1]); c.stroke();
@@ -2036,6 +2036,8 @@ function rGrad(c, x0, y0, rad, mid, edge, hi) { const g = c.createRadialGradient
 function hsl(h, s, l, a) { return a == null ? `hsl(${h},${clamp(s, 0, 100)}%,${clamp(l, 0, 100)}%)` : `hsla(${h},${clamp(s, 0, 100)}%,${clamp(l, 0, 100)}%,${a})`; }
 let RST = 4; // growth stage of the creature being drawn (1 baby ... 5 alpha)
 let RCOV = 'skin', RANG = 0; // body covering and heading of the creature being drawn, for vol3d
+let RAIR = 1, RAIR_SET = false; // how far the drawn creature's wings are spread: 1 in flight, 0 folded after landing (set when the game knows; thumbnails keep their usual pose)
+const AIRK = () => clamp((RAIR - 0.15) / 0.85, 0, 1);
 // ---- 3D body volume: real surface texture (fur, scales, feathers...), cylinder shading lit from one world direction,
 // darker flanks where the body curves away, and a specular highlight on glossy coverings. Call inside the body clip.
 const VOL_TEX = { fur: ['fur', 0.0068, 0.85], scales: ['scales', 0.0046, 0.8], feathers: ['feathers', 0.0058, 0.75], chitin: ['chitin', 0.005, 0.7], plates: ['chitin', 0.0075, 0.6], skin: ['skin', 0.0075, 0.6], rock: ['rock', 0.008, 0.85], slime: ['skin', 0.006, 0.4] };
@@ -2116,7 +2118,7 @@ function drawTadpole(c, r, t, ph, moving, ang, elev, C, L, P, opt, froglet) {
 function drawBird(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   r *= 1.3; const S = SPECIES[L.sp] || {}, B = birdStyle(S.name || def.name, L), flightless = B.ostrich || B.penguin;
   if (st === 1) return drawChick(c, B, L, r * 0.75, t, ph, moving, ang, elev, C, opt);
-  const flying = !flightless && (moving || elev > 0 || (opt.lod != null && moves(def).fly && !opt.thumb)), body = C.body, dark = C.dark, light = C.light;
+  const flying = !flightless && (RAIR_SET ? RAIR > 0.5 : (moving || elev > 0 || (opt.lod != null && moves(def).fly && !opt.thumb))), body = C.body, dark = C.dark, light = C.light;
   const hk = [1.25, 1.15, 1.06, 1, 1][st - 1], H = L.hue, Sa = L.sat, Li = L.lig;
   const bodyL = r * (B.ostrich ? 0.62 : B.penguin ? 0.6 : 0.52), bodyW = r * (B.owl ? 0.36 : B.penguin ? 0.34 : B.flamingo ? 0.24 : 0.28);
   const neck = B.flamingo || B.ostrich ? r * 0.38 : 0, headX = bodyL * 0.86 + neck, headR = r * (B.owl ? 0.26 : B.ostrich ? 0.13 : B.flamingo ? 0.12 : 0.17) * hk;
@@ -2140,7 +2142,7 @@ function drawBird(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   const drawWing = s => {
     c.save(); c.scale(1, s);
     if (flying) {
-      const open = 0.72 + 0.28 * flap, sw = wingSpan * open, sweep = B.falcon ? 0.35 : 0.12, root = bodyL * 0.25;
+      const open = (0.72 + 0.28 * flap) * (RAIR_SET ? 0.3 + 0.7 * clamp((RAIR - 0.5) * 2, 0, 1) : 1), sw = wingSpan * open, sweep = B.falcon ? 0.35 : 0.12, root = bodyL * 0.25;
       // covert-covered arm and hand, then primaries as separate feather fingers
       c.fillStyle = wingCol; c.beginPath(); c.moveTo(root, bodyW * 0.6); c.quadraticCurveTo(root + r * 0.15, sw * 0.5, root - sw * sweep, sw); c.lineTo(root - sw * sweep - r * 0.32, sw * 0.92); c.quadraticCurveTo(-bodyL * 0.3, sw * 0.45, -bodyL * 0.45, bodyW * 0.5); c.closePath(); c.fill();
       const nP = B.eagle || B.harpy ? 6 : 8;
@@ -2220,7 +2222,7 @@ function drawBug(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   if (kind === 'butterfly' && st <= 2) return drawLarva(c, 'caterpillar', r, t, ph, moving, ang, elev, C, L, opt, n);
   if ((kind === 'wasp' || kind === 'beetle' || kind === 'ant') && st === 1) return drawLarva(c, 'grub', r, t, ph, moving, ang, elev, C, L, opt, n);
   const body = C.body, dark = C.dark, light = C.light, deep = C.deep, legCol = L.legCol || deep, lw = Math.max(1.2, r * 0.045);
-  const gaitT = t * (kind === 'centipede' ? 7 : 14) + ph, step = moving ? 1 : 0.06, flying = (kind === 'wasp' || kind === 'butterfly') && (moving || elev > 0);
+  const gaitT = t * (kind === 'centipede' ? 7 : 14) + ph, step = moving ? 1 : 0.06, flying = (kind === 'wasp' || kind === 'butterfly') && (RAIR_SET ? RAIR > 0.5 : (moving || elev > 0));
   if (opt.shadow !== false) rShadow(c, ang, elev, r, r * (kind === 'centipede' ? 1.1 : 0.8), r * (kind === 'butterfly' && flying ? 0.8 : 0.5));
   const shell = (x, y, rx, ry, col) => { c.fillStyle = rGrad(c, x, y, Math.max(rx, ry), col, deep, light); c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, 7); c.fill(); if (LOD_HI) { c.fillStyle = 'rgba(255,255,255,.28)'; c.beginPath(); c.ellipse(x - rx * 0.15, y - ry * 0.35, rx * 0.5, ry * 0.18, -0.15, 0, 7); c.fill(); } };
   const antennae = (hx, len, club, curl) => { c.strokeStyle = deep; c.lineWidth = Math.max(0.8, r * 0.022); c.lineCap = 'round'; for (const s of [-1, 1]) { const wig = Math.sin(t * 3 + ph + s) * r * 0.04; c.beginPath(); c.moveTo(hx, s * r * 0.05); c.quadraticCurveTo(hx + len * 0.5, s * (len * 0.45 + wig), hx + len, s * (len * (curl || 0.55)) + wig); c.stroke(); if (club) { c.fillStyle = deep; c.beginPath(); c.ellipse(hx + len, s * len * (curl || 0.55) + wig, r * 0.04, r * 0.03, 0, 0, 7); c.fill(); } } };
@@ -2263,7 +2265,7 @@ function drawBug(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
     return;
   }
   if (kind === 'butterfly') {
-    const fl = flying ? 0.35 + 0.65 * Math.abs(Math.sin(t * 10 + ph)) : 1, wc = body, wd = '#120c08';
+    const fl = flying ? 0.35 + 0.65 * Math.abs(Math.sin(t * 10 + ph)) : RAIR_SET ? 0.2 : 1, wc = body, wd = '#120c08';
     for (const s of [-1, 1]) { c.save(); c.scale(1, s * fl);
       const wing = (x0, y0, x1, y1, x2, y2) => { c.beginPath(); c.moveTo(r * 0.05, r * 0.05); c.bezierCurveTo(x0, y0, x1, y1, x2, y2); c.quadraticCurveTo(x2 * 0.4, y2 * 0.4, r * 0.05, r * 0.05); c.closePath(); };
       wing(r * 0.45, r * 0.3, r * 0.75, r * 0.85, r * 0.15, r * 0.95); c.fillStyle = wc; c.fill(); c.strokeStyle = wd; c.lineWidth = r * 0.04; c.stroke();
@@ -2448,7 +2450,7 @@ function drawAlien(ctx, def, x, y, r, ang, t, opt = {}) {
   const L = def.look, P = anatomy(def), ph = opt.phase || 0, st = clamp(opt.lvl || 3, 1, 5), F = STG.feat[st];
   const NAT = !!(L.sig || (L.theme && (L.theme.k === 'animal' || L.theme.k === 'plant'))), TR = NAT && L.trait !== 'fins' ? null : L.trait;
   const apex = L.apex || opt.apex, moving = !!opt.moving, hi = (opt.lod != null ? opt.lod : 99) >= (PERF_LOW && !opt.self ? 26 : 12); LOD_HI = hi; LOD_FULL = (opt.lod != null ? opt.lod : 99) >= (PERF_LOW && !opt.self ? 34 : 20);
-  const elev = opt.elev || 0;
+  const elev = opt.elev || 0; RAIR_SET = opt.air != null; RAIR = RAIR_SET ? opt.air : 1;
   ctx.save(); ctx.translate(x, y); ctx.rotate(ang); if (elev) { const ek = 1 + 0.07 * elev; ctx.scale(ek, ek); }
   if (moving && P.gait) { const fq = 9 * (P.gs || 1); let lift = 0; if (P.gait === 'hop') lift = Math.pow(Math.max(0, Math.sin(t * fq * 0.5 + ph)), 2) * 0.1; else if (P.gait === 'gallop' || P.gait === 'sprint') lift = Math.abs(Math.sin(t * fq * 0.5 + ph)) * 0.035; else if (P.gait === 'lumber' || P.gait === 'knuckle') lift = Math.abs(Math.sin(t * fq * 0.5 + ph)) * 0.02; if (lift) { ctx.translate(r * lift * 1.5, 0); ctx.scale(1 + lift, 1 + lift); } }
   if (opt.alpha != null) ctx.globalAlpha = opt.alpha;
@@ -2488,7 +2490,8 @@ function drawAlien(ctx, def, x, y, r, ang, t, opt = {}) {
   // wings (membrane) and fins behind the body
   if (L.wings === 1 && P.arch !== 'insect' && P.arch !== 'beetle' && P.arch !== 'fish' && P.arch !== 'squid') {
     const flap = 0.75 + 0.25 * Math.sin(t * (moving ? 18 : 4) + ph), ws = [0, 0.45, 0.75, 1, 1.08, 1.15][st];
-    for (const s of [-1, 1]) drawWing(ctx, def, P, L, B, r, st, t, ph, moving, s, { body, dark, deep, light, acc });
+    { const k = AIRK(); ctx.save(); ctx.translate(B.shX, 0); ctx.scale(0.8 + 0.2 * k, 0.28 + 0.72 * k); ctx.translate(-B.shX, 0); // folded: wings drawn in close along the back
+    for (const s of [-1, 1]) drawWing(ctx, def, P, L, B, r, st, t, ph, moving && k > 0.5, s, { body, dark, deep, light, acc }); ctx.restore(); }
   }
   if ((TR === 'fins' || P.arch === 'fish') && st > 1) { const fl = 0.85 + 0.15 * Math.sin(t * (moving ? 12 : 3) + ph); ctx.fillStyle = `hsla(${L.hue2},60%,62%,.6)`; for (const s of [-1, 1]) { const ax = B.shX * 0.9, aw = spineAt(N, ax).w; ctx.beginPath(); ctx.moveTo(ax, s * aw * 0.8); ctx.quadraticCurveTo(ax - r * 0.2, s * (aw + r * 0.45 * F) * fl, ax - r * 0.55, s * (aw + r * 0.3 * F) * fl); ctx.lineTo(ax - r * 0.3, s * aw * 0.7); ctx.closePath(); ctx.fill(); } }
   if (P.arch === 'squid') { ctx.strokeStyle = dark; ctx.lineCap = 'round'; const nt = st === 1 ? 4 : P.tent; for (let i = 0; i < nt; i++) { const oy = (i - (nt - 1) / 2) * r * 0.14, tl = r * (st === 1 ? 0.9 : 1.5) * (i % 3 === 0 ? 1.3 : 1); ctx.lineWidth = r * (i % 3 === 0 ? 0.09 : 0.12); ctx.beginPath(); ctx.moveTo(B.hipX + r * 0.1, oy); ctx.bezierCurveTo(B.hipX - tl * 0.35, oy + Math.sin(t * 6 + i) * r * 0.25, B.hipX - tl * 0.7, oy * 1.6 + Math.sin(t * 5 + i * 1.3) * r * 0.3, B.hipX - tl, oy * 2 + Math.sin(t * 4 + i) * r * 0.35); ctx.stroke(); } }
@@ -2582,7 +2585,7 @@ function drawAlien(ctx, def, x, y, r, ang, t, opt = {}) {
   }
   if (L.ktrait === 'frostmasyeti') { ctx.fillStyle = '#c4202a'; const nx = B.neckX; ctx.beginPath(); ctx.ellipse(nx, 0, r * 0.1, spineAt(N, nx).w + r * 0.05, 0, 0, 7); ctx.fill(); ctx.fillRect(nx - r * 0.35, spineAt(N, nx).w - r * 0.02, r * 0.35, r * 0.12); }
   // insect wings over the back
-  if (L.wings && (P.arch === 'insect' || P.arch === 'beetle')) { const flap = moving ? 0.5 + 0.5 * Math.abs(Math.sin(t * 30 + ph)) : 0.15, ws = [0, 0.4, 0.75, 1, 1.05, 1.1][st]; ctx.fillStyle = 'rgba(220,240,255,.35)'; ctx.strokeStyle = 'rgba(80,100,120,.5)'; ctx.lineWidth = r * 0.02; for (const s of [-1, 1]) for (let k = 0; k < 2; k++) { ctx.save(); ctx.translate(B.shX * 0.5 - k * r * 0.15, s * r * 0.05); ctx.rotate(Math.PI + s * (0.25 + flap * 0.6 + k * 0.15)); ctx.beginPath(); ctx.ellipse(r * 0.55 * ws, 0, r * 0.6 * ws, r * 0.16 * ws, 0, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore(); } }
+  if (L.wings && (P.arch === 'insect' || P.arch === 'beetle')) { const flap = moving && RAIR > 0.5 ? 0.5 + 0.5 * Math.abs(Math.sin(t * 30 + ph)) : 0.15 * (RAIR_SET ? 0.4 + 0.6 * AIRK() : 1), ws = [0, 0.4, 0.75, 1, 1.05, 1.1][st]; ctx.fillStyle = 'rgba(220,240,255,.35)'; ctx.strokeStyle = 'rgba(80,100,120,.5)'; ctx.lineWidth = r * 0.02; for (const s of [-1, 1]) for (let k = 0; k < 2; k++) { ctx.save(); ctx.translate(B.shX * 0.5 - k * r * 0.15, s * r * 0.05); ctx.rotate(Math.PI + s * (0.25 + flap * 0.6 + k * 0.15)); ctx.beginPath(); ctx.ellipse(r * 0.55 * ws, 0, r * 0.6 * ws, r * 0.16 * ws, 0, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore(); } }
   drawTheme(ctx, 'top', def, P, L, B, r, st, t, ph, F, TC, hi, moving);
   drawSpecies(ctx, 'top', def, P, L, B, r, st, t, ph, TC, moving); drawHabitat(ctx, 'top', def, P, L, B, r, st, t, ph, TC);
   if (L.sig) drawSig(ctx, 'top', def, P, L, B, r, st, t, ph, F, TC, hi, moving);
@@ -4605,8 +4608,12 @@ function envPre(e, dt) {
   if (e.def.forms && !e.remote) { const cur = e.form || e.def.planet;
     if (cur !== e.biome && e.def.forms.includes(e.biome)) { if (!e.isPlayer) shiftForm(e, e.biome); else if (e.formHint !== e.biome) { e.formHint = e.biome; banner('Press F to shift into your ' + HAB_NAME[e.biome] + ' form', '#9fe3ff'); } } }
   if (e.perch && !wasPerch && !(e.alt > 0.5)) { e.climbT = 0.45; if (G.player && d2(e, G.player) < 900 * 900) burst(e.x, e.y, '#b9a27a', 5); if (e === G.player) floatText(e.x, e.y - e.r, 'CLIMBING UP', '#ffcf8a'); }
-  { let over = false; if (mv.fly) for (const o of sgNear(G.obstacles, G.ogrid, e.x, e.y)) if ((e.x - o.x) ** 2 + (e.y - o.y) ** 2 < (o.r + e.r * 0.3) ** 2) { over = true; break; }
-    e.overObst = over; const tgt = mv.fly ? (over ? 1 : 0.55) : e.perch ? 0.75 : 0; e.alt = (e.alt || 0) + (tgt - (e.alt || 0)) * Math.min(1, dt * (e.climbT > 0 ? 2.2 : 6)); }
+  { let over = null; if (mv.fly) for (const o of sgNear(G.obstacles, G.ogrid, e.x, e.y)) if ((e.x - o.x) ** 2 + (e.y - o.y) ** 2 < (o.r + e.r * 0.3) ** 2) { over = o; break; }
+    if (mv.fly) { // fliers land and tuck their wings when they stop, and take off again as soon as they move
+      const mov = Math.hypot(e.vx || 0, e.vy || 0) > 25 || (e.cast && G.t - e.cast < 0.6); e.stillT = mov ? 0 : (e.stillT || 0) + dt;
+      const aloft = mov || e.stillT < 0.35 || (over && over.k === 'volcano'); e.air = (e.air == null ? 1 : e.air) + ((aloft ? 1 : 0) - (e.air == null ? 1 : e.air)) * Math.min(1, dt * (aloft ? 7 : 3.5));
+      if (e.air < 0.5 && over) e.perch = over; } // a landed flier over a rock or tree sits on top of it
+    e.overObst = !!over && !(e.air < 0.5); const tgt = mv.fly ? (e.air < 0.5 ? (over ? 0.75 : 0) : over ? 1 : 0.55) : e.perch ? 0.75 : 0; e.alt = (e.alt || 0) + (tgt - (e.alt || 0)) * Math.min(1, dt * (e.climbT > 0 ? 2.2 : 6)); }
   if (wasPerch && !e.perch) { e.pounce = 1.6; if (e === G.player) floatText(e.x, e.y - e.r, 'POUNCE READY', '#ffcf8a'); }
   if (e.pounce > 0) e.pounce -= dt;
   if (e === G.player && G.mstat) { if (e.inCave) G.mstat.cave += dt; }
@@ -5866,7 +5873,7 @@ function render() {
     if (e.shiftAnim && G.t - e.shiftAnim < 0.6) { const k = (G.t - e.shiftAnim) / 0.6; ctx.save(); ctx.globalAlpha = 1 - k; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(e.x, e.y, e.r * (1 + k * (1.2 + i * 0.5)), 0, 7); ctx.stroke(); } ctx.restore(); }
     const shK = (e.shiftAnim && G.t - e.shiftAnim < 0.5 ? 1 + Math.sin((G.t - e.shiftAnim) / 0.5 * Math.PI) * 0.22 : 1) * (1 + 0.13 * (e.alt || 0)) * (e.climbT > 0 ? 1 + Math.sin(G.t * 40) * 0.015 : 1);
     if (e.elder) drawElderAura(e);
-    drawAlien(CL || ctx, e.form ? formDef(e.def, e.form) : e.def, e.x, e.y, e.r * shK, e.ang, G.t, { lod: e.r * zoom, self: e === p, cast: e.cast, form: inForm(e) ? G.dis.id : null, apex: e.boss, lvl: e.minion ? Math.max(1, e.lvl - 1) : e.lvl, moving: Math.hypot(e.vx, e.vy) > 20, phase: e.phase, alpha, elev: elevOf(e), worldBoss: !!e.worldBoss, titan: !!e.titan, env: e.biome, adapted: e.biome ? resists(e, e.biome) : true, fx: e.fx, ab: e.def.ability, abK: AB[e.def.ability] ? 1 - e.cdAb / AB[e.def.ability].cd : 1, shadow: !CL, aura: e.hitFlash > 0 ? '#ff2a2a' : (e.fx.slow > 0 ? '#9fe3ff' : null) });
+    drawAlien(CL || ctx, e.form ? formDef(e.def, e.form) : e.def, e.x, e.y, e.r * shK, e.ang, G.t, { air: e.air, lod: e.r * zoom, self: e === p, cast: e.cast, form: inForm(e) ? G.dis.id : null, apex: e.boss, lvl: e.minion ? Math.max(1, e.lvl - 1) : e.lvl, moving: Math.hypot(e.vx, e.vy) > 20, phase: e.phase, alpha, elev: elevOf(e), worldBoss: !!e.worldBoss, titan: !!e.titan, env: e.biome, adapted: e.biome ? resists(e, e.biome) : true, fx: e.fx, ab: e.def.ability, abK: AB[e.def.ability] ? 1 - e.cdAb / AB[e.def.ability].cd : 1, shadow: !CL, aura: e.hitFlash > 0 ? '#ff2a2a' : (e.fx.slow > 0 ? '#9fe3ff' : null) });
   }
   if (CL) lit3dEnd(zoom);
   for (const e of list) {
@@ -6048,7 +6055,7 @@ function drawHUD() {
   ctx.fillStyle = '#333'; ctx.fillRect(18, topY + 41, bw, 6); ctx.fillStyle = '#7dffb2'; ctx.fillRect(18, topY + 41, bw * clamp((p.xp - curXp) / Math.max(1, nextXp - curXp), 0, 1), 6);
   ctx.font = '12px system-ui'; ctx.fillStyle = '#ccc';
   ctx.fillText('DNA ' + G.earned.dna + (G.earned.adna ? ' · Ancient ' + G.earned.adna : '') + ' · Kills ' + G.kills, 18, topY + 63);
-  { const st = p.inCave ? 'In cave: sheltered' : p.climbT > 0 ? 'Climbing…' : p.perch ? 'Perched up high' : p.overObst ? 'Flying over obstacles' : p.inCover ? 'Hidden in cover' : (moves(p.def).swim && p.inMist) ? 'Diving, hidden' : moves(p.def).fly ? 'Flying' : ''; const tr = moves(p.def).list.map(k => MOVE_INFO[k].icon).join(''); if (st || tr) { ctx.textAlign = 'right'; ctx.fillStyle = '#ffcf8a'; ctx.fillText((st ? st + ' ' : '') + tr, 10 + pw - 8, topY + 63); ctx.textAlign = 'left'; } }
+  { const st = p.inCave ? 'In cave: sheltered' : p.climbT > 0 ? 'Climbing…' : p.perch ? 'Perched up high' : p.overObst ? 'Flying over obstacles' : p.air != null && p.air < 0.5 ? 'Landed: move to take off' : p.inCover ? 'Hidden in cover' : (moves(p.def).swim && p.inMist) ? 'Diving, hidden' : moves(p.def).fly ? 'Flying' : ''; const tr = moves(p.def).list.map(k => MOVE_INFO[k].icon).join(''); if (st || tr) { ctx.textAlign = 'right'; ctx.fillStyle = '#ffcf8a'; ctx.fillText((st ? st + ' ' : '') + tr, 10 + pw - 8, topY + 63); ctx.textAlign = 'left'; } }
   const ok = resists(p, G.planet);
   ctx.fillStyle = '#c9b6ff'; ctx.fillText('Diet: ' + DIETS[p.def.diet].name + ' (' + DIETS[p.def.diet].eats.map(x => FOODS[x].name.toLowerCase()).join(', ') + ')' + (G.dis ? (inForm(p) ? ' · ' + DISASTERS[G.planet].form + '!' : '') : ''), 18, topY + 91);
   ctx.fillStyle = ok ? '#7dffb2' : '#ffb35a'; ctx.fillText(ok ? 'Adapted to ' + G.P.name : { dune: 'Heat is draining you', ice: 'Cold slows and chills you', dark: 'Darkness limits your sight', hell: 'Fire is burning you', water: 'You are short of breath', heaven: 'Holy radiance sears you', earth: 'Heavy gravity tires you', mars: 'Thin frozen air chokes you', space: 'The vacuum is suffocating you', jungle: 'Toxic spores poison you', robo: 'Static radiation burns you' }[G.planet] + ' (not adapted)', 18, topY + 77);
@@ -6337,6 +6344,11 @@ function walletHTML() {
 //  CHANGELOG: newest first. Add an entry here with every update; players see it once on the main page.
 // =====================================================================
 const CHANGELOG = [
+  { v: '2.1', date: 'Nov 2026', title: 'Folded wings', items: [
+    'Winged creatures now land when they stop and tuck their wings in: birds fold them along the body, bat and dragon wings fold back against the sides, and butterflies and wasps close theirs over the back',
+    'Move again to take off: the wings spread and start flapping',
+    'Land on top of a tree or rock to perch up high, safe from ground hunters, with a pounce ready when you take off',
+  ] },
   { v: '2.0.1', date: 'Nov 2026', title: 'Google Pay and account controls', items: [
     'The store now takes card, Google Pay and Apple Pay',
     'New privacy policy page, linked from Settings',
