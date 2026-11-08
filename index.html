@@ -1261,7 +1261,10 @@ const BASIC_IDS = ALIENS.filter(a => a.kind === 'basic').map(a => a.id);
 const SAVE_KEY = 'xenoio_save_v1';
 let save = { dna: 0, adna: 0, tokens: {}, owned: BASIC_IDS.slice(), equipped: 'blipling', name: '', story: 0, planetPref: 'random', stats: { kills: 0, matches: 0, wins: 0 } };
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.owned) save = Object.assign(save, s); } catch (e) {}
+function fillSave() { // fill in every field a fresh or older save may be missing
 if (save.mdna == null) save.mdna = 0; save.shards = save.shards || {}; bag(); save.skins = save.skins || {}; save.skinSel = save.skinSel || {}; save.primordial = save.primordial || {}; save.primoOn = save.primoOn || {}; save.titan = save.titan || {}; save.holPity = save.holPity || {}; save.settings = Object.assign({ sound: true, vol: 0.7, quality: 'auto', names: true }, save.settings || {}); save.daily = save.daily || { last: '', streak: 0 }; save.missions = save.missions || { day: '', prog: {}, claimed: {} }; save.stats.bosses = save.stats.bosses || 0;
+}
+fillSave();
 function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} if (typeof cloudSaveSoon === 'function') cloudSaveSoon(); }
 function owns(id) { return save.owned.includes(id); }
 function unlock(id) { if (!owns(id)) { save.owned.push(id); persist(); return true; } return false; }
@@ -4970,11 +4973,17 @@ function renderSettings() {
   <label class="setrow">3D creature lighting <input type="checkbox" id="s3d" ${S.c3d !== false ? 'checked' : ''}></label>
   <label class="setrow">Show online chat <input type="checkbox" id="sChat" ${S.chat !== false ? 'checked' : ''}></label>
   <label class="setrow">Show creature names <input type="checkbox" id="sNames" ${S.names ? 'checked' : ''}></label>
-  <div class="row" style="margin-top:12px"><button class="btn" id="sHelp">How to play</button><button class="btn red" id="sReset">Reset progress</button></div>`;
+  <div class="row" style="margin-top:12px"><button class="btn" id="sHelp">How to play</button><button class="btn red" id="sReset">Reset progress</button></div>
+  <div class="row" style="margin-top:8px;font-size:13px"><a href="/privacy" target="_blank" rel="noopener" style="color:#9fe3ff">Privacy policy</a>${Cloud.token ? ' · <a href="#" id="sDelAcct" style="color:#ff8a8a">Delete my account</a>' : ''}</div>`;
   $('sQual').value = S.quality;
   const sv = () => { S.sound = $('sSound').checked; S.vol = +$('sVol').value; S.quality = $('sQual').value; S.names = $('sNames').checked; S.c3d = $('s3d').checked; S.chat = $('sChat').checked; PERF_LOW = S.quality === 'low'; slowT = 0; persist(); };
   ['sSound', 'sVol', 'sQual', 'sNames', 's3d', 'sChat'].forEach(id => $(id).onchange = sv); $('sVol').oninput = sv;
   $('sHelp').onclick = showHelp;
+  if ($('sDelAcct')) $('sDelAcct').onclick = e => { e.preventDefault(); modal('Delete your account?', 'This permanently deletes your account from our servers: your saved aliens, currencies, purchases and leaderboard scores. It cannot be undone.', [['Keep my account', null], ['Delete account', () => modal('Are you sure?', 'Everything on your account will be gone for good, including anything you bought.', [['Cancel', null], ['Yes, delete it', async () => {
+    try { await api('/api/account/delete', { confirm: true }); } catch (err) { return modal('Could not delete', esc(err.message), [['OK', null]]); }
+    Cloud.token = null; Cloud.profile = null; try { localStorage.removeItem('xenoio_token'); } catch (e2) {}
+    save = { dna: 0, adna: 0, tokens: {}, owned: BASIC_IDS.slice(), equipped: 'blipling', name: '', story: 0, planetPref: 'random', stats: { kills: 0, matches: 0, wins: 0 }, settings: save.settings }; fillSave(); persist(); refreshMenu();
+    modal('Account deleted', 'Your account and its data were removed.', [['OK', () => { if (Cloud.cfg && Cloud.cfg.guest) guestLogin().then(renderAcct); }]]); }]])]]); };
   $('sReset').onclick = () => modal('Reset all progress?', 'This deletes your DNA, aliens and story progress on this device. It cannot be undone.', [['Reset', () => modal('Are you sure?', 'Last chance: everything on this device will be wiped.', [['Yes, wipe it', () => { localStorage.removeItem(SAVE_KEY); location.reload(); }], ['Cancel', null]])], ['Cancel', null]]);
 }
 function showHelp() {
@@ -5378,7 +5387,7 @@ function renderStore() {
   }
   h += `<h3 style="margin:18px 0 6px">Exchange (no money needed)</h3><div class="sub">Trade between currencies any time. Bigger trades get a better rate.</div>`;
   EXCHANGE.forEach((x, i) => { const ok = (save[x.from] || 0) >= x.fn; h += `<div class="pill" style="display:flex;justify-content:space-between;align-items:center;border-radius:12px;margin:6px 0;padding:10px 12px"><span><b style="color:${CUR[x.from].col}">${x.fn.toLocaleString('en-US')} ${CUR[x.from].name}</b> → <b style="color:${CUR[x.to].col}">${x.tn} ${CUR[x.to].name}</b></span><button class="btn small green" data-ex="${i}" ${ok ? '' : 'disabled'}>Trade</button></div>`; });
-  h += PAY() ? `<p class="note" style="margin-top:12px">Payments are processed securely by Stripe. Purchases are saved to your account.${Cloud.cfg.testMode ? ' <b style="color:#ffd25a">Test mode: no real money is charged.</b>' : ' Pay with card, Google Pay or Apple Pay.'}</p>` : `<p class="note" style="margin-top:12px">Checkout opens soon. Currency trades below work now.</p>`;
+  h += PAY() ? `<p class="note" style="margin-top:12px">Payments are processed securely by Stripe. Purchases are saved to your account.${Cloud.cfg.testMode ? ' <b style="color:#ffd25a">Test mode: no real money is charged.</b>' : ' Pay with card, <b>Google Pay</b> or Apple Pay.'}</p><div style="display:flex;gap:8px;justify-content:center;margin-top:4px">${['G Pay', ' Pay', 'Card'].map(t => `<span class="pill" style="font-size:12px;padding:4px 10px;border-radius:8px;font-weight:700">${t}</span>`).join('')}</div>` : `<p class="note" style="margin-top:12px">Checkout opens soon. Currency trades below work now.</p>`;
   $('storeBody').innerHTML = h;
   $('storeBody').querySelectorAll('[data-pack]').forEach(b => b.onclick = () => { const p = STORE_PACKS[+b.dataset.pack]; if (IN_PLAY_APP) return modal('Not available yet', 'Purchases are not available in this version of the app yet. You can still trade currencies for free below.', [['OK', null]]); if (PAY()) return modal(`Buy ${p.n.toLocaleString('en-US')} ${CUR[p.cur].name} — ${p.price}`, 'Pay securely by card, Google Pay or Apple Pay (via Stripe). The currency is added to your account as soon as payment goes through.' + (Cloud.cfg.testMode ? '<br><small style="color:#ffd25a">Test mode: use card 4242 4242 4242 4242, any future date, any CVC.</small>' : ''), [['Pay ' + p.price, () => payCheckout('pack:pack' + b.dataset.pack)], ['Cancel', null]]); modal('Store opening soon', 'Checkout is being switched on. Packs will be available very soon. You can still trade currencies for free below.', [['OK', null]]); });
   $('storeBody').querySelectorAll('[data-gift]').forEach(b => b.onclick = () => { const p = STORE_PACKS[+b.dataset.gift]; giftDialog({ type: 'pack', cur: p.cur, n: p.n }, p.n.toLocaleString('en-US') + ' ' + CUR[p.cur].name + ' (' + p.price + ')'); });
@@ -6233,7 +6242,7 @@ function signOut() {
   modal('Sign out?', 'Your progress stays safe in your account. This device switches to a fresh guest save.', [['Sign out', () => {
     Cloud.token = null; Cloud.profile = null; try { localStorage.removeItem('xenoio_token'); } catch (e) {}
     if (window.google && google.accounts) google.accounts.id.disableAutoSelect();
-    save = { dna: 0, adna: 0, tokens: {}, owned: BASIC_IDS.slice(), equipped: 'blipling', name: '', story: 0, planetPref: 'random', stats: { kills: 0, matches: 0, wins: 0 } };
+    save = { dna: 0, adna: 0, tokens: {}, owned: BASIC_IDS.slice(), equipped: 'blipling', name: '', story: 0, planetPref: 'random', stats: { kills: 0, matches: 0, wins: 0 } }; fillSave();
     persist(); refreshMenu(); renderAcct(); if (Cloud.cfg && Cloud.cfg.guest) guestLogin().then(renderAcct);
   }], ['Cancel', null]]);
 }
@@ -6328,6 +6337,12 @@ function walletHTML() {
 //  CHANGELOG: newest first. Add an entry here with every update; players see it once on the main page.
 // =====================================================================
 const CHANGELOG = [
+  { v: '2.0.1', date: 'Nov 2026', title: 'Google Pay and account controls', items: [
+    'The store now takes card, Google Pay and Apple Pay',
+    'New privacy policy page, linked from Settings',
+    'Delete my account: remove your account and all of its data from Settings',
+    'Fixed signing out, which could break the main menu',
+  ] },
   { v: '2.0', date: 'Nov 2026', title: 'Full release: worldwide servers', items: [
     'XENO.IO is out of beta!',
     'Game servers in US West, US East, Europe and Asia: pick one on the Online screen, which shows live ping and player counts, and the closest server is chosen automatically',

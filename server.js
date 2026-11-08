@@ -44,6 +44,10 @@ const server = http.createServer(async (req, res) => {
   } else if (pathOnly === '/ads.txt') { // AdSense publisher verification
     const pub = String(process.env.ADSENSE_CLIENT || '').replace(/^ca-/, '');
     res.writeHead(pub ? 200 : 404, { 'Content-Type': 'text/plain' }); res.end(pub ? `google.com, ${pub}, DIRECT, f08c47fec0942fa0\n` : 'not configured\n');
+  } else if (pathOnly === '/privacy' || pathOnly === '/privacy.html') { // privacy policy (linked from the game and the Google Play listing)
+    fs.readFile(path.join(__dirname, 'privacy.html'), 'utf8', (err, html) => { if (err) { res.writeHead(404); return res.end('Not found'); }
+      const mail = String(process.env.CONTACT_EMAIL || '').replace(/[^\w.+@-]/g, ''), contact = mail ? `Questions or requests: <a href="mailto:${mail}">${mail}</a>` : 'Questions or requests: use the Report button in the game and we will get back to you.';
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=3600' }); res.end(html.replace('{{CONTACT}}', contact)); });
   } else if (pathOnly === '/robots.txt') {
     const base = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || ('https://' + req.headers.host)).replace(/\/$/, '');
     res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end(`User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: ${base}/sitemap.xml\n`);

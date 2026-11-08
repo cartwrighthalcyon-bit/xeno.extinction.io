@@ -60,6 +60,7 @@ function fileStore() {
     kind: 'file',
     async get(id) { return db[id] || null; },
     async put(id, rec) { db[id] = rec; if (!timer) timer = setTimeout(flush, 1000); },
+    async del(id) { delete db[id]; if (!timer) timer = setTimeout(flush, 1000); },
     async top(field, n) { return Object.values(db).filter(r => (r.stats && r.stats[field]) > 0).sort((a, b) => b.stats[field] - a.stats[field]).slice(0, n); },
     async rank(field, value) { return 1 + Object.values(db).filter(r => (r.stats && r.stats[field] || 0) > value).length; },
     async byCode(code) { return Object.values(db).find(r => r.code === code) || null; },
@@ -78,6 +79,7 @@ function pgStore(url) {
     kind: 'postgres',
     async get(id) { await ready; const r = await pool.query('SELECT data FROM players WHERE id = $1', [id]); return r.rows[0] ? r.rows[0].data : null; },
     async put(id, rec) { await ready; await pool.query('INSERT INTO players (id, data) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = now()', [id, rec]); },
+    async del(id) { await ready; await pool.query('DELETE FROM players WHERE id = $1', [id]); },
     async top(field, n) { if (!BOARD_FIELDS.includes(field)) return []; await ready; const r = await pool.query(`SELECT data FROM players WHERE ${num(field)} > 0 ORDER BY ${num(field)} DESC LIMIT $1`, [n]); return r.rows.map(x => x.data); },
     async rank(field, value) { if (!BOARD_FIELDS.includes(field)) return 0; await ready; const r = await pool.query(`SELECT COUNT(*)::int AS c FROM players WHERE ${num(field)} > $1`, [value]); return 1 + r.rows[0].c; },
     async byCode(code) { await ready; const r = await pool.query("SELECT data FROM players WHERE data->>'code' = $1 LIMIT 1", [code]); return r.rows[0] ? r.rows[0].data : null; },
@@ -261,6 +263,11 @@ async function handle(req, res) {
     if (!rec) return send(res, 401, { error: 'Unknown player' }), true;
 
     if (route === 'GET /api/me') return send(res, 200, profileOut(rec)), true;
+    if (route === 'POST /api/account/delete') { // required by Google Play: players can delete their account and data
+      const body = await readBody(req); if (!body.confirm) return send(res, 400, { error: 'Missing confirmation' }), true;
+      await store.del(rec.id); console.log('[accounts] deleted account', crypto.createHash('sha256').update(rec.id).digest('hex').slice(0, 12));
+      return send(res, 200, { ok: true }), true;
+    }
 
     if (route === 'POST /api/redeem') { // exclusive-creature codes; only hashes are stored
       const body = await readBody(req), now = Date.now(), recent = (lastGifts.get('r:' + rec.id) || []).filter(t => now - t < 3600e3);
