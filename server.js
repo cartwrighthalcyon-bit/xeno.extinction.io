@@ -7,7 +7,7 @@
 //  - Free-for-All: up to 16 players, one 5-minute Extinction Event, then re-queue.
 //  - Open World: up to 24 players, no timer. Eight world bosses (one per environment)
 //    have server-owned health; the server tracks every player's damage and pays out
-//    rewards by contribution when a boss falls, then respawns it 3 minutes later.
+//    rewards by contribution when a boss falls, then respawns it 8 minutes later (15 for the mega boss).
 // Server tracks players, the timer and relays bites/hits. Wildlife is simulated on
 // each player's device from the room's shared seed, so every player sees the
 // same map layout.
@@ -22,7 +22,7 @@ const PORT = +process.env.PORT || 8080;
 const ROUND_MS = 300 * 1000;
 const ROOM_MAX = 16, OPEN_MAX = 24;
 const BOSS_IDS = ['dune', 'ice', 'dark', 'hell', 'water', 'jungle', 'robo', 'space', 'heaven', 'earth', 'mars', 'mega'];
-const BOSS_UNITS = 10000, BOSS_RESPAWN_MS = 300 * 1000;
+const BOSS_UNITS = 10000, BOSS_RESPAWN_MS = 480 * 1000;
 const PLANETS = ['dune', 'ice', 'dark', 'water', 'jungle', 'robo', 'space', 'heaven', 'earth', 'mars'];
 
 // ------------------------------------------------------------------ HTTP
@@ -85,7 +85,7 @@ const rooms = new Map();
 let nextId = 1, nextRoom = 1;
 
 function newBosses() { const b = {}; for (const id of BOSS_IDS) b[id] = { hp: BOSS_UNITS, alive: true, respawnAt: 0, dmg: new Map() }; return b; }
-const respawnMs = id => id === 'mega' ? 600 * 1000 : BOSS_RESPAWN_MS;
+const respawnMs = id => id === 'mega' ? 900 * 1000 : BOSS_RESPAWN_MS;
 function findRoom(mode) {
   const open = mode === 'open';
   for (const r of rooms.values()) {

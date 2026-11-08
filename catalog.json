@@ -135,5 +135,10 @@
    "name": "Sphinx Pharaoh",
    "cents": 1499
   }
- ]
+ ],
+ "codes": {
+  "97d68024f4404e2c7914a489ce7d09c61ca1c2e015c63294c595872dbbb6b0a5": "halcyon",
+  "2de7ae808a236dddf04b32718c76fd913376e413659516af6f79345dcd231bdc": "founderxenarch",
+  "ddf17cb3d3ab606cec216470d74082fe1dc9ef05555097fd28a28f6d4a98cbd6": "firstcontact"
+ }
 }

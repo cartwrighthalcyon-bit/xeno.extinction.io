@@ -16,7 +16,7 @@ const DEV_LOGIN = process.env.DEV_LOGIN === '1';
 // Stripe payments: set STRIPE_SECRET_KEY (sk_test_... or sk_live_...) on the server. STRIPE_WEBHOOK_SECRET (whsec_...) is optional but recommended.
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || '', STRIPE_WH = process.env.STRIPE_WEBHOOK_SECRET || '';
 const CATALOG = (() => { try { return require('./catalog.json'); } catch (e) { return { packs: [], aliens: [] }; } })();
-const PREMIUM_IDS = new Set(CATALOG.aliens.map(a => a.id));
+const PREMIUM_IDS = new Set([...CATALOG.aliens.map(a => a.id), ...Object.values(CATALOG.codes || {})]); // paid or code-only: kept only by accounts entitled to them
 function catalogItem(item) {
   const [type, id] = String(item || '').split(':');
   if (type === 'pack') { const p = CATALOG.packs.find(x => x.id === id); return p && { key: 'pack:' + p.id, name: p.name, cents: p.cents, grant: { type: 'pack', cur: p.cur, n: p.n } }; }
@@ -42,7 +42,7 @@ if (!SECRET) {
   SECRET = crypto.randomBytes(32).toString('hex');
   console.warn('[accounts] SESSION_SECRET not set: players will be signed out whenever the server restarts.');
 }
-const BOARD_FIELDS = ['best', 'kills', 'wins', 'collected'];
+const BOARD_FIELDS = ['best', 'kills', 'wins', 'collected', 'onlineBest', 'openBest'];
 
 // ------------------------------------------------------------------ storage
 function fileStore() {
@@ -244,6 +244,14 @@ async function handle(req, res) {
 
     if (route === 'GET /api/me') return send(res, 200, profileOut(rec)), true;
 
+    if (route === 'POST /api/redeem') { // exclusive-creature codes; only hashes are stored
+      const body = await readBody(req), now = Date.now(), recent = (lastGifts.get('r:' + rec.id) || []).filter(t => now - t < 3600e3);
+      if (recent.length >= 10) return send(res, 429, { error: 'Too many attempts, try again later' }), true; recent.push(now); lastGifts.set('r:' + rec.id, recent);
+      const h = crypto.createHash('sha256').update('xeno:' + String(body.code || '').toUpperCase().replace(/\s+/g, '')).digest('hex'), id = (CATALOG.codes || {})[h];
+      if (!id) return send(res, 404, { error: 'Code not recognised' }), true;
+      rec.entitled = [...new Set([...(rec.entitled || []), id])]; rec.redeemed = [...new Set([...(rec.redeemed || []), id])]; await store.put(rec.id, rec);
+      return send(res, 200, { ok: true, id }), true;
+    }
     if (route === 'POST /api/checkout') {
       if (!STRIPE_KEY) return send(res, 503, { error: 'Payments are not set up on this server yet' }), true;
       const body = await readBody(req), it = catalogItem(body.item); if (!it) return send(res, 400, { error: 'Unknown item' }), true;
@@ -270,7 +278,7 @@ async function handle(req, res) {
       const body = await readBody(req);
       const sv = cleanSave(body.save);
       if (!sv) return send(res, 400, { error: 'Bad save' }), true;
-      if (STRIPE_KEY) { const ent = new Set(rec.entitled || []); sv.owned = sv.owned.filter(id => !PREMIUM_IDS.has(id) || ent.has(id)); }
+      { const ent = new Set(rec.entitled || []), codeIds = new Set(Object.values(CATALOG.codes || {})); sv.owned = sv.owned.filter(id => ent.has(id) || (codeIds.has(id) ? false : (!STRIPE_KEY || !PREMIUM_IDS.has(id)))); }
       rec.save = sv; rec.stats.collected = sv.owned.length; if (sv.equipped) rec.stats.alien = sv.equipped;
       await store.put(rec.id, rec);
       return send(res, 200, { ok: true }), true;
@@ -285,6 +293,8 @@ async function handle(req, res) {
       rec.stats.matches = (rec.stats.matches || 0) + 1;
       rec.stats.kills = (rec.stats.kills || 0) + kills;
       if (body.win && body.mode === 'online') rec.stats.wins = (rec.stats.wins || 0) + 1;
+      if (body.mode === 'online' && score > (rec.stats.onlineBest || 0)) rec.stats.onlineBest = score;
+      if (body.mode === 'open' && score > (rec.stats.openBest || 0)) rec.stats.openBest = score;
       if (score > (rec.stats.best || 0)) { rec.stats.best = score; rec.stats.alien = String(body.alien || rec.stats.alien).slice(0, 40); }
       await store.put(rec.id, rec);
       return send(res, 200, { ok: true, stats: rec.stats, rank: await store.rank('best', rec.stats.best) }), true;
