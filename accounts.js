@@ -338,7 +338,7 @@ async function handle(req, res) {
           custom_price: it.cents,
           product_options: { name: 'XENO.IO: ' + it.name + (to ? ' (gift)' : ''), description: to ? 'A gift for another player. It arrives in their game inbox.' : 'Delivered to your XENO.IO account as soon as payment goes through.', redirect_url: back, receipt_button_text: 'Back to XENO.IO', receipt_link_url: back, enabled_variants: [+LS.variant] },
           checkout_options: { embed: false, media: false, logo: true },
-          checkout_data: { custom: { uid: rec.id, item: it.key, to } },
+          checkout_data: { custom: Object.assign({ uid: rec.id, item: it.key }, to ? { to } : {}) }, // Lemon Squeezy rejects empty custom fields
           expires_at: new Date(Date.now() + 3600e3).toISOString(), test_mode: LS.test,
         }, relationships: { store: { data: { type: 'stores', id: LS.store } }, variant: { data: { type: 'variants', id: LS.variant } } } } });
         return send(res, 200, { url: co.data.attributes.url }), true;
