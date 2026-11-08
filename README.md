@@ -38,6 +38,8 @@ To test sign-in without Google: `DEV_LOGIN=1 node server.js` (never enable this 
 | `SESSION_SECRET` | any long random text (keeps players signed in) |
 | `STRIPE_SECRET_KEY` | your Stripe secret key (`sk_test_...` to test, `sk_live_...` for real money); turns on real checkout |
 | `STRIPE_WEBHOOK_SECRET` | optional: the `whsec_...` signing secret of a Stripe webhook pointing at `/api/stripe/webhook` |
+| `ADSENSE_CLIENT` | optional: your AdSense publisher id (`ca-pub-...`) to show an ad after a player is defeated |
+| `ADSENSE_TEST` | optional: `1` shows Google test ads while your AdSense account is being approved |
 | `ADMIN_KEY` | any long random text; lets you read player and bug reports at `/api/reports?key=YOUR_KEY` |
 
 Also check **Settings → Build Command** is `npm install`. Save. Render redeploys automatically.

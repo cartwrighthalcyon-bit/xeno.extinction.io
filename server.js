@@ -33,6 +33,15 @@ const server = http.createServer(async (req, res) => {
   if (pathOnly === '/' || pathOnly === '/index.html') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     fs.createReadStream(page).pipe(res);
+  } else if (pathOnly === '/ads.txt') { // AdSense publisher verification
+    const pub = String(process.env.ADSENSE_CLIENT || '').replace(/^ca-/, '');
+    res.writeHead(pub ? 200 : 404, { 'Content-Type': 'text/plain' }); res.end(pub ? `google.com, ${pub}, DIRECT, f08c47fec0942fa0\n` : 'not configured\n');
+  } else if (pathOnly === '/robots.txt') {
+    const base = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || ('https://' + req.headers.host)).replace(/\/$/, '');
+    res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end(`User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: ${base}/sitemap.xml\n`);
+  } else if (pathOnly === '/sitemap.xml') {
+    const base = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || ('https://' + req.headers.host)).replace(/\/$/, '');
+    res.writeHead(200, { 'Content-Type': 'application/xml' }); res.end(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${base}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url></urlset>\n`);
   } else if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ rooms: rooms.size, players: [...rooms.values()].reduce((n, r) => n + r.players.size, 0) }));

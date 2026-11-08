@@ -3,7 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>XENO.IO — Extinction Event</title>
+<title>XENO.IO — Free Online Alien Survival .io Game</title>
+<meta name="description" content="XENO.IO is a free multiplayer .io game: hatch as a baby alien, eat, grow and evolve through 1,200+ creatures across 11 worlds. Play free in your browser, no download.">
+<meta name="keywords" content="xeno.io, xeno io, xenoio, io game, alien game, multiplayer io game, browser game, survival game, evolution game">
+<meta name="theme-color" content="#07060c">
+<meta property="og:type" content="website"><meta property="og:site_name" content="XENO.IO"><meta property="og:title" content="XENO.IO — Free Online Alien Survival .io Game">
+<meta property="og:description" content="Hatch, hunt and evolve through 1,200+ alien creatures. Free multiplayer .io game in your browser.">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2307060c'/%3E%3Cellipse cx='32' cy='34' rx='20' ry='16' fill='%237dffb2'/%3E%3Ccircle cx='24' cy='30' r='5' fill='%23111'/%3E%3Ccircle cx='40' cy='30' r='5' fill='%23111'/%3E%3C/svg%3E">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"XENO.IO","alternateName":["Xeno io","XenoIO"],"description":"Free multiplayer alien survival .io game in the browser.","genre":["io game","Survival","Action"],"gamePlatform":"Web browser","applicationCategory":"Game","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;background:#07060c;color:#eee;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}
@@ -171,6 +179,7 @@ input[type=text]{background:#140f22;border:2px solid #5a46a0;color:#fff;border-r
 <div id="results" class="screen">
   <h2 id="resTitle">Results</h2>
   <div class="res" id="resBody"></div>
+  <div id="adBox"></div>
   <div class="row">
     <button class="btn green" id="resAgain">Play again</button>
     <button class="btn" id="resMenu">Main menu</button>
@@ -1705,11 +1714,247 @@ function drawHabitat(c, layer, def, P, L, B, r, st, t, ph, C) {
 //  what they are, instead of the shared alien body. Facing +x, sizes in units of r.
 // =====================================================================
 const REAL_SKIP = /porcupine|hedgehog|armadillo|pangolin|tortoise|turtle|kangaroo|griffin|hippogriff/i;
+// =====================================================================
+//  ALIEN RENDERERS (top-down): every alien body plan gets real anatomy, jointed limbs,
+//  hands and feet, plus its alien features (1-4 eyes, horns, element crests, glow, patterns).
+// =====================================================================
+function tube(c, pts, ws, fill, stroke) { // tapered body along a polyline: pts [[x,y]...], ws half-widths
+  const n = pts.length; if (n < 2) return; const L = [], R = [];
+  for (let i = 0; i < n; i++) { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy) || 1, nx = -dy / d, ny = dx / d, w = ws[i];
+    L.push([pts[i][0] + nx * w, pts[i][1] + ny * w]); R.push([pts[i][0] - nx * w, pts[i][1] - ny * w]); }
+  c.beginPath(); c.moveTo(L[0][0], L[0][1]); for (let i = 1; i < n; i++) { const m = [(L[i - 1][0] + L[i][0]) / 2, (L[i - 1][1] + L[i][1]) / 2]; c.quadraticCurveTo(L[i - 1][0], L[i - 1][1], m[0], m[1]); } c.lineTo(L[n - 1][0], L[n - 1][1]);
+  const e = pts[n - 1], ew = ws[n - 1]; if (ew > 0.3) c.arc(e[0], e[1], ew, Math.atan2(L[n - 1][1] - e[1], L[n - 1][0] - e[0]), Math.atan2(R[n - 1][1] - e[1], R[n - 1][0] - e[0]), true);
+  for (let i = n - 1; i > 0; i--) { const m = [(R[i - 1][0] + R[i][0]) / 2, (R[i - 1][1] + R[i][1]) / 2]; c.quadraticCurveTo(R[i][0], R[i][1], m[0], m[1]); } c.lineTo(R[0][0], R[0][1]); c.closePath();
+  if (fill) { c.fillStyle = fill; c.fill(); } if (stroke) { c.strokeStyle = stroke; c.lineWidth = Math.max(0.7, ws[0] * 0.08); c.stroke(); }
+}
+function limb(c, pts, w0, w1, col, outline) { // jointed limb: shoulder → elbow → wrist, tapering, with round joints
+  const ws = pts.map((_, i) => w0 + (w1 - w0) * i / (pts.length - 1));
+  if (outline) tube(c, pts, ws.map(w => w + outline), 'rgba(0,0,0,.35)');
+  tube(c, pts, ws, col); c.fillStyle = col; for (let i = 1; i < pts.length - 1; i++) { c.beginPath(); c.arc(pts[i][0], pts[i][1], ws[i] * 1.12, 0, 7); c.fill(); }
+}
+function clawFoot(c, x, y, a, s, col, n, claw, web) { // foot with splayed toes and claws, pointing along angle a
+  const spread = n >= 5 ? 1.5 : n === 4 ? 1.2 : 0.95;
+  if (web) { c.fillStyle = col; c.globalAlpha *= 0.75; c.beginPath(); c.moveTo(x, y); for (let k = 0; k < n; k++) { const ta = a + (k / (n - 1) - 0.5) * spread; c.lineTo(x + Math.cos(ta) * s * 1.05, y + Math.sin(ta) * s * 1.05); } c.closePath(); c.fill(); c.globalAlpha /= 0.75; }
+  for (let k = 0; k < n; k++) { const ta = a + (n === 1 ? 0 : (k / (n - 1) - 0.5) * spread), len = s * (k === Math.floor(n / 2) ? 1.1 : 0.85), tx = x + Math.cos(ta) * len, ty = y + Math.sin(ta) * len;
+    c.strokeStyle = col; c.lineCap = 'round'; c.lineWidth = Math.max(1, s * 0.32); c.beginPath(); c.moveTo(x, y); c.lineTo(tx, ty); c.stroke();
+    if (claw) { c.strokeStyle = claw; c.lineWidth = Math.max(0.8, s * 0.16); c.beginPath(); c.moveTo(tx, ty); c.lineTo(tx + Math.cos(ta) * s * 0.35, ty + Math.sin(ta) * s * 0.35); c.stroke(); } }
+  c.fillStyle = col; c.beginPath(); c.arc(x, y, s * 0.42, 0, 7); c.fill();
+}
+function alienEyes(c, hx, hy, hr, L, P, t, ph) {
+  const n = L.eyes || 2, iris = P.irisCol || `hsl(${L.eyeHue || 60},80%,55%)`, slit = P.pupil === 'slit', glow = L.glow;
+  const spots = n === 1 ? [[0.25, 0, 1.6]] : n === 2 ? [[0.15, -0.55, 1], [0.15, 0.55, 1]] : n === 3 ? [[0.35, 0, 1.1], [0.0, -0.55, 0.85], [0.0, 0.55, 0.85]] : [[0.25, -0.38, 0.9], [0.25, 0.38, 0.9], [-0.15, -0.62, 0.7], [-0.15, 0.62, 0.7]];
+  const blink = (Math.sin(t * 0.7 + ph * 5) > 0.985) ? 0.15 : 1;
+  for (const [ex, ey, k] of spots) { const x = hx + ex * hr, y = hy + ey * hr, er = hr * 0.24 * k;
+    if (glow) { const g = c.createRadialGradient(x, y, 0, x, y, er * 2.4); g.addColorStop(0, hsl(L.eyeHue || 60, 90, 60, 0.45)); g.addColorStop(1, hsl(L.eyeHue || 60, 90, 60, 0)); c.fillStyle = g; c.beginPath(); c.arc(x, y, er * 2.4, 0, 7); c.fill(); }
+    c.fillStyle = '#0b0710'; c.beginPath(); c.ellipse(x, y, er * 1.15, er * 1.05 * blink, 0, 0, 7); c.fill();
+    c.fillStyle = iris; c.beginPath(); c.ellipse(x, y, er, er * 0.92 * blink, 0, 0, 7); c.fill();
+    c.fillStyle = '#050307'; c.beginPath(); c.ellipse(x + er * 0.15, y, slit ? er * 0.22 : er * 0.48, er * 0.8 * blink, 0, 0, 7); c.fill();
+    c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.arc(x - er * 0.3, y - er * 0.35, er * 0.28, 0, 7); c.fill(); }
+}
+function alienHorns(c, hx, hy, hr, L, P, C) {
+  const n = L.horns || 0; if (!n) return; const st = P.hornStyle || 0, col = L.hornCol || '#e8dcc4', dk = '#8a7a60';
+  const horn = (x0, y0, x1, y1, cx, cy, w) => { const g = c.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, dk); g.addColorStop(1, col); c.fillStyle = g; c.beginPath(); c.moveTo(x0, y0 - w); c.quadraticCurveTo(cx, cy, x1, y1); c.quadraticCurveTo(cx, cy + w * 0.4, x0, y0 + w); c.closePath(); c.fill(); };
+  if (n === 1) horn(hx + hr * 0.2, hy, hx + hr * 1.5, hy, hx + hr * 0.9, hy - hr * 0.2, hr * 0.18);
+  else for (const s of [-1, 1]) { if (st === 0) horn(hx - hr * 0.3, hy + s * hr * 0.5, hx - hr * 1.5, hy + s * hr * 1.0, hx - hr * 0.8, hy + s * hr * 1.1, hr * 0.15);
+    else if (st === 1) horn(hx + hr * 0.1, hy + s * hr * 0.5, hx + hr * 0.9, hy + s * hr * 1.2, hx + hr * 0.2, hy + s * hr * 1.3, hr * 0.14);
+    else { c.strokeStyle = col; c.lineWidth = hr * 0.14; c.lineCap = 'round'; c.beginPath(); c.arc(hx - hr * 0.3, hy + s * hr * 0.95, hr * 0.42, s > 0 ? -1.8 : 1.8, s > 0 ? 2.6 : -2.6, s < 0); c.stroke(); } }
+}
+function traitAlong(c, kind, pts, ws, r, t, ph, C, L) { // element accessory along the spine
+  if (!kind || !LOD_HI) return; const n = pts.length;
+  for (let i = 1; i < n - 1; i++) { const [x, y] = pts[i], w = ws[i], a = Math.atan2(pts[i + 1][1] - pts[i - 1][1], pts[i + 1][0] - pts[i - 1][0]), u = i / (n - 1);
+    if (kind === 'sandplates' && i % 2 === 0) { c.save(); c.translate(x, y); c.rotate(a); c.fillStyle = C.dark; c.beginPath(); c.moveTo(w * 0.5, 0); c.lineTo(-w * 0.3, -w * 0.55); c.lineTo(-w * 0.5, 0); c.lineTo(-w * 0.3, w * 0.55); c.closePath(); c.fill(); c.fillStyle = 'rgba(255,255,255,.2)'; c.beginPath(); c.moveTo(w * 0.4, 0); c.lineTo(-w * 0.25, -w * 0.4); c.lineTo(-w * 0.2, 0); c.fill(); c.restore(); }
+    else if (kind === 'frost' && i % 2 === 1) { c.fillStyle = 'rgba(220,245,255,.92)'; for (const s of [-1, 1]) { c.beginPath(); c.moveTo(x, y + s * w * 0.2); c.lineTo(x - w * 0.15, y + s * w * 0.95); c.lineTo(x + w * 0.15, y + s * w * 0.3); c.fill(); } }
+    else if (kind === 'flame' && i % 2 === 0) { const fl = 0.7 + 0.3 * Math.sin(t * 12 + i + ph); const g = c.createRadialGradient(x, y, 0, x, y, w * 1.1 * fl); g.addColorStop(0, 'rgba(255,240,150,.95)'); g.addColorStop(0.5, 'rgba(255,120,20,.75)'); g.addColorStop(1, 'rgba(255,60,0,0)'); c.fillStyle = g; c.beginPath(); c.ellipse(x - w * 0.3, y, w * 1.1 * fl, w * 0.55, a, 0, 7); c.fill(); }
+    else if (kind === 'leafy' && i % 2 === 1) for (const s of [-1, 1]) { c.save(); c.translate(x, y + s * w * 0.6); c.rotate(a + s * 2.2); c.fillStyle = s > 0 ? '#5ea83a' : '#4a9030'; c.beginPath(); c.ellipse(w * 0.45, 0, w * 0.55, w * 0.2, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.2)'; c.lineWidth = 0.7; c.beginPath(); c.moveTo(0, 0); c.lineTo(w * 0.95, 0); c.stroke(); c.restore(); }
+    else if (kind === 'mech' && i % 2 === 0) { c.save(); c.translate(x, y); c.rotate(a); c.fillStyle = '#8a929c'; c.fillRect(-w * 0.35, -w * 0.45, w * 0.7, w * 0.9); c.strokeStyle = '#3a4048'; c.lineWidth = 1; c.strokeRect(-w * 0.35, -w * 0.45, w * 0.7, w * 0.9); c.fillStyle = '#2a3038'; for (const q of [[-0.25, -0.35], [0.25, -0.35], [-0.25, 0.35], [0.25, 0.35]]) { c.beginPath(); c.arc(q[0] * w, q[1] * w, w * 0.05, 0, 7); c.fill(); } c.fillStyle = `hsla(${L.hue2},90%,60%,${0.5 + 0.5 * Math.sin(t * 4 + i)})`; c.fillRect(-w * 0.08, -w * 0.3, w * 0.16, w * 0.6); c.restore(); }
+    else if (kind === 'fins' && i > 1 && i < n - 2) { c.fillStyle = `hsla(${L.hue2},60%,55%,.7)`; c.beginPath(); c.ellipse(x, y, w * 0.6, w * 0.12, a, 0, 7); c.fill(); }
+    else if (kind === 'wisps' && i % 3 === 0) { const k = (t * 0.8 + i * 0.3 + ph) % 1; c.fillStyle = `hsla(${L.hue2},90%,70%,${0.6 * (1 - k)})`; c.beginPath(); c.arc(x - k * w * 2, y + Math.sin(t * 3 + i) * w * 0.6, w * (0.25 + k * 0.3), 0, 7); c.fill(); }
+    else if (kind === 'cosmic' && i % 2 === 0) { c.fillStyle = `rgba(255,255,255,${0.5 + 0.5 * Math.sin(t * 5 + i * 1.7)})`; for (const s of [-0.5, 0.4]) { c.beginPath(); c.arc(x, y + s * w, Math.max(0.8, w * 0.08), 0, 7); c.fill(); } }
+    else if (kind === 'halo' && i === 1) { c.strokeStyle = `rgba(255,236,160,${0.6 + 0.3 * Math.sin(t * 2)})`; c.lineWidth = Math.max(1.5, w * 0.12); c.beginPath(); c.ellipse(pts[n - 1][0] + w * 0.2, pts[n - 1][1], w * 0.8, w * 0.7, 0, 0, 7); c.stroke(); }
+  }
+}
+function alienSkin(c, clipPath, L, r, C, x0, x1, w, seed) { // pattern + cover inside a clip
+  c.save(); clipPath(); c.clip(); const rnd = mulberry32(seed), p = L.noMark ? -1 : L.pattern, mk = L.markCol && L.markCol !== 'dark' ? L.markCol : C.deep;
+  const g = c.createLinearGradient(0, -w, 0, w); g.addColorStop(0, 'rgba(255,255,255,.1)'); g.addColorStop(0.5, 'rgba(0,0,0,.16)'); g.addColorStop(1, 'rgba(255,255,255,.08)'); c.fillStyle = g; c.fillRect(x0, -w * 1.5, x1 - x0, w * 3);
+  if (p === 0) { c.fillStyle = mk; for (let i = 0; i < 26; i++) { c.beginPath(); c.arc(x0 + rnd() * (x1 - x0), (rnd() * 2 - 1) * w, r * (0.02 + rnd() * 0.03), 0, 7); c.fill(); } }
+  else if (p === 1) { c.fillStyle = mk; const n = 9; for (let i = 0; i < n; i++) { const x = x0 + (i + 0.5) * (x1 - x0) / n; c.beginPath(); c.moveTo(x - r * 0.03, -w * 1.3); c.quadraticCurveTo(x + r * 0.05, 0, x - r * 0.03, w * 1.3); c.lineTo(x + r * 0.03, w * 1.3); c.quadraticCurveTo(x + r * 0.1, 0, x + r * 0.03, -w * 1.3); c.fill(); } }
+  else if (p === 2) { c.fillStyle = mk; c.globalAlpha *= 0.7; c.beginPath(); c.ellipse((x0 + x1) / 2, 0, (x1 - x0) * 0.48, w * 0.22, 0, 0, 7); c.fill(); c.globalAlpha /= 0.7; }
+  else if (p === 3) { for (let i = 0; i < 18; i++) { const x = x0 + rnd() * (x1 - x0), y = (rnd() * 2 - 1) * w * 0.8, s = r * (0.015 + rnd() * 0.02); c.fillStyle = hsl(L.hue2, 95, 65, 0.9); c.beginPath(); c.arc(x, y, s, 0, 7); c.fill(); c.fillStyle = hsl(L.hue2, 95, 75, 0.25); c.beginPath(); c.arc(x, y, s * 2.4, 0, 7); c.fill(); } }
+  if (LOD_HI) { c.strokeStyle = 'rgba(0,0,0,.12)'; c.lineWidth = Math.max(0.5, r * 0.009); for (let i = 0; i < 40; i++) { const x = x0 + rnd() * (x1 - x0), y = (rnd() * 2 - 1) * w; c.beginPath(); c.arc(x, y, r * 0.025, Math.PI * 0.6, Math.PI * 1.4); c.stroke(); } }
+  c.restore();
+}
+function membraneWings(c, root, r, t, ph, moving, col, C) {
+  const fl = Math.sin(t * (moving ? 7 : 1.6) + ph), sp = r * (1.15 + 0.15 * fl);
+  for (const s of [-1, 1]) { c.save(); c.scale(1, s);
+    const fingers = [[root + r * 0.15, sp * 0.95], [root - r * 0.15, sp * 1.0], [root - r * 0.45, sp * 0.85], [root - r * 0.7, sp * 0.55]], arm = [root + r * 0.1, sp * 0.45];
+    c.fillStyle = hexA('#000000', 0); c.beginPath(); c.moveTo(root, r * 0.15); c.lineTo(arm[0], arm[1]); for (const f of fingers) { c.lineTo(f[0], f[1]); } c.quadraticCurveTo(root - r * 0.5, r * 0.4, root - r * 0.55, r * 0.15); c.closePath();
+    c.fillStyle = col; c.globalAlpha *= 0.82; c.fill(); c.globalAlpha /= 0.82;
+    c.strokeStyle = C.deep; c.lineCap = 'round'; c.lineWidth = Math.max(1.2, r * 0.035); c.beginPath(); c.moveTo(root, r * 0.15); c.lineTo(arm[0], arm[1]); c.stroke();
+    c.lineWidth = Math.max(0.8, r * 0.018); for (const f of fingers) { c.beginPath(); c.moveTo(arm[0], arm[1]); c.lineTo(f[0], f[1]); c.stroke(); }
+    c.fillStyle = '#e8dcc4'; c.beginPath(); c.arc(arm[0], arm[1], r * 0.03, 0, 7); c.fill(); c.restore(); }
+}
+function drawAlienBody(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
+  const A = P.arch, seed = hashStr(def.id), trait = L.trait, mv = moving ? 1 : 0, gt = t * 9 * (P.gs || 1) + ph, hk = [1.25, 1.15, 1.06, 1, 1][st - 1];
+  const body = C.body, dark = C.dark, light = C.light, deep = C.deep, claw = '#efe6d2', limbCol = dark;
+  const bodyFill = (x, y, rr) => rGrad(c, x, y, rr, body, dark, light);
+  const fly = L.wings && A !== 'fish' && A !== 'squid';
+  // ------------------------------------------------ serpents
+  if (A === 'serpent') {
+    const N = 22, len = r * 2.3 * Math.min(1.3, (P.len || 1.8) / 1.8), w0 = r * 0.27 * Math.min(1.4, (P.wid || 0.55) / 0.55), amp = r * (moving ? 0.22 : 0.08), heads = Math.max(1, L.heads || 1);
+    if (opt.shadow !== false) rShadow(c, ang, elev, r, len * 0.55, w0 * 1.6);
+    const pts = [], ws = []; for (let i = 0; i < N; i++) { const u = i / (N - 1), x = r * 0.75 - u * len, y = Math.sin(t * 5 * (P.gs || 1) + ph - u * 6) * amp * Math.min(1, u * 3); pts.push([x, y]); ws.push(w0 * (u < 0.12 ? 0.75 + u * 2 : 1 - Math.pow((u - 0.12) / 0.88, 1.6) * 0.92)); }
+    if (fly) membraneWings(c, pts[4][0], r * 0.9, t, ph, moving, light, C);
+    tube(c, pts, ws, bodyFill(0, 0, len * 0.6), 'rgba(0,0,0,.3)');
+    const clip = () => { tube(c, pts, ws); }; alienSkin(c, clip, L, r, C, -len, r, w0, seed);
+    if (LOD_HI) { c.strokeStyle = 'rgba(0,0,0,.18)'; c.lineWidth = Math.max(0.5, r * 0.01); for (let i = 1; i < N - 1; i += 1) { const [x, y] = pts[i]; c.beginPath(); c.arc(x, y, ws[i] * 0.9, Math.PI * 0.35, Math.PI * 0.65); c.arc(x, y, ws[i] * 0.9, Math.PI * 1.35, Math.PI * 1.65); c.stroke(); } }
+    traitAlong(c, trait, pts.slice(1, N - 3), ws.slice(1, N - 3), r, t, ph, C, L);
+    if (L.tail === 1 || L.tail === 3) { const [ex, ey] = pts[N - 1]; c.fillStyle = L.tail === 1 ? '#e8dcc4' : hsl(L.hue2, 70, 60, 0.85); c.beginPath(); if (L.tail === 1) { for (let k = 0; k < 4; k++) c.ellipse(ex + r * 0.04 * k, ey, r * 0.05, r * 0.035, 0, 0, 7); } else { c.moveTo(ex, ey); c.lineTo(ex - r * 0.25, ey - r * 0.16); c.lineTo(ex - r * 0.18, ey); c.lineTo(ex - r * 0.25, ey + r * 0.16); c.closePath(); } c.fill(); }
+    for (let h = 0; h < heads; h++) { const off = heads > 1 ? (h / (heads - 1) - 0.5) * r * 0.55 : 0, hx = r * 0.82 + Math.abs(off) * -0.3, hy = pts[0][1] + off, hr = r * 0.2 * hk * (P.head ? P.head / 0.38 : 1);
+      if (heads > 1) tube(c, [[pts[1][0], pts[1][1]], [hx - hr * 0.5, hy]], [w0 * 0.8, w0 * 0.75], body);
+      if (P.hood) { c.fillStyle = bodyFill(hx - hr, hy, hr * 2); c.beginPath(); c.ellipse(hx - hr * 0.9, hy, hr * 1.2, hr * 1.7, 0, 0, 7); c.fill(); c.fillStyle = hsl(L.hue2, 60, 55, 0.6); for (const s of [-1, 1]) { c.beginPath(); c.ellipse(hx - hr * 1.0, hy + s * hr * 0.7, hr * 0.3, hr * 0.22, 0, 0, 7); c.fill(); } }
+      c.fillStyle = bodyFill(hx, hy, hr * 1.3); c.beginPath(); c.moveTo(hx - hr * 0.8, hy - hr * 0.7); c.quadraticCurveTo(hx + hr * 0.6, hy - hr * 0.85, hx + hr * 1.25, hy); c.quadraticCurveTo(hx + hr * 0.6, hy + hr * 0.85, hx - hr * 0.8, hy + hr * 0.7); c.closePath(); c.fill(); c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = Math.max(0.7, r * 0.012); c.stroke();
+      if (Math.sin(t * 3 + ph + h) > 0.6) { c.strokeStyle = '#d0203a'; c.lineWidth = Math.max(1, r * 0.018); c.beginPath(); c.moveTo(hx + hr * 1.2, hy); c.lineTo(hx + hr * 1.65, hy); c.lineTo(hx + hr * 1.8, hy - hr * 0.15); c.moveTo(hx + hr * 1.65, hy); c.lineTo(hx + hr * 1.8, hy + hr * 0.15); c.stroke(); }
+      alienEyes(c, hx + hr * 0.15, hy, hr * 0.9, L, P, t, ph + h); alienHorns(c, hx, hy, hr * 0.85, L, P, C); }
+    return;
+  }
+  // ------------------------------------------------ fish
+  if (A === 'fish') {
+    const len = r * 1.2 * clamp((P.len || 1.6) / 1.6, 0.9, 1.25), w = r * 0.3 * Math.min(1.35, (P.wid || 0.6) / 0.6), sw = Math.sin(t * 7 * (P.gs || 1) + ph) * (moving ? 1 : 0.35);
+    if (opt.shadow !== false) rShadow(c, ang, elev, r, len, w * 1.3);
+    const pts = [], ws = []; for (let i = 0; i < 12; i++) { const u = i / 11, x = len * 0.75 - u * len * 1.6, y = sw * r * 0.14 * u * u; pts.push([x, y]); ws.push(w * (u < 0.25 ? 0.45 + Math.sqrt(u / 0.25) * 0.55 : u < 0.5 ? 1 : 1 - Math.pow((u - 0.5) / 0.5, 0.8) * 0.85)); }
+    const [tx, ty] = pts[11], fa = Math.atan2(pts[11][1] - pts[10][1], pts[11][0] - pts[10][0]), fs = (P.finStyle || 0);
+    c.save(); c.translate(tx, ty); c.rotate(fa); c.fillStyle = hsl(L.hue2, 60, 55, 0.85); c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(r * 0.25, -r * (fs === 2 ? 0.45 : 0.35), r * 0.4, -r * (fs === 1 ? 0.5 : 0.38)); c.quadraticCurveTo(r * (fs === 0 ? 0.15 : 0.28), 0, r * 0.4, r * (fs === 1 ? 0.5 : 0.38)); c.quadraticCurveTo(r * 0.25, r * 0.35, 0, 0); c.fill(); c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 0.8; for (let k = -2; k <= 2; k++) { c.beginPath(); c.moveTo(0, 0); c.lineTo(r * 0.36, k * r * 0.17); c.stroke(); } c.restore();
+    for (const s of [-1, 1]) { const fl = 0.6 + 0.4 * Math.sin(t * 9 + ph + s); c.fillStyle = hsl(L.hue2, 60, 60, 0.75); c.beginPath(); c.ellipse(len * 0.25, s * w * 0.95, r * 0.22, r * 0.07 * fl, s * 0.6, 0, 7); c.fill(); }
+    tube(c, pts, ws, bodyFill(0, 0, len), 'rgba(0,0,0,.3)');
+    alienSkin(c, () => tube(c, pts, ws), L, r, C, -len, len, w, seed);
+    c.strokeStyle = hsl(L.hue2, 60, 55, 0.8); c.lineWidth = Math.max(1.5, r * 0.05); c.beginPath(); c.moveTo(pts[3][0], pts[3][1]); c.quadraticCurveTo(pts[5][0], pts[5][1] - r * 0.02, pts[8][0], pts[8][1]); c.stroke();
+    c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = Math.max(0.8, r * 0.015); for (const s of [-1, 1]) { c.beginPath(); c.arc(len * 0.45, 0, w * 0.75, s > 0 ? 0.6 : -1.1, s > 0 ? 1.1 : -0.6); c.stroke(); }
+    traitAlong(c, trait, pts.slice(2, 9), ws.slice(2, 9), r, t, ph, C, L);
+    alienEyes(c, len * 0.6, 0, w * 0.8, L, P, t, ph); alienHorns(c, len * 0.55, 0, w * 0.6, L, P, C);
+    if ((L.mouth || 0) >= 2) { c.fillStyle = '#f2ead6'; for (const s of [-1, 1]) for (let k = 0; k < 3; k++) { c.beginPath(); c.moveTo(len * (0.72 - k * 0.04), s * w * 0.2); c.lineTo(len * (0.74 - k * 0.04), s * w * 0.32); c.lineTo(len * (0.7 - k * 0.04), s * w * 0.22); c.fill(); } }
+    return;
+  }
+  // ------------------------------------------------ squid / octopus
+  if (A === 'squid') {
+    const ml = r * 0.75, mw = r * 0.38, arms = 8;
+    if (opt.shadow !== false) rShadow(c, ang, elev, r, r * 1.3, mw * 1.6);
+    for (let k = 0; k < arms; k++) { const s = k % 2 ? 1 : -1, j = Math.floor(k / 2), base = -r * 0.05, by = s * (r * 0.06 + j * r * 0.06), pts = [], ws = [], al = r * (1.0 + (k % 3) * 0.12);
+      for (let i = 0; i < 9; i++) { const u = i / 8; pts.push([base - u * al, by + s * u * r * (0.12 + j * 0.12) + Math.sin(t * 4 + ph + k - u * 4) * r * 0.12 * u]); ws.push(r * 0.065 * (1 - u * 0.85)); }
+      tube(c, pts, ws, k % 2 ? body : dark); if (LOD_HI) { c.fillStyle = 'rgba(255,235,225,.5)'; for (let i = 1; i < 8; i += 2) { c.beginPath(); c.arc(pts[i][0], pts[i][1], ws[i] * 0.4, 0, 7); c.fill(); } } }
+    c.fillStyle = hsl(L.hue2, 55, 55, 0.7); for (const s of [-1, 1]) { const fl = Math.sin(t * 5 + ph) * 0.2; c.beginPath(); c.ellipse(ml * 0.75, s * mw * 0.75, ml * 0.28, mw * (0.5 + fl), s * 0.4, 0, 7); c.fill(); }
+    c.fillStyle = bodyFill(ml * 0.35, 0, ml); c.beginPath(); c.moveTo(ml * 1.05, 0); c.bezierCurveTo(ml * 0.9, -mw * 1.15, -r * 0.05, -mw * 1.0, -r * 0.08, 0); c.bezierCurveTo(-r * 0.05, mw * 1.0, ml * 0.9, mw * 1.15, ml * 1.05, 0); c.fill(); c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = Math.max(0.7, r * 0.012); c.stroke();
+    alienSkin(c, () => { c.beginPath(); c.ellipse(ml * 0.45, 0, ml * 0.62, mw, 0, 0, 7); }, L, r, C, -r * 0.1, ml * 1.05, mw, seed);
+    traitAlong(c, trait, [[ml * 0.9, 0], [ml * 0.6, 0], [ml * 0.3, 0], [0, 0]], [mw * 0.5, mw * 0.7, mw * 0.7, mw * 0.6], r, t, ph, C, L);
+    alienEyes(c, r * 0.02, 0, mw * 0.95, L, P, t, ph);
+    return;
+  }
+  // shared four-legged / two-legged pieces
+  const len = r * 0.95 * Math.min(1.3, (P.len || 1.6) / 1.6), wid = r * 0.36 * Math.min(1.4, (P.wid || 0.6) / 0.6), legL = Math.min(1.5, P.legL || 1), legT = Math.min(1.5, P.legT || 1);
+  const tailL = r * (0.4 + (P.tail || 0.6) * 0.9), headR = r * 0.22 * hk * Math.min(1.5, (P.head || 0.4) / 0.4), neck = r * Math.min(0.4, (P.neck || 0.1) * 0.6);
+  const sway = Math.sin(gt * 0.5) * r * 0.05 * mv;
+  // ------------------------------------------------ humanoids
+  if (A === 'humanoid') {
+    r *= 1.35; const sh = r * 0.42 * Math.min(1.4, (P.wid || 0.6) / 0.6), headX = r * 0.08, hr = r * 0.24 * hk;
+    if (opt.shadow !== false) rShadow(c, ang, elev, r, r * 0.6, sh * 1.3);
+    for (const s of [-1, 1]) { const step = Math.sin(gt + (s > 0 ? Math.PI : 0)) * r * 0.32 * mv; limb(c, [[-r * 0.05, s * sh * 0.4], [step * 0.5 - r * 0.05, s * sh * 0.45], [step, s * sh * 0.42]], r * 0.11 * legT, r * 0.08 * legT, deep); c.fillStyle = deep; c.beginPath(); c.ellipse(step + r * 0.06, s * sh * 0.42, r * 0.11, r * 0.07, 0, 0, 7); c.fill(); }
+    if (L.tail) { const tp = [[-r * 0.2, 0], [-r * 0.5, Math.sin(t * 2 + ph) * r * 0.15], [-r * 0.85, Math.sin(t * 2 + ph - 1) * r * 0.25]]; tube(c, tp, [r * 0.08, r * 0.05, r * 0.02], body); }
+    if (fly) membraneWings(c, -r * 0.05, r * 0.9, t, ph, moving, light, C);
+    // torso, then arms swinging opposite to legs, ending in clawed three-fingered hands
+    c.fillStyle = bodyFill(0, 0, sh); c.beginPath(); c.ellipse(-r * 0.02, 0, r * 0.3, sh, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = Math.max(0.7, r * 0.012); c.stroke();
+    alienSkin(c, () => { c.beginPath(); c.ellipse(-r * 0.02, 0, r * 0.3, sh, 0, 0, 7); }, L, r, C, -r * 0.35, r * 0.3, sh, seed);
+    traitAlong(c, trait, [[-r * 0.3, 0], [-r * 0.15, 0], [0, 0], [r * 0.1, 0]], [sh * 0.4, sh * 0.5, sh * 0.5, sh * 0.4], r, t, ph, C, L);
+    for (const s of [-1, 1]) { const sw = -Math.sin(gt + (s > 0 ? Math.PI : 0)) * r * 0.22 * mv + (opt.cast ? r * 0.3 : 0), ex = sw * 0.4 - r * 0.06, hx2 = sw + r * 0.26;
+      limb(c, [[0, s * sh * 0.85], [ex, s * (sh * 1.45)], [hx2, s * sh * 1.25]], r * 0.11 * legT, r * 0.075 * legT, body, Math.max(0.6, r * 0.012));
+      clawFoot(c, hx2, s * sh * 1.25, s * 0.2, r * 0.09, body, 3, claw, false); }
+    c.fillStyle = bodyFill(headX, 0, hr * 1.2); c.beginPath(); c.ellipse(headX + hr * 0.1, 0, hr * 1.05, hr, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.3)'; c.stroke();
+    if (L.mouth >= 2) { c.fillStyle = 'rgba(0,0,0,.4)'; c.beginPath(); c.ellipse(headX + hr * 0.95, 0, hr * 0.12, hr * 0.35, 0, 0, 7); c.fill(); }
+    alienEyes(c, headX + hr * 0.35, 0, hr * 0.9, L, P, t, ph); alienHorns(c, headX, 0, hr * 0.9, L, P, C);
+    return;
+  }
+  // ------------------------------------------------ toads
+  if (A === 'toad') {
+    r *= 1.2; const bw = r * 0.46 * Math.min(1.3, (P.wid || 0.6) / 0.6), bl = r * 0.5;
+    if (opt.shadow !== false) rShadow(c, ang, elev, r, bl * 1.1, bw * 1.3);
+    const hop = Math.max(0, Math.sin(gt * 0.5)) * mv;
+    for (const s of [-1, 1]) { // folded hind legs with big webbed feet, short front legs
+      limb(c, [[-bl * 0.5, s * bw * 0.6], [-bl * (0.05 - hop * 0.4), s * bw * 1.35], [-bl * (0.95 + hop * 0.7), s * bw * 1.15]], r * 0.16 * legT, r * 0.05 * legT, body, 1);
+      clawFoot(c, -bl * (0.95 + hop * 0.7), s * bw * 1.15, Math.PI + s * 0.6, r * 0.14, body, 4, null, true);
+      limb(c, [[bl * 0.35, s * bw * 0.7], [bl * 0.55, s * bw * 1.15], [bl * 0.85, s * bw * 1.05]], r * 0.065, r * 0.045, body, 1);
+      clawFoot(c, bl * 0.85, s * bw * 1.05, s * 0.45, r * 0.09, body, 4, null, false); }
+    c.fillStyle = bodyFill(0, 0, bl); c.beginPath(); c.ellipse(0, 0, bl, bw, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = Math.max(0.7, r * 0.012); c.stroke();
+    alienSkin(c, () => { c.beginPath(); c.ellipse(0, 0, bl, bw, 0, 0, 7); }, L, r, C, -bl, bl, bw, seed);
+    if (LOD_HI) { c.fillStyle = 'rgba(0,0,0,.18)'; const rnd = mulberry32(seed + 5); for (let i = 0; i < 16; i++) { c.beginPath(); c.arc((rnd() * 2 - 1) * bl * 0.8, (rnd() * 2 - 1) * bw * 0.7, r * 0.025, 0, 7); c.fill(); } }
+    traitAlong(c, trait, [[-bl * 0.7, 0], [-bl * 0.3, 0], [bl * 0.1, 0], [bl * 0.5, 0]], [bw * 0.3, bw * 0.4, bw * 0.4, bw * 0.3], r, t, ph, C, L);
+    c.strokeStyle = 'rgba(0,0,0,.4)'; c.lineWidth = Math.max(1, r * 0.02); c.beginPath(); c.arc(bl * 0.55, 0, bw * 0.55, -0.9, 0.9); c.stroke();
+    alienEyes(c, bl * 0.55, 0, bw * 0.75, L, P, t, ph); alienHorns(c, bl * 0.5, 0, bw * 0.5, L, P, C);
+    return;
+  }
+  // ------------------------------------------------ two-legged dinosaurs (raptor arch)
+  if (A === 'raptor') {
+    const hipX = -len * 0.15, chestX = len * 0.45, headX = chestX + neck + headR * 1.5;
+    if (opt.shadow !== false) rShadow(c, ang, elev, r, (len + tailL) * 0.6, wid * 1.4);
+    // tail: long counterweight that sways as it runs
+    const tp = [], tw = []; for (let i = 0; i < 9; i++) { const u = i / 8; tp.push([hipX - u * tailL * 1.2, Math.sin(gt * 0.5 + ph - u * 2.5) * r * 0.16 * u * (moving ? 1 : 0.4)]); tw.push(wid * 0.75 * (1 - u * 0.9)); }
+    for (const s of [-1, 1]) { const ph2 = s > 0 ? Math.PI : 0, swing = Math.sin(gt + ph2) * r * 0.42 * legL * mv, lift = Math.max(0, Math.cos(gt + ph2)) * mv;
+      const kx = hipX + r * 0.12 + swing * 0.35, ky = s * (wid * 0.95 + r * 0.06), fx = hipX + swing, fy = s * (wid * 0.8 + r * 0.05);
+      limb(c, [[hipX, s * wid * 0.45], [kx, ky], [fx, fy]], r * 0.16 * legT, r * 0.07 * legT, limbCol, Math.max(0.6, r * 0.012));
+      clawFoot(c, fx, fy, s * 0.15, r * 0.14 * (1 - lift * 0.25), limbCol, 3, claw, false); }
+    tube(c, tp, tw, bodyFill(hipX - tailL * 0.5, 0, tailL), 'rgba(0,0,0,.3)');
+    if (L.tail === 1) { const [ex, ey] = tp[8]; c.fillStyle = C.deep; c.beginPath(); c.arc(ex, ey, r * 0.11, 0, 7); c.fill(); c.fillStyle = claw; for (let k = 0; k < 6; k++) { const a = k * 1.05; c.beginPath(); c.moveTo(ex + Math.cos(a) * r * 0.1, ey + Math.sin(a) * r * 0.1); c.lineTo(ex + Math.cos(a + 0.2) * r * 0.18, ey + Math.sin(a + 0.2) * r * 0.18); c.lineTo(ex + Math.cos(a + 0.4) * r * 0.1, ey + Math.sin(a + 0.4) * r * 0.1); c.fill(); } }
+    else if (L.tail === 2) { const [ex, ey] = tp[8]; c.fillStyle = claw; c.beginPath(); c.moveTo(ex + r * 0.04, ey - r * 0.05); c.lineTo(ex - r * 0.22, ey); c.lineTo(ex + r * 0.04, ey + r * 0.05); c.fill(); }
+    if (fly) membraneWings(c, chestX * 0.6, r, t, ph, moving, light, C);
+    const bp = [[hipX - r * 0.05, 0], [hipX + r * 0.15, 0], [chestX * 0.5, 0], [chestX, 0], [chestX + neck * 0.5, 0], [headX - headR, 0]], bw = [wid * 0.8, wid, wid * 0.95, wid * 0.75, wid * 0.42, headR * 0.6];
+    tube(c, bp, bw, bodyFill(0, 0, len), 'rgba(0,0,0,.3)');
+    alienSkin(c, () => tube(c, bp, bw), L, r, C, hipX - r * 0.1, headX, wid, seed);
+    traitAlong(c, trait, tp.slice(0, 6).reverse().concat(bp.slice(1, 4)), tw.slice(0, 6).reverse().concat(bw.slice(1, 4)), r, t, ph, C, L);
+    for (const s of [-1, 1]) { const g = Math.sin(t * 3 + ph + s) * r * 0.03 + (opt.cast ? r * 0.1 : 0); limb(c, [[chestX * 0.8, s * wid * 0.6], [chestX * 0.95, s * wid * 1.0], [chestX * 1.15 + g, s * wid * 0.85]], r * 0.06, r * 0.04, limbCol); clawFoot(c, chestX * 1.15 + g, s * wid * 0.85, 0, r * 0.06, limbCol, 3, claw, false); }
+    drawAlienHead(c, headX, 0, headR, L, P, t, ph, C, opt);
+    return;
+  }
+  // ------------------------------------------------ four-legged (quad) and lizards
+  const lizard = A === 'lizard', hipX = -len * 0.55, shX = len * 0.42, headX = len * 0.62 + neck + headR * 1.1;
+  if (opt.shadow !== false) rShadow(c, ang, elev, r, (len + tailL) * 0.65, wid * 1.5);
+  const yAt = x => (lizard ? Math.sin(gt * 0.5 + x / r * 1.4) * r * 0.08 * mv : sway * Math.sin((x / r + 1) * 1.6));
+  const tp = [], tw = []; for (let i = 0; i < 10; i++) { const u = i / 9, x = hipX - r * 0.05 - u * tailL * (lizard ? 1.35 : 1); tp.push([x, yAt(x) + Math.sin(t * (moving ? 5 : 1.3) + ph - u * 3) * r * 0.12 * u]); tw.push(wid * (lizard ? 0.7 : 0.38) * (1 - u * 0.88)); }
+  // legs: shoulder/hip → elbow/knee → wrist/ankle, feet with splayed clawed toes; lizards sprawl with elbows out
+  for (const [ax, k] of [[shX * 0.85, 0], [hipX * 0.85, 1]]) for (const s of [-1, 1]) {
+    const diag = lizard ? (k ? (s > 0 ? 0 : Math.PI) : (s > 0 ? Math.PI : 0)) : (k ? Math.PI : 0) + (s > 0 ? Math.PI : 0), swing = Math.sin(gt + diag) * r * 0.24 * legL * mv;
+    const ay = yAt(ax) + s * wid * 0.55, out = lizard ? r * 0.38 * legL : r * 0.16 * legL, ex = ax + (k ? -r * 0.05 : r * 0.05) + swing * 0.4, ey = yAt(ax) + s * (wid + out * 0.75), fx = ax + swing + (lizard ? (k ? -r * 0.1 : r * 0.12) : 0), fy = yAt(ax) + s * (wid + out * (lizard ? 1.0 : 0.55));
+    limb(c, [[ax, ay], [ex, ey], [fx, fy]], r * (lizard ? 0.09 : 0.12) * legT, r * 0.065 * legT, limbCol, Math.max(0.6, r * 0.012));
+    clawFoot(c, fx, fy, lizard ? s * (k ? 0.9 : 0.5) + (k ? Math.PI * 0.15 : 0) : s * 0.25, r * (lizard ? 0.1 : 0.09) * legT, limbCol, lizard ? 5 : 4, claw, false); }
+  tube(c, tp, tw, bodyFill(hipX - tailL * 0.5, 0, tailL), 'rgba(0,0,0,.3)');
+  if (L.tail === 1) { const [ex, ey] = tp[9]; c.fillStyle = C.deep; c.beginPath(); c.ellipse(ex, ey, r * 0.13, r * 0.1, 0, 0, 7); c.fill(); c.fillStyle = claw; for (const s of [-1, 1]) for (const dx of [-0.04, 0.05]) { c.beginPath(); c.moveTo(ex + r * dx, ey + s * r * 0.07); c.lineTo(ex + r * (dx - 0.02), ey + s * r * 0.2); c.lineTo(ex + r * (dx + 0.04), ey + s * r * 0.08); c.fill(); } }
+  else if (L.tail === 2) { const [ex, ey] = tp[9]; c.fillStyle = '#2a1a10'; c.beginPath(); c.moveTo(ex + r * 0.05, ey - r * 0.06); c.quadraticCurveTo(ex - r * 0.18, ey - r * 0.04, ex - r * 0.25, ey + r * 0.04); c.lineTo(ex + r * 0.04, ey + r * 0.06); c.fill(); }
+  else if (L.tail === 3) { const [ex, ey] = tp[9]; c.fillStyle = hsl(L.hue2, 70, 60, 0.85); c.beginPath(); c.ellipse(ex - r * 0.05, ey, r * 0.16, r * 0.07, 0, 0, 7); c.fill(); }
+  if (fly) membraneWings(c, shX * 0.4, r * 1.05, t, ph, moving, light, C);
+  const pts = [], ws = []; const prof = lizard ? [[hipX - r * 0.08, 0.7], [hipX, 0.9], [0, 1], [shX, 0.92], [len * 0.62, 0.6]] : [[hipX - r * 0.06, 0.65], [hipX * 0.8, 0.95], [hipX * 0.3, 0.88], [shX * 0.5, 0.95], [shX, 1], [len * 0.62, 0.62]];
+  for (const [x, k] of prof) { pts.push([x, yAt(x)]); ws.push(wid * k); }
+  if (neck > r * 0.05) { pts.push([len * 0.62 + neck, yAt(len * 0.62)]); ws.push(headR * 0.7); }
+  tube(c, pts, ws, bodyFill(0, 0, len), 'rgba(0,0,0,.3)');
+  alienSkin(c, () => tube(c, pts, ws), L, r, C, hipX - r * 0.1, len * 0.7, wid, seed);
+  traitAlong(c, trait, tp.slice(0, 5).reverse().concat(pts.slice(1)), tw.slice(0, 5).reverse().concat(ws.slice(1)), r, t, ph, C, L);
+  drawAlienHead(c, headX, yAt(headX), headR, L, P, t, ph, C, opt, lizard);
+}
+function drawAlienHead(c, hx, hy, hr, L, P, t, ph, C, opt, flat) {
+  const sn = hr * (0.5 + Math.min(1.2, (P.snout || 0.3)) * 1.4), jaw = opt.cast ? 0.3 : 0;
+  if (P.frill) { c.fillStyle = hsl(L.hue2, 60, 50, 0.85); c.beginPath(); c.ellipse(hx - hr * 0.6, hy, hr * 0.7, hr * 1.6, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = 1; for (let k = -3; k <= 3; k++) { c.beginPath(); c.moveTo(hx - hr * 0.5, hy); c.lineTo(hx - hr * 0.9, hy + k * hr * 0.42); c.stroke(); } }
+  if (P.ear) for (const s of [-1, 1]) { c.fillStyle = C.dark; c.beginPath(); c.moveTo(hx - hr * 0.2, hy + s * hr * 0.6); c.lineTo(hx - hr * (P.earLong ? 1.5 : 1.0), hy + s * hr * 1.15); c.lineTo(hx - hr * 0.7, hy + s * hr * 0.35); c.fill(); }
+  c.fillStyle = rGrad(c, hx, hy, hr * 1.4, C.body, C.dark, C.light); c.beginPath(); c.moveTo(hx - hr * 0.95, hy);
+  c.bezierCurveTo(hx - hr * 0.95, hy - hr * 0.95, hx + hr * 0.3, hy - hr * (flat ? 0.75 : 0.95), hx + hr * 0.55, hy - hr * 0.55);
+  c.quadraticCurveTo(hx + sn, hy - hr * (0.35 + jaw), hx + hr * 0.5 + sn, hy); c.quadraticCurveTo(hx + sn, hy + hr * (0.35 + jaw), hx + hr * 0.55, hy + hr * 0.55);
+  c.bezierCurveTo(hx + hr * 0.3, hy + hr * (flat ? 0.75 : 0.95), hx - hr * 0.95, hy + hr * 0.95, hx - hr * 0.95, hy); c.closePath(); c.fill(); c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = Math.max(0.7, hr * 0.05); c.stroke();
+  if ((L.mouth || 0) >= 1) { c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = Math.max(0.8, hr * 0.05); for (const s of [-1, 1]) { c.beginPath(); c.moveTo(hx + hr * 0.5 + sn * 0.9, hy + s * hr * 0.05); c.quadraticCurveTo(hx + sn * 0.6, hy + s * hr * 0.4, hx + hr * 0.1, hy + s * hr * 0.5); c.stroke(); } }
+  if ((L.mouth || 0) >= 3) { c.fillStyle = '#f2ead6'; for (const s of [-1, 1]) for (let k = 0; k < 3; k++) { const x = hx + hr * 0.35 + sn * (0.85 - k * 0.22); c.beginPath(); c.moveTo(x, hy + s * hr * 0.32); c.lineTo(x + hr * 0.05, hy + s * hr * 0.5); c.lineTo(x + hr * 0.12, hy + s * hr * 0.3); c.fill(); } }
+  c.fillStyle = 'rgba(0,0,0,.6)'; for (const s of [-1, 1]) { c.beginPath(); c.ellipse(hx + hr * 0.35 + sn * 0.85, hy + s * hr * 0.14, hr * 0.06, hr * 0.04, 0, 0, 7); c.fill(); }
+  alienEyes(c, hx + hr * 0.05, hy, hr * 0.95, L, P, t, ph); alienHorns(c, hx, hy, hr, L, P, C);
+}
+const ALIEN_ARCH = new Set(['quad', 'lizard', 'toad', 'raptor', 'humanoid', 'serpent', 'fish', 'squid']);
 function realKind(def, P, L) {
   const S = L.sp && SPECIES[L.sp];
   if (S && (S.tpl === 'eagle' || S.tpl === 'owl') && !REAL_SKIP.test(S.name)) return 'bird';
   if (P.arch === 'insect' || P.arch === 'beetle') return 'bug';
   if (S && P.arch === 'quad' && ['cat', 'wolf', 'bear', 'mammoth', 'rhino', 'hoof'].includes(S.tpl) && !REAL_SKIP.test(S.name)) return 'mammal';
+  if (!L.sig && ALIEN_ARCH.has(P.arch)) return 'alien';
   return null;
 }
 function rShadow(c, ang, elev, r, len, wid) {
@@ -1722,6 +1967,7 @@ function drawReal(c, kind, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   if (!(r > 0.5) || !isFinite(r)) return;
   if (kind === 'bird') drawBird(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C);
   else if (kind === 'bug') drawBug(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C);
+  else if (kind === 'alien') drawAlienBody(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C);
   else drawMammal(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C);
   if (opt.aura) { c.save(); c.globalAlpha *= 0.5; c.strokeStyle = opt.aura; c.lineWidth = Math.max(2, r * 0.06); c.beginPath(); c.ellipse(0, 0, r * 1.15, r * 0.7, 0, 0, 7); c.stroke(); c.restore(); }
 }
@@ -3311,7 +3557,7 @@ function onAbilityCast(e, a) {
     if ((q.x - e.x) ** 2 + (q.y - e.y) ** 2 > 320 * 320) continue;
     const key = [q.el, el].sort().join('+'), C = CLASH[key]; if (!C) continue;
     const x = (q.x + e.x) / 2, y = (q.y + e.y) / 2;
-    C.fn(x, y); ring(x, y, 230, C.col); burst(x, y, C.col, 36); floatText(x, y - 40, C.name + '!', C.col);
+    C.fn(x, y); SND('boom', x, y); ring(x, y, 230, C.col); burst(x, y, C.col, 36); floatText(x, y - 40, C.name + '!', C.col);
     const p = G.player; if (p && (q.e === p || e === p)) { banner('Ability clash: ' + C.name + '!', C.col); sfx(160, 0.35); }
     G.casts = G.casts.filter(z => z !== q); return;
   }
@@ -3337,7 +3583,7 @@ function envReact(e, el) {
     if (rocks.length) { for (const o of rocks) { for (const c of G.creatures) if (c.alive && c !== e && !allied(c, e) && d2(c, o) < (o.r + 130) ** 2) { hurt(c, e.dmg * 0.9, e); c.fx.stun = Math.max(c.fx.stun || 0, 0.8); } burst(o.x, o.y, '#a08060', 26); ring(o.x, o.y, o.r + 130, '#a08060'); } what = ['ROCKSLIDE', '#d9b47a']; } }
   if (el === 'acid' && (bio === 'robo' || G.obstacles.some(o => near(o) && ['turret', 'scrap', 'pylon'].includes(o.k)))) { addWarp(x, y, 200, 'toxic', 6, e); what = ['TOXIC FUMES', '#a6ff4a']; }
   if (el === 'plant' && bio === 'hell') { G.zones.push({ x, y, r: 120, k: 'wildfire', temp: 5 }); what = ['THE VINES IGNITE', '#ff7a2a']; }
-  if (what) { e.reactT = G.t + 2.5; floatText(x, y - e.r - 30, what[0] + '!', what[1]); if (e === G.player) sfx(240, 0.2); }
+  if (what) { e.reactT = G.t + 2.5; floatText(x, y - e.r - 30, what[0] + '!', what[1]); SND(el === 'fire' ? 'fire' : el === 'storm' ? 'zap' : el === 'earth' ? 'quake' : 'magic', x, y); }
 }
 // ---- shapeshifting: change into the form built for another environment
 function shiftForm(e, pid) {
@@ -3345,7 +3591,7 @@ function shiftForm(e, pid) {
   e.form = pid === d.planet ? null : pid; e.shiftCd = 3;
   const pal = HAB_PALETTE[pid], col = pal ? `hsl(${pal[0]},${Math.max(40, pal[1])}%,${Math.min(70, Math.max(45, pal[2]))}%)` : '#7dffb2';
   ring(e.x, e.y, e.r * 2.4, col); burst(e.x, e.y, col, 18);
-  e.cdAb = Math.min(e.cdAb, 1.5); e.shiftAnim = G.t;
+  e.cdAb = Math.min(e.cdAb, 1.5); e.shiftAnim = G.t; SND('shapeshift', e.x, e.y);
   if (e === G.player) { banner(HAB_NAME[pid] + ' form! New skill: ' + AB[curAbility(e)].name + ' · adapted to ' + PLANETS[pid].name, '#7dffb2'); updateAbBtn(); sfx(520, 0.25); }
   else if (G.player && Math.hypot(e.x - G.player.x, e.y - G.player.y) < 700) floatText(e.x, e.y - e.r, HAB_NAME[pid].toUpperCase() + ' FORM', col);
   return true;
@@ -3460,8 +3706,9 @@ function useAbility(e, ult = false) {
     case 'absolutezero': near(380).forEach(o => { hurt(o, e.dmg * 1.2, e); o.fx.stun = 2; o.fx.slow = 4.5; }); ring(e.x, e.y, 380, '#e8fbff'); for (let i = 0; i < 50; i++) { const a2 = Math.random() * 6.28, s = rand(100, 450); G.parts.push({ x: e.x, y: e.y, vx: Math.cos(a2) * s, vy: Math.sin(a2) * s, life: 0.8, c: pick(['#ffffff', '#bff4ff', '#8fd8ff']), s: rand(4, 9) }); } break;
   }
   onAbilityCast(e, a);
+  SND(ELEM_SND[AB_ELEM[a]] || CAST_SND[CAST_KIND[a] || 'glow'] || 'magic', e.x, e.y, ult ? 1 : 0.8);
   e.cast = { a, t: 0, d: ult ? 0.8 : 0.55 };
-  if (P) { sfx(ult ? 220 : 440, ult ? 0.25 : 0.08); updateAbBtn(); if (G.tut && !ult) G.tut.used = true; }
+  if (P) { updateAbBtn(); if (G.tut && !ult) G.tut.used = true; }
 }
 function shoot(e, dx, dy, spd, dmg, c, extra) { G.proj.push(Object.assign({ x: e.x + dx * e.r, y: e.y + dy * e.r, vx: dx * spd, vy: dy * spd, dmg, owner: e, life: 0.9, c, r: 7 }, extra)); }
 function tryRebirth(t) {
@@ -3520,7 +3767,8 @@ function kill(t, src) {
     if (G.mstat) { G.mstat.kills++; if (t.lvl >= 3) G.mstat.bigkills++; const S = tstat(); if (G.mstat.kills > S.bestKills) { S.bestKills = G.mstat.kills; if ([25, 30, 40].includes(S.bestKills)) trialCheck(); } }
     if (G.objective) G.objective.onKill && G.objective.onKill(t);
   }
-  if (t === G.player) { const gm = G, cause = src ? (src.isBot ? src.name + ' (' + src.def.name + ')' : src.remote ? src.name : 'a wild ' + src.def.name) : 'the planet itself'; G.deathCause = cause; setTimeout(() => { if (G === gm) endMatch(false, src ? 'You were eaten by ' + cause + '.' : 'You were killed by ' + cause + '.'); }, 1300); G.dead = true; }
+  if (src === G.player && t !== G.player) SND(t.boss ? 'boom' : 'kill', t.x, t.y);
+  if (t === G.player) { SND('death'); const gm = G, cause = src ? (src.isBot ? src.name + ' (' + src.def.name + ')' : src.remote ? src.name : 'a wild ' + src.def.name) : 'the planet itself'; G.deathCause = cause; setTimeout(() => { if (G === gm) endMatch(false, src ? 'You were eaten by ' + cause + '.' : 'You were killed by ' + cause + '.'); }, 1300); G.dead = true; }
   if (G.tut && t === G.tut.prey) G.tut.preyDead = true;
   if (G.tut && t === G.tut.pred) G.tut.predDead = true;
   if (!t.isPlayer && !t.isBot && !t.remote && !t.lucky && !t.event && !t.worldBoss && G.mode !== 'tutorial') { const gm = G; setTimeout(() => { if (G === gm && !G.over) spawnWild(nativesOf(G.planet)); }, rand(4000, 9000)); }
@@ -3786,7 +4034,7 @@ function update(dt) {
     { const fcx = e.x / 256 | 0, fcy = e.y / 256 | 0;
     for (let gx = fcx - 1; gx <= fcx + 1; gx++) for (let gy = fcy - 1; gy <= fcy + 1; gy++) { const FB = G.fgrid && G.fgrid.get(gx + gy * 4096); if (!FB) continue; for (const f of FB) {
       if (!f.gone && d2(f, e) < (e.r + f.r) ** 2 && canEat(e, f)) {
-        f.gone = true; G.foodGone = true; const sc = has(e, 'scavenger') ? 1.5 : 1; addXP(e, f.xp * sc); e.hp = Math.min(e.maxhp, e.hp + 2 * sc);
+        f.gone = true; G.foodGone = true; if (e === G.player) SND('crunch'); const sc = has(e, 'scavenger') ? 1.5 : 1; addXP(e, f.xp * sc); e.hp = Math.min(e.maxhp, e.hp + 2 * sc);
         if (e === p && G.tut) G.tut.eat++;
         if (e === p && G.mstat) G.mstat.eat++;
         if (e === p) { if (f.token) { G.earned.tokens++; floatText(f.x, f.y, '+1 token', '#ff8ad8'); } if (G.objective && G.objective.onEat) G.objective.onEat(); }
@@ -3857,6 +4105,7 @@ function tryBite(a, b) {
   if (a.remote) return;
   if (!canReach(a, b)) { if (a === G.player && Math.random() < 0.05) floatText(b.x, b.y - b.r, 'OUT OF REACH', '#ffcf8a'); return; }
   a.cdBite = has(a, 'extralimbs') ? 0.36 : 0.55;
+  if (a === G.player || b === G.player) SND(b === G.player ? 'hurt' : 'bite', a.x, a.y); else SND('bite', a.x, a.y, 0.45);
   let dmg = a.dmg * (a.fx.power > 0 ? a.fx.power : 1) * (0.8 + Math.random() * 0.4);
   if (b.trappedT > G.t && has(a, 'trapper')) { dmg *= 1.5; if (a === G.player) floatText(b.x, b.y - b.r - 12, 'TRAP KILL BONUS', '#ffcf8a'); }
   if (a.inCave && has(a, 'cavedweller')) dmg *= 1.35;
@@ -4004,7 +4253,7 @@ function endMatch(win, msg) {
     $('resBody').innerHTML = `<p>${esc(msg)}</p>${storyTxt}${unl}<p style="margin-top:8px">${rankTxt}</p><p id="rankLine" style="color:#ffd77a">${G.rankHtml || (Cloud.token && G.mode !== 'tutorial' ? 'Sending score to the leaderboard…' : '')}</p>
       <p>Size reached: <b>${LEVELS[p.lvl - 1].n}</b> · Kills: <b>${G.kills}</b> · Time: <b>${fmtTime(G.t)}</b></p>
       <p style="margin-top:6px">Earned: <b style="color:#7dffb2">${G.earned.dna} DNA</b>${G.earned.adna ? ` · <b style="color:#ffcf5a">${G.earned.adna} Ancient DNA</b>` : ''}${G.earned.mdna ? ` · <b style="color:#e05cff">${G.earned.mdna} Mutated DNA</b>` : ''}${G.earned.tfrag ? ` · <b style="color:#9fe3ff">${G.earned.tfrag} Time Fragments</b>` : ''}${G.earned.shards ? Object.entries(G.earned.shards).filter(([, n]) => n).map(([k, n]) => ` · <b style="color:#ffb3a0">${n} ${BOSS_INFO[k].short} Soul Shards</b>`).join('') : ''}${G.earned.tokens ? ` · <b style="color:#ff8ad8">${G.earned.tokens} ${G.event ? G.event.icon + ' ' + G.event.cur : 'event tokens'}</b>` : ''}</p>${rows}`;
-    showScreen('results');
+    showScreen('results'); { const box = document.getElementById('adBox'); if (box) box.innerHTML = ''; if (!win && p && !p.alive) adAfterDeath(); }
     if (G.net) G.net.close();
   }, 900);
 }
@@ -4019,8 +4268,65 @@ function line(a, b, c) { G.parts.push({ line: true, x: a.x, y: a.y, x2: b.x, y2:
 function floatText(x, y, s, c) { G.texts.push({ x, y, s: String(s), c, life: 0.9 }); }
 let bannerT = null;
 function banner(s, c) { const b = $('banner'); b.textContent = s; b.style.color = c || '#fff'; b.style.opacity = 1; clearTimeout(bannerT); bannerT = setTimeout(() => b.style.opacity = 0, 2600); }
-let AC = null;
-function sfx(f, d) { if (!save.settings.sound || save.settings.vol <= 0) return; try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const o = AC.createOscillator(), g = AC.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.value = 0.07 * save.settings.vol; g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + d); o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime + d); } catch (e) {} }
+// =====================================================================
+//  SOUND EFFECTS: procedurally synthesized with Web Audio (no files to download).
+//  SND(name, x, y): plays a named effect, quieter and panned the further it is from the player.
+// =====================================================================
+let AC = null, SFX_BUS = null, NOISE = null; const SND_LAST = {};
+function audioCtx() {
+  if (!AC) { AC = new (window.AudioContext || window.webkitAudioContext)(); const comp = AC.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 6; SFX_BUS = AC.createGain(); SFX_BUS.connect(comp); comp.connect(AC.destination);
+    NOISE = AC.createBuffer(1, AC.sampleRate * 1.5, AC.sampleRate); const d = NOISE.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  if (AC.state === 'suspended') AC.resume(); SFX_BUS.gain.value = save.settings.vol; return AC;
+}
+function sndOk() { return save.settings.sound && save.settings.vol > 0; }
+function env(g, t0, a, peak, d, end = 0.0001) { g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(peak, t0 + a); g.gain.exponentialRampToValueAtTime(end, t0 + a + d); }
+function tone(type, f0, f1, dur, vol, out, t0, att = 0.005) { const o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t0); if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur); env(g, t0, att, vol, dur); o.connect(g); g.connect(out); o.start(t0); o.stop(t0 + att + dur + 0.05); }
+function noise(dur, vol, out, t0, ftype, f0, f1, q = 1, att = 0.005) { const s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain(); s.buffer = NOISE; s.loop = true; f.type = ftype; f.Q.value = q; f.frequency.setValueAtTime(f0, t0); if (f1 && f1 !== f0) f.frequency.exponentialRampToValueAtTime(f1, t0 + dur); env(g, t0, att, vol, dur); s.connect(f); f.connect(g); g.connect(out); s.start(t0, Math.random()); s.stop(t0 + att + dur + 0.05); }
+const SOUNDS = {
+  click: (o, t) => { tone('triangle', 900, 700, 0.05, 0.15, o, t); },
+  bite: (o, t) => { noise(0.07, 0.5, o, t, 'bandpass', 1800, 700, 2); tone('square', 180, 90, 0.07, 0.12, o, t); },
+  crunch: (o, t) => { for (let i = 0; i < 3; i++) noise(0.04, 0.35, o, t + i * 0.045, 'bandpass', 2600 - i * 400, 1200, 3); },
+  hit: (o, t) => { noise(0.12, 0.5, o, t, 'lowpass', 2200, 300, 1); tone('sine', 140, 60, 0.12, 0.35, o, t); },
+  hurt: (o, t) => { tone('sawtooth', 420, 180, 0.18, 0.18, o, t); noise(0.1, 0.3, o, t, 'bandpass', 900, 400, 1.5); },
+  kill: (o, t) => { tone('sine', 120, 45, 0.35, 0.5, o, t); noise(0.25, 0.35, o, t, 'lowpass', 1500, 120, 1); tone('triangle', 660, 990, 0.12, 0.12, o, t + 0.08); },
+  death: (o, t) => { tone('sawtooth', 300, 60, 1.1, 0.25, o, t, 0.02); tone('sine', 150, 40, 1.3, 0.35, o, t + 0.1); noise(0.8, 0.2, o, t, 'lowpass', 900, 100); },
+  levelup: (o, t) => { [523, 659, 784, 1047].forEach((f, i) => tone('triangle', f, f, 0.16, 0.18, o, t + i * 0.08)); },
+  unlock: (o, t) => { [784, 988, 1175, 1568].forEach((f, i) => { tone('triangle', f, f, 0.3, 0.16, o, t + i * 0.09); tone('sine', f * 2, f * 2, 0.25, 0.05, o, t + i * 0.09); }); },
+  coin: (o, t) => { tone('square', 988, 988, 0.06, 0.08, o, t); tone('square', 1319, 1319, 0.18, 0.08, o, t + 0.06); },
+  dash: (o, t) => { noise(0.28, 0.4, o, t, 'bandpass', 600, 2800, 1.2, 0.03); },
+  roar: (o, t) => { tone('sawtooth', 110, 70, 0.7, 0.3, o, t, 0.06); tone('sawtooth', 165, 95, 0.7, 0.18, o, t, 0.06); noise(0.7, 0.3, o, t, 'bandpass', 500, 250, 0.8, 0.06); },
+  slam: (o, t) => { tone('sine', 90, 30, 0.5, 0.7, o, t); noise(0.45, 0.45, o, t, 'lowpass', 800, 60, 1); },
+  fire: (o, t) => { noise(0.6, 0.45, o, t, 'bandpass', 900, 500, 0.7, 0.05); for (let i = 0; i < 6; i++) noise(0.02, 0.25, o, t + Math.random() * 0.5, 'highpass', 3000, 3000, 1); },
+  frost: (o, t) => { [1760, 2349, 2637, 3136].forEach((f, i) => tone('sine', f, f * 0.98, 0.35, 0.06, o, t + i * 0.05)); noise(0.35, 0.15, o, t, 'highpass', 5000, 7000, 1); },
+  water: (o, t) => { noise(0.5, 0.4, o, t, 'lowpass', 2500, 400, 1, 0.02); for (let i = 0; i < 4; i++) tone('sine', 500 + Math.random() * 600, 900 + Math.random() * 700, 0.06, 0.08, o, t + 0.05 + i * 0.07); },
+  zap: (o, t) => { for (let i = 0; i < 5; i++) tone('square', 1200 + Math.random() * 1500, 200, 0.05, 0.08, o, t + i * 0.035); noise(0.2, 0.25, o, t, 'highpass', 3000, 6000, 1); },
+  quake: (o, t) => { tone('sine', 55, 35, 0.9, 0.6, o, t, 0.05); noise(0.9, 0.4, o, t, 'lowpass', 300, 60, 1, 0.05); },
+  void: (o, t) => { tone('sine', 300, 60, 0.7, 0.3, o, t, 0.05); tone('triangle', 452, 90, 0.7, 0.12, o, t, 0.05); noise(0.6, 0.15, o, t, 'bandpass', 2000, 200, 4); },
+  acid: (o, t) => { for (let i = 0; i < 7; i++) tone('sine', 300 + Math.random() * 400, 900, 0.05, 0.08, o, t + i * 0.06); },
+  plant: (o, t) => { noise(0.35, 0.3, o, t, 'bandpass', 1500, 2500, 2, 0.04); tone('triangle', 220, 330, 0.3, 0.08, o, t); },
+  magic: (o, t) => { [880, 1109, 1319].forEach((f, i) => tone('sine', f, f * 1.5, 0.3, 0.1, o, t + i * 0.04)); },
+  boom: (o, t) => { tone('sine', 80, 25, 0.8, 0.8, o, t); noise(0.8, 0.6, o, t, 'lowpass', 3000, 80, 0.7); },
+  shapeshift: (o, t) => { tone('sine', 220, 880, 0.4, 0.15, o, t, 0.03); tone('triangle', 330, 1320, 0.4, 0.08, o, t + 0.05, 0.03); },
+  bossroar: (o, t) => { tone('sawtooth', 70, 45, 1.4, 0.35, o, t, 0.1); tone('sawtooth', 105, 60, 1.4, 0.2, o, t, 0.1); noise(1.3, 0.35, o, t, 'bandpass', 350, 180, 0.7, 0.1); },
+  alarm: (o, t) => { for (let i = 0; i < 3; i++) tone('square', 660, 440, 0.18, 0.1, o, t + i * 0.22); },
+  splash: (o, t) => { noise(0.25, 0.3, o, t, 'lowpass', 3000, 500, 1, 0.01); },
+};
+const CAST_SND = { roar: 'roar', slam: 'slam', dash: 'dash', breath: 'fire', chomp: 'bite', lash: 'dash', spin: 'dash', vanish: 'void', glow: 'magic' };
+const ELEM_SND = { fire: 'fire', frost: 'frost', water: 'water', storm: 'zap', plant: 'plant', earth: 'quake', void: 'void', acid: 'acid' };
+function SND(name, x, y, vol = 1) {
+  if (!sndOk() || !SOUNDS[name]) return; const now = performance.now(); if (SND_LAST[name] && now - SND_LAST[name] < 45) return; SND_LAST[name] = now;
+  try { audioCtx(); let gain = vol, pan = 0; const p = G && G.player;
+    if (p && x != null) { const dx = x - p.x, dy = y - p.y, d = Math.hypot(dx, dy); if (d > 1400) return; gain *= Math.max(0, 1 - d / 1400) ** 1.5; pan = clamp(dx / 700, -1, 1); }
+    if (gain < 0.03) return; const g = AC.createGain(); g.gain.value = gain; let out = g;
+    if (AC.createStereoPanner) { const sp = AC.createStereoPanner(); sp.pan.value = pan; g.connect(sp); sp.connect(SFX_BUS); } else g.connect(SFX_BUS);
+    SOUNDS[name](out, AC.currentTime + 0.005);
+  } catch (e) {}
+}
+function sfx(f, d) { // legacy beeps now map onto the new sounds
+  if (!sndOk()) return; if (f >= 860) return SND(d >= 0.3 ? 'unlock' : 'coin'); if (f >= 600) return SND('levelup'); if (f <= 120) return SND(d >= 0.7 ? 'bossroar' : 'boom'); if (f <= 180) return SND('boom'); if (f <= 240) return SND(d >= 0.4 ? 'alarm' : 'crunch');
+  if (f === 440) return SND('click'); return SND('magic');
+}
+addEventListener('pointerdown', e => { const b = e.target.closest && e.target.closest('.btn,.tab,button'); if (b && !(G && !G.over && (b.id === 'abBtn' || b.id === 'ultBtn'))) SND('click', null, null, 0.7); }, true);
 function updateAbBtn() { if (!G) return; const d = G.player.def; { const fb = $('formBtn'); fb.style.display = d.forms ? 'flex' : 'none'; if (d.forms) { const cur = G.player.form || d.planet, nx = d.forms[(d.forms.indexOf(cur) + 1) % d.forms.length]; fb.innerHTML = 'SHIFT<br>' + HAB_NAME[nx] + ' [F]'; } } $('abBtn').innerHTML = AB[curAbility(G.player)].name; const u = $('ultBtn'); u.style.display = d.ult ? 'flex' : 'none'; if (d.ult) u.innerHTML = 'ULT<br>' + AB[d.ult].name; }
 function updateAbBtnCd() {
   const p = G.player, b = $('abBtn'), u = $('ultBtn'); updateElderBar();
@@ -4661,7 +4967,7 @@ function stepPrints(e, bio, mv, dt) {
   const a = Math.atan2(e.vy, e.vx), sx = Math.cos(a + Math.PI / 2) * e.r * 0.32 * e.stepS, sy = Math.sin(a + Math.PI / 2) * e.r * 0.32 * e.stepS;
   if (!G.prints) G.prints = [];
   if (bio === 'water' || G.zones.some(z => (z.k === 'swamp' || (z.k === 'oasis' && z.pond) || z.k === 'icelake') && (e.x - z.x) ** 2 + (e.y - z.y) ** 2 < z.r * z.r)) {
-    G.prints.push({ x: e.x + sx, y: e.y + sy, t: G.t, ring: true, s: e.r * 0.5 });
+    G.prints.push({ x: e.x + sx, y: e.y + sy, t: G.t, ring: true, s: e.r * 0.5 }); if (e === p && Math.random() < 0.3) SND('splash', e.x, e.y, 0.35);
     if (v > 120 && Math.random() < 0.5) for (let i = 0; i < 3; i++) G.parts.push({ x: e.x, y: e.y, vx: rand(-60, 60), vy: rand(-90, -30), life: 0.45, c: 'rgba(200,235,255,.8)', s: rand(2, 4) });
   } else {
     const col = PRINT_COL[bio]; if (!col) return;
@@ -5593,6 +5899,7 @@ async function cloudInit() {
   try { Cloud.token = localStorage.getItem('xenoio_token'); } catch (e) {}
   if (Cloud.token) { try { applyProfile(await api('/api/me'), false); } catch (e) { if (e.status === 401) { Cloud.token = null; try { localStorage.removeItem('xenoio_token'); } catch (e2) {} } } }
   if (Cloud.cfg.googleClientId) loadGoogle();
+  adsInit();
   renderAcct();
   if (!(await checkoutReturn()) && Cloud.token && Cloud.cfg.payments) claimGifts(true);
 }
@@ -5730,6 +6037,15 @@ function walletHTML() {
 //  CHANGELOG: newest first. Add an entry here with every update; players see it once on the main page.
 // =====================================================================
 const CHANGELOG = [
+  { v: '1.5', date: 'Nov 2026', title: 'Alien makeover and sound', items: [
+    'Every alien redrawn: four-legged beasts, lizards, frogs, two-legged hunters, humanoids, serpents, fish and squid all have real anatomy',
+    'New limbs: shoulders, elbows and knees that bend, hands with clawed fingers, splayed clawed toes, webbed frog feet and swinging arms',
+    'Alien features are sharper: one to four glowing eyes, horns, flame crests, frost crystals, metal plating, leaves, wisps and star sparkles',
+    'Tails end in spiked clubs, stingers or glowing fins; serpents flick their tongues and flare their hoods',
+    'Sound effects: bites, crunches, hits, roars, fire, frost, splashes, lightning, quakes, explosions, level-ups and unlocks',
+    'Optional ad after you are defeated, with a choice to watch one to double the DNA you earned',
+    'The site is easier to find in search engines',
+  ] },
   { v: '1.4', date: 'Nov 2026', title: 'Real creatures, codes and live leaderboards', items: [
     'Bugs now look like bugs: six jointed legs, head, thorax and segmented abdomen, antennae, and wings on flying insects',
     'Birds now look like birds: fanned tail feathers instead of lizard tails, folded or beating wings, proper beaks and feathered bodies',
@@ -5762,6 +6078,40 @@ function changelogHTML(n) {
   return CHANGELOG.slice(0, n || CHANGELOG.length).map(c => `<div style="text-align:left;margin:8px 0"><div style="font-weight:800;color:#ffd25a">v${c.v} · ${esc(c.title)} <small style="color:#999;font-weight:400">${c.date}</small></div><ul style="margin:4px 0 0 18px;padding:0;font-size:13px;line-height:1.45">${c.items.map(i => '<li>' + esc(i) + '</li>').join('')}</ul></div>`).join('');
 }
 function showChangelog() { modal("What's new in XENO.IO", `<div style="max-height:56vh;overflow:auto">${changelogHTML()}</div>`, [['Play', null]]); save.seenVer = CHANGELOG[0].v; persist(); renderNews(); }
+// =====================================================================
+//  ADS AFTER DEATH: Google AdSense "ads for games" (adBreak). Configure ADSENSE_CLIENT on the server.
+//  Without it, the death screen shows a small house promo instead. Ads never interrupt a match.
+// =====================================================================
+const ADS = { ready: false, deaths: 0, lastAd: 0 };
+function adsInit() {
+  const a = Cloud.cfg && Cloud.cfg.ads; if (!a || !a.client || ADS.ready) return;
+  window.adsbygoogle = window.adsbygoogle || []; window.adBreak = window.adConfig = function (o) { window.adsbygoogle.push(o); };
+  const sc = document.createElement('script'); sc.async = true; sc.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + encodeURIComponent(a.client); sc.crossOrigin = 'anonymous';
+  sc.setAttribute('data-ad-frequency-hint', '45s'); if (a.test) sc.setAttribute('data-adbreak-test', 'on');
+  document.head.appendChild(sc); adConfig({ preloadAdBreaks: 'on', sound: save.settings.sound ? 'on' : 'off' }); ADS.ready = true;
+}
+const muteForAd = on => { try { if (SFX_BUS) SFX_BUS.gain.value = on ? 0 : save.settings.vol; } catch (e) {} };
+function adAfterDeath() { // called when the results screen opens after the player died
+  ADS.deaths++; if (!ADS.ready || G.mode === 'tutorial') return renderAdPromo();
+  adBreak({ type: 'next', name: 'after-death', beforeAd: () => muteForAd(true), afterAd: () => muteForAd(false), adBreakDone: () => {} });
+  renderAdPromo(true);
+}
+function renderAdPromo(withReward) {
+  const box = document.getElementById('adBox'); if (!box) return;
+  const rewardBtn = withReward && G && G.earned && G.earned.dna > 0 ? `<button class="btn small gold" id="adReward">▶ Watch an ad: double your ${G.earned.dna} DNA</button>` : '';
+  if (ADS.ready) { box.innerHTML = rewardBtn ? `<div style="margin-top:8px">${rewardBtn}</div>` : ''; }
+  else { const picks = [['Unlock exclusive creatures with codes', 'Codes', () => { showScreen('menu'); redeemDialog(); }], ['Earn an Elder God through its trials', 'Elder Trials', () => { showScreen('menu'); eldersOverview(); }], ['Get DNA packs and premium creatures', 'Store', () => { storeFrom = 'menu'; showScreen('store'); renderStore(); }]];
+    const pk = picks[ADS.deaths % picks.length];
+    box.innerHTML = `<div style="margin:10px auto 0;max-width:420px;padding:8px 12px;border:1px dashed #5a46a0;border-radius:12px;font-size:13px;color:#cfc4ef">${pk[0]} <button class="btn small" id="adPromo" style="margin-left:6px">${pk[1]}</button></div>`;
+    $('adPromo').onclick = pk[2]; return; }
+  const rb = $('adReward'); if (!rb) return;
+  rb.onclick = () => { const bonus = G.earned.dna; rb.disabled = true; rb.textContent = 'Loading ad…'; let shown = false;
+    adBreak({ type: 'reward', name: 'double-dna', beforeAd: () => muteForAd(true), afterAd: () => muteForAd(false),
+      beforeReward: showAdFn => { shown = true; showAdFn(); },
+      adViewed: () => { grant({ dna: bonus }, true); persist(); rb.textContent = '+' + bonus + ' DNA added!'; SND('coin'); },
+      adDismissed: () => { rb.textContent = 'Ad skipped: no bonus'; },
+      adBreakDone: () => { if (!shown) rb.textContent = 'No ad available right now'; } }); };
+}
 function renderNews() {
   const el = $('newsBox'); if (!el) return; const c = CHANGELOG[0], fresh = save.seenVer !== c.v;
   el.innerHTML = `<b style="color:#ffd25a">${fresh ? 'NEW · ' : ''}Update v${c.v}: ${esc(c.title)}</b><br><span style="color:#ccc">${esc(c.items[0])}${c.items.length > 1 ? ' · and ' + (c.items.length - 1) + ' more' : ''}</span> <a href="#" id="newsMore" style="color:#7dffb2">See all changes</a>`;

@@ -15,6 +15,8 @@ const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const DEV_LOGIN = process.env.DEV_LOGIN === '1';
 // Stripe payments: set STRIPE_SECRET_KEY (sk_test_... or sk_live_...) on the server. STRIPE_WEBHOOK_SECRET (whsec_...) is optional but recommended.
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || '', STRIPE_WH = process.env.STRIPE_WEBHOOK_SECRET || '';
+// Ads: ADSENSE_CLIENT = your AdSense publisher id (ca-pub-...). ADSENSE_TEST=1 shows test ads while you wait for approval.
+const ADS_CLIENT = /^ca-pub-\d{6,20}$/.test(process.env.ADSENSE_CLIENT || '') ? process.env.ADSENSE_CLIENT : '';
 const CATALOG = (() => { try { return require('./catalog.json'); } catch (e) { return { packs: [], aliens: [] }; } })();
 const PREMIUM_IDS = new Set([...CATALOG.aliens.map(a => a.id), ...Object.values(CATALOG.codes || {})]); // paid or code-only: kept only by accounts entitled to them
 function catalogItem(item) {
@@ -188,7 +190,7 @@ async function handle(req, res) {
   if (!url.pathname.startsWith('/api/')) return false;
   try {
     const route = req.method + ' ' + url.pathname;
-    if (route === 'GET /api/config') return send(res, 200, { login: !!CLIENT_ID || DEV_LOGIN, googleClientId: CLIENT_ID, dev: DEV_LOGIN, storage: store.kind, payments: !!STRIPE_KEY, testMode: STRIPE_KEY.startsWith('sk_test_') }), true;
+    if (route === 'GET /api/config') return send(res, 200, { login: !!CLIENT_ID || DEV_LOGIN, googleClientId: CLIENT_ID, dev: DEV_LOGIN, storage: store.kind, payments: !!STRIPE_KEY, testMode: STRIPE_KEY.startsWith('sk_test_'), ads: ADS_CLIENT ? { client: ADS_CLIENT, test: process.env.ADSENSE_TEST === '1' } : null }), true;
 
     if (route === 'POST /api/login') {
       const body = await readBody(req);
