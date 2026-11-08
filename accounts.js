@@ -15,6 +15,7 @@ const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const DEV_LOGIN = process.env.DEV_LOGIN === '1';
 // Stripe payments: set STRIPE_SECRET_KEY (sk_test_... or sk_live_...) on the server. STRIPE_WEBHOOK_SECRET (whsec_...) is optional but recommended.
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || '', STRIPE_WH = process.env.STRIPE_WEBHOOK_SECRET || '';
+console.log('[pay] payments ' + (STRIPE_KEY ? 'ON (' + (STRIPE_KEY.startsWith('sk_live') || STRIPE_KEY.startsWith('rk_live') ? 'live' : 'test') + ' mode)' + (STRIPE_WH ? ', webhook signed' : '') : 'OFF: set STRIPE_SECRET_KEY to turn them on'));
 // Ads: ADSENSE_CLIENT = your AdSense publisher id (ca-pub-...). ADSENSE_TEST=1 shows test ads while you wait for approval.
 const ADS_CLIENT = /^ca-pub-\d{6,20}$/.test(process.env.ADSENSE_CLIENT || '') ? process.env.ADSENSE_CLIENT : '';
 const CATALOG = (() => { try { return require('./catalog.json'); } catch (e) { return { packs: [], aliens: [] }; } })();
