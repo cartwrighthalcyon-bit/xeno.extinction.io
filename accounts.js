@@ -14,8 +14,9 @@ const path = require('path');
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const DEV_LOGIN = process.env.DEV_LOGIN === '1';
 // Stripe payments: set STRIPE_SECRET_KEY (sk_test_... or sk_live_...) on the server. STRIPE_WEBHOOK_SECRET (whsec_...) is optional but recommended.
-const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || '', STRIPE_WH = process.env.STRIPE_WEBHOOK_SECRET || '';
-console.log('[pay] payments ' + (STRIPE_KEY ? 'ON (' + (STRIPE_KEY.startsWith('sk_live') || STRIPE_KEY.startsWith('rk_live') ? 'live' : 'test') + ' mode)' + (STRIPE_WH ? ', webhook signed' : '') : 'OFF: set STRIPE_SECRET_KEY to turn them on'));
+const STRIPE_RAW = String(process.env.STRIPE_SECRET_KEY || '').trim(), STRIPE_KEY = /^(sk|rk)_(live|test)_/.test(STRIPE_RAW) ? STRIPE_RAW : '', STRIPE_WH = String(process.env.STRIPE_WEBHOOK_SECRET || '').trim();
+const STRIPE_KIND = (STRIPE_RAW.match(/^[a-z]{2}_[a-z]{4}_/) || [''])[0] || (STRIPE_RAW ? 'unrecognised' : 'none'); // prefix only, never the key
+console.log('[pay] payments ' + (STRIPE_KEY ? 'ON (' + (/_live_/.test(STRIPE_KEY) ? 'live' : 'test') + ' mode)' + (STRIPE_WH ? ', webhook signed' : '') : STRIPE_RAW ? 'OFF: STRIPE_SECRET_KEY looks like a ' + STRIPE_KIND + ' key; it must be the secret key, starting sk_live_ (or sk_test_ for testing)' : 'OFF: set STRIPE_SECRET_KEY to turn them on') + (STRIPE_KEY ? ' [key type ' + STRIPE_KIND + ']' : ''));
 // Ads: ADSENSE_CLIENT = your AdSense publisher id (ca-pub-...). ADSENSE_TEST=1 shows test ads while you wait for approval.
 const ADS_CLIENT = /^ca-pub-\d{6,20}$/.test(process.env.ADSENSE_CLIENT || '') ? process.env.ADSENSE_CLIENT : '';
 const CATALOG = (() => { try { return require('./catalog.json'); } catch (e) { return { packs: [], aliens: [] }; } })();
