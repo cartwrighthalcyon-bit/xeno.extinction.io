@@ -1863,6 +1863,28 @@ function membraneWings(c, root, r, t, ph, moving, col, C) {
     c.lineWidth = Math.max(0.8, r * 0.018); for (const f of fingers) { c.beginPath(); c.moveTo(arm[0], arm[1]); c.lineTo(f[0], f[1]); c.stroke(); }
     c.fillStyle = '#e8dcc4'; c.beginPath(); c.arc(arm[0], arm[1], r * 0.03, 0, 7); c.fill(); c.restore(); }
 }
+function mixHex(a, b, k) { // blend two colours (hex or hsl strings)
+  const hs = v => { const m = /^hsla?\(([-\d.]+),\s*([\d.]+)%,\s*([\d.]+)%/.exec(String(v)); return m ? [+m[1], +m[2], +m[3]] : null; }, H1 = hs(a), H2 = hs(b);
+  if (H1 && H2) return `hsl(${(H1[0] + (H2[0] - H1[0]) * k).toFixed(1)},${(H1[1] + (H2[1] - H1[1]) * k).toFixed(1)}%,${(H1[2] + (H2[2] - H1[2]) * k).toFixed(1)}%)`;
+  const p = h => { h = String(h); if (h[0] !== '#') return null; if (h.length === 4) h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3]; const n = parseInt(h.slice(1, 7), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }, A = p(a), B = p(b); if (!A || !B) return a; return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * k).toString(16).padStart(2, '0')).join(''); }
+function humanHand(c, x, y, a, s, side, col, claw) { // palm, four jointed fingers that curl slightly, and an opposable thumb toward the body
+  const ca = Math.cos(a), sa = Math.sin(a), P = (u, v) => [x + ca * u - sa * v * side, y + sa * u + ca * v * side], fw = Math.max(0.5, s * 0.11);
+  if (RST === 1 || s < 3) { c.fillStyle = col; c.beginPath(); c.ellipse(x, y, s * 0.42, s * 0.34, a, 0, 7); c.fill(); return; }
+  const th = [P(-s * 0.05, -s * 0.28), P(s * 0.18, -s * 0.48), P(s * 0.36, -s * 0.5)]; tube(c, th, [fw * 1.25, fw * 1.05, fw * 0.8], col);
+  for (let k = 0; k < 4; k++) { const v = (k - 1.5) * s * 0.15, len = s * [0.5, 0.56, 0.53, 0.42][k], kn = P(s * 0.3, v), mid = P(s * 0.3 + len * 0.55, v * 1.15), tip = P(s * 0.3 + len * 0.95, v * 1.1 + s * 0.04);
+    tube(c, [kn, mid, tip], [fw * 1.1, fw, fw * 0.82], col);
+    if (claw) { c.fillStyle = claw; c.beginPath(); c.arc(tip[0], tip[1], fw * 0.6, 0, 7); c.fill(); }
+    else if (LOD_HI) { c.fillStyle = 'rgba(255,255,255,.22)'; c.beginPath(); c.arc(tip[0], tip[1], fw * 0.45, 0, 7); c.fill(); }
+    if (LOD_HI) { c.fillStyle = 'rgba(0,0,0,.14)'; c.beginPath(); c.arc(mid[0], mid[1], fw * 0.5, 0, 7); c.fill(); } }
+  const pc = P(s * 0.12, 0); c.fillStyle = col; c.beginPath(); c.ellipse(pc[0], pc[1], s * 0.3, s * 0.3, a, 0, 7); c.fill();
+  if (LOD_HI) { c.fillStyle = 'rgba(255,255,255,.12)'; const hp = P(s * 0.08, -s * 0.08); c.beginPath(); c.arc(hp[0], hp[1], s * 0.13, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.18)'; c.lineWidth = Math.max(0.5, s * 0.04); const k1 = P(s * 0.3, -s * 0.24), k2 = P(s * 0.32, s * 0.24); c.beginPath(); c.moveTo(k1[0], k1[1]); c.lineTo(k2[0], k2[1]); c.stroke(); }
+}
+function humanFoot(c, x, y, s, col) { // heel, arch and five short toes pointing forward
+  c.fillStyle = col; c.beginPath(); c.ellipse(x + s * 0.15, y, s * 0.62, s * 0.36, 0, 0, 7); c.fill();
+  if (s < 3 || RST === 1) return;
+  for (let k = 0; k < 5; k++) { const v = (k - 2) * s * 0.15, rr = s * (k === 0 || k === 4 ? 0.1 : 0.12); c.beginPath(); c.arc(x + s * 0.72 - Math.abs(k - 1) * s * 0.05, y + v, rr, 0, 7); c.fill(); }
+  if (LOD_HI) { c.fillStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.ellipse(x - s * 0.25, y, s * 0.2, s * 0.24, 0, 0, 7); c.fill(); }
+}
 function drawAlienBody(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   const A = P.arch, seed = hashStr(def.id), trait = L.trait, mv = moving ? 1 : 0, gt = t * 9 * (P.gs || 1) + ph, hk = [1.25, 1.15, 1.06, 1, 1][st - 1];
   const body = C.body, dark = C.dark, light = C.light, deep = C.deep, claw = '#efe6d2', limbCol = dark;
@@ -1924,19 +1946,40 @@ function drawAlienBody(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   const sway = Math.sin(gt * 0.5) * r * 0.05 * mv;
   // ------------------------------------------------ humanoids
   if (A === 'humanoid') {
-    r *= 1.35; const sh = r * 0.42 * Math.min(1.4, (P.wid || 0.6) / 0.6), headX = r * 0.08, hr = r * 0.24 * hk;
+    r *= 1.35; const sh = r * 0.42 * Math.min(1.4, (P.wid || 0.6) / 0.6), headX = r * 0.1, hr = r * 0.24 * hk;
+    const big = P.bigArms ? 1.32 : 1, aw = r * 0.088 * legT * big, skinC = body, shadeC = mixHex(body, dark, 0.45);
     if (opt.shadow !== false) rShadow(c, ang, elev, r, r * 0.6, sh * 1.3);
-    for (const s of [-1, 1]) { const step = Math.sin(gt + (s > 0 ? Math.PI : 0)) * r * 0.32 * mv; limb(c, [[-r * 0.05, s * sh * 0.4], [step * 0.5 - r * 0.05, s * sh * 0.45], [step, s * sh * 0.42]], r * 0.11 * legT, r * 0.08 * legT, deep); c.fillStyle = deep; c.beginPath(); c.ellipse(step + r * 0.06, s * sh * 0.42, r * 0.11, r * 0.07, 0, 0, 7); c.fill(); }
+    // legs first, rooted under the pelvis: thigh → knee → shin → a planted foot with toes
+    for (const s of [-1, 1]) { const st2 = Math.sin(gt + (s > 0 ? Math.PI : 0)) * mv, step = st2 * r * 0.32, lift = Math.max(0, Math.cos(gt + (s > 0 ? Math.PI : 0))) * mv;
+      const hx0 = -r * 0.14, hy0 = s * sh * 0.34, kx = step * 0.55 - r * 0.04, ky = s * sh * 0.46, fx = step, fy = s * sh * 0.42;
+      limb(c, [[hx0, hy0], [kx, ky], [fx, fy]], r * 0.12 * legT, r * 0.07 * legT, shadeC, Math.max(0.6, r * 0.01));
+      humanFoot(c, fx, fy, r * 0.13 * legT * (1 - lift * 0.15), shadeC); }
     if (L.tail) { const tp = [[-r * 0.2, 0], [-r * 0.5, Math.sin(t * 2 + ph) * r * 0.15], [-r * 0.85, Math.sin(t * 2 + ph - 1) * r * 0.25]]; tube(c, tp, [r * 0.08, r * 0.05, r * 0.02], body); }
     if (fly) membraneWings(c, -r * 0.05, r * 0.9, t, ph, moving, light, C);
-    // torso, then arms swinging opposite to legs, ending in clawed three-fingered hands
-    c.fillStyle = bodyFill(0, 0, sh); c.beginPath(); c.ellipse(-r * 0.02, 0, r * 0.3, sh, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = Math.max(0.7, r * 0.012); c.stroke();
-    alienSkin(c, () => { c.beginPath(); c.ellipse(-r * 0.02, 0, r * 0.3, sh, 0, 0, 7); }, L, r, C, -r * 0.35, r * 0.3, sh, seed);
-    traitAlong(c, trait, [[-r * 0.3, 0], [-r * 0.15, 0], [0, 0], [r * 0.1, 0]], [sh * 0.4, sh * 0.5, sh * 0.5, sh * 0.4], r, t, ph, C, L);
-    for (const s of [-1, 1]) { const sw = -Math.sin(gt + (s > 0 ? Math.PI : 0)) * r * 0.22 * mv + (opt.cast ? r * 0.3 : 0), ex = sw * 0.4 - r * 0.06, hx2 = sw + r * 0.26;
-      limb(c, [[0, s * sh * 0.85], [ex, s * (sh * 1.45)], [hx2, s * sh * 1.25]], r * 0.11 * legT, r * 0.075 * legT, body, Math.max(0.6, r * 0.012));
-      clawFoot(c, hx2, s * sh * 1.25, s * 0.2, r * 0.09, body, 3, claw, false); }
-    c.fillStyle = bodyFill(headX, 0, hr * 1.2); c.beginPath(); c.ellipse(headX + hr * 0.1, 0, hr * 1.05, hr, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.3)'; c.stroke();
+    // arms are drawn BEFORE the torso so the shoulder joint sits inside the body and the deltoid grows over it
+    // seen from above, arms hang beside the ribs and swing forward/back against the stride; elbows stay close to the body
+    const arm = (s, rootX, rootY, k, swPh) => { const sw = -Math.sin(gt + swPh) * r * 0.2 * mv * k + (opt.cast ? r * 0.3 : 0), idle = Math.sin(t * 1.4 + ph + s) * r * 0.01, ex = sw * 0.45 - r * 0.04 + idle, ey = s * (rootY + sh * 0.3 * k), wx = sw + r * 0.13 * k + idle, wy = s * (rootY + sh * (opt.cast ? 0.2 : 0.34) * k);
+      const W = aw * k; limb(c, [[rootX, s * rootY], [ex, ey], [wx, wy]], W * 1.05, W * 0.6, skinC, Math.max(0.6, r * 0.01));
+      if (LOD_HI && W > 1.5) { c.strokeStyle = 'rgba(0,0,0,.14)'; c.lineWidth = Math.max(0.5, W * 0.12); c.beginPath(); c.moveTo(rootX + (ex - rootX) * 0.25, s * rootY + (ey - s * rootY) * 0.25); c.quadraticCurveTo((rootX + ex) / 2 + W * 0.3, (s * rootY + ey) / 2, ex, ey); c.stroke(); } // biceps / triceps split
+      humanHand(c, wx, wy, Math.atan2(wy - ey, wx - ex) * 0.6 + s * 0.15, W * 1.45 * (P.bigArms ? 1.1 : 1), s, skinC, L.mouth >= 3 || def.diet === 'carnivore' ? claw : null); };
+    for (const s of [-1, 1]) arm(s, -r * 0.01, sh * 0.72, 1, s > 0 ? Math.PI : 0);
+    if (P.arms4) for (const s of [-1, 1]) arm(s, -r * 0.13, sh * 0.6, 0.78, s > 0 ? 0 : Math.PI);
+    // torso seen from above: broad rounded shoulders (deltoids), chest in front, tapering back
+    const dz = Math.max(r * 0.95, sh * 2.1), tp2 = [[dz * 0.17, 0], [dz * 0.15, 0.5], [dz * 0.1, 0.82], [dz * 0.03, 0.98], [-dz * 0.06, 1.0], [-dz * 0.14, 0.9], [-dz * 0.21, 0.62], [-dz * 0.25, 0.25], [-dz * 0.26, 0]]; // depth grows with shoulder width so the chest has volume
+    const torso = () => { const Q = []; for (const [x, k] of tp2) Q.push([x, -k * sh]); for (let i = tp2.length - 2; i > 0; i--) Q.push([tp2[i][0], tp2[i][1] * sh]); const n = Q.length; c.beginPath(); c.moveTo((Q[n - 1][0] + Q[0][0]) / 2, (Q[n - 1][1] + Q[0][1]) / 2); for (let i = 0; i < n; i++) { const q = Q[(i + 1) % n]; c.quadraticCurveTo(Q[i][0], Q[i][1], (Q[i][0] + q[0]) / 2, (Q[i][1] + q[1]) / 2); } c.closePath(); };
+    c.fillStyle = bodyFill(-r * 0.03, 0, sh * 1.05); torso(); c.fill(); c.strokeStyle = 'rgba(0,0,0,.2)'; c.lineWidth = Math.max(0.6, r * 0.009); c.stroke();
+    alienSkin(c, torso, L, r, C, -dz * 0.3, dz * 0.2, sh, seed);
+    if (LOD_HI && r > 8) { c.save(); torso(); c.clip(); c.lineCap = 'round';
+      // spine groove, shoulder blades and the pec line: soft creases instead of hard outlines
+      c.strokeStyle = 'rgba(0,0,0,.16)'; c.lineWidth = Math.max(0.6, r * 0.014); c.beginPath(); c.moveTo(-r * 0.25, 0); c.quadraticCurveTo(-r * 0.12, Math.sin(gt) * r * 0.01, r * 0.0, 0); c.stroke();
+      for (const s of [-1, 1]) { c.beginPath(); c.moveTo(-r * 0.04, s * sh * 0.2); c.quadraticCurveTo(-r * 0.16, s * sh * 0.32, -r * 0.13, s * sh * 0.62); c.stroke();
+        c.strokeStyle = 'rgba(255,255,255,.1)'; c.lineWidth = Math.max(1, r * 0.03); c.beginPath(); c.arc(-r * 0.03, s * sh * 0.86, sh * 0.14, s > 0 ? -2.6 : 0.9, s > 0 ? -0.9 : 2.6); c.stroke(); c.strokeStyle = 'rgba(0,0,0,.16)'; c.lineWidth = Math.max(0.6, r * 0.014); }
+      c.restore(); }
+    traitAlong(c, trait, [[-r * 0.25, 0], [-r * 0.13, 0], [0, 0], [r * 0.08, 0]], [sh * 0.4, sh * 0.5, sh * 0.5, sh * 0.4], r, t, ph, C, L);
+    // soft contact shadow where the head and neck sit on the shoulders
+    { const g = c.createRadialGradient(headX - hr * 0.2, 0, hr * 0.2, headX - hr * 0.2, 0, hr * 1.5); g.addColorStop(0, 'rgba(0,0,0,.2)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(headX - hr * 0.2, 0, hr * 1.5, 0, 7); c.fill(); }
+    c.fillStyle = bodyFill(headX, 0, hr * 1.2); c.beginPath(); c.ellipse(headX + hr * 0.1, 0, hr * 1.05, hr, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.22)'; c.lineWidth = Math.max(0.6, r * 0.009); c.stroke();
+    if (LOD_HI) { c.fillStyle = 'rgba(255,255,255,.12)'; c.beginPath(); c.ellipse(headX - hr * 0.1, -hr * 0.25, hr * 0.5, hr * 0.35, -0.3, 0, 7); c.fill(); }
     if (L.mouth >= 2) { c.fillStyle = 'rgba(0,0,0,.4)'; c.beginPath(); c.ellipse(headX + hr * 0.95, 0, hr * 0.12, hr * 0.35, 0, 0, 7); c.fill(); }
     alienEyes(c, headX + hr * 0.35, 0, hr * 0.9, L, P, t, ph); alienHorns(c, headX, 0, hr * 0.9, L, P, C);
     return;
@@ -1978,7 +2021,9 @@ function drawAlienBody(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
     tube(c, bp, bw, bodyFill(0, 0, len), 'rgba(0,0,0,.3)');
     alienSkin(c, () => tube(c, bp, bw), L, r, C, hipX - r * 0.1, headX, wid, seed);
     traitAlong(c, trait, tp.slice(0, 6).reverse().concat(bp.slice(1, 4)), tw.slice(0, 6).reverse().concat(bw.slice(1, 4)), r, t, ph, C, L);
-    for (const s of [-1, 1]) { const g = Math.sin(t * 3 + ph + s) * r * 0.03 + (opt.cast ? r * 0.1 : 0); limb(c, [[chestX * 0.8, s * wid * 0.6], [chestX * 0.95, s * wid * 1.0], [chestX * 1.15 + g, s * wid * 0.85]], r * 0.06, r * 0.04, limbCol); clawFoot(c, chestX * 1.15 + g, s * wid * 0.85, 0, r * 0.06, limbCol, 3, claw, false); }
+    for (const s of [-1, 1]) { const g = Math.sin(t * 3 + ph + s) * r * 0.03 + (opt.cast ? r * 0.1 : 0), ac = mixHex(body, dark, 0.35); limb(c, [[chestX * 0.8, s * wid * 0.45], [chestX * 0.95, s * wid * 1.0], [chestX * 1.15 + g, s * wid * 0.85]], r * 0.06, r * 0.04, ac); clawFoot(c, chestX * 1.15 + g, s * wid * 0.85, 0, r * 0.06, ac, 3, claw, false);
+      c.fillStyle = body; c.beginPath(); c.ellipse(chestX * 0.82, s * wid * 0.62, r * 0.075, r * 0.06, 0, 0, 7); c.fill(); } // shoulder: skin flows over the arm root
+    tube(c, [bp[4], [headX - headR * 0.55, 0]], [bw[4], headR * 0.7], bodyFill(0, 0, len));
     drawAlienHead(c, headX, 0, headR, L, P, t, ph, C, opt);
     return;
   }
@@ -2004,6 +2049,7 @@ function drawAlienBody(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   tube(c, pts, ws, bodyFill(0, 0, len), 'rgba(0,0,0,.3)');
   alienSkin(c, () => tube(c, pts, ws), L, r, C, hipX - r * 0.1, len * 0.7, wid, seed);
   traitAlong(c, trait, tp.slice(0, 5).reverse().concat(pts.slice(1)), tw.slice(0, 5).reverse().concat(ws.slice(1)), r, t, ph, C, L);
+  { const nl = pts.length - 1; tube(c, [pts[nl], [headX - headR * 0.55, yAt(headX)]], [ws[nl] * 0.95, headR * 0.72], bodyFill(0, 0, len)); } // neck flows into the skull, no seam
   drawAlienHead(c, headX, yAt(headX), headR, L, P, t, ph, C, opt, lizard);
 }
 function drawAlienHead(c, hx, hy, hr, L, P, t, ph, C, opt, flat) {
@@ -3016,7 +3062,15 @@ function drawFood(f, edible) {
     const c = PLANETS[FP].food[f.v % 2]; if (FP === 'dark') { ctx.shadowColor = c; ctx.shadowBlur = 10; }
     if (FP === 'dark' || (FP === 'jungle' && f.v % 3 === 0)) { ctx.fillStyle = '#e8e2d0'; ctx.fillRect(-s * 0.18, -s * 0.1, s * 0.36, s * 0.9); ctx.fillStyle = c; ctx.beginPath(); ctx.arc(0, -s * 0.1, s * 0.8, Math.PI, 0); ctx.fill(); }
     else if (FP === 'water') { ctx.strokeStyle = c; ctx.lineWidth = s * 0.3; ctx.lineCap = 'round'; for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.moveTo(k * s * 0.4, s * 0.8); ctx.quadraticCurveTo(k * s * 0.4 + Math.sin(t * 2 + k + f.ph) * s * 0.5, 0, k * s * 0.3, -s * 0.9); ctx.stroke(); } }
-    else { ctx.fillStyle = c; for (let k = 0; k < 3; k++) { const a = k * 2.094; ctx.beginPath(); ctx.ellipse(Math.cos(a) * s * 0.45, Math.sin(a) * s * 0.45, s * 0.55, s * 0.3, a, 0, 7); ctx.fill(); } ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.arc(0, 0, s * 0.18, 0, 7); ctx.fill(); if (FP === 'jungle') { ctx.fillStyle = '#ff6ab8'; ctx.beginPath(); ctx.arc(0, 0, s * 0.25, 0, 7); ctx.fill(); } }
+    else { // leafy rosette: pointed leaves with a midrib, darker toward the stem, lit edge on top
+      const n = 5 + (f.v % 2); ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(s * 0.12, s * 0.16, s * 0.95, s * 0.85, 0, 0, 7); ctx.fill();
+      for (let k = 0; k < n; k++) { const a = k / n * 6.283 + (k % 2) * 0.2, L = s * (k % 2 ? 0.95 : 1.1);
+        ctx.save(); ctx.rotate(a); ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(L * 0.45, -L * 0.36, L, 0); ctx.quadraticCurveTo(L * 0.45, L * 0.36, 0, 0); ctx.fill();
+        if (LOD_HI) { ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(L * 0.45, L * 0.36, L, 0); ctx.quadraticCurveTo(L * 0.5, L * 0.08, 0, 0); ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,220,.35)'; ctx.lineWidth = Math.max(0.6, s * 0.05); ctx.beginPath(); ctx.moveTo(s * 0.1, 0); ctx.lineTo(L * 0.85, 0); ctx.stroke(); }
+        ctx.restore(); }
+      ctx.fillStyle = 'rgba(30,50,20,.6)'; ctx.beginPath(); ctx.arc(0, 0, s * 0.16, 0, 7); ctx.fill();
+      if (FP === 'jungle' || FP === 'heaven') { ctx.fillStyle = FP === 'jungle' ? '#ff6ab8' : '#fff4c0'; for (let k = 0; k < 5; k++) { const a = k * 1.257; ctx.beginPath(); ctx.ellipse(Math.cos(a) * s * 0.2, Math.sin(a) * s * 0.2, s * 0.18, s * 0.11, a, 0, 7); ctx.fill(); } ctx.fillStyle = '#ffe36a'; ctx.beginPath(); ctx.arc(0, 0, s * 0.1, 0, 7); ctx.fill(); } }
     ctx.shadowBlur = 0;
   } else if (f.type === 'rock') {
     const crystal = FP === 'ice' || FP === 'dark';
@@ -3403,6 +3457,39 @@ function paintLandmark(c, o, X, Y, t) {
   }
   c.restore();
 }
+// ---- realistic trees: painted once into a sprite (roots, trunk, branches, layered leaf clusters lit from the top-left)
+function paintTree(o) {
+  const can = o.can, S = Math.ceil(can * 1.45) + 8, K = PERF_LOW ? 0.45 : 0.7, cv2 = document.createElement('canvas'); cv2.width = cv2.height = Math.ceil(S * 2 * K); o.sprS = S; const c = cv2.getContext('2d'); c.scale(K, K); const R = mulberry32((o.x * 13 + o.y * 7) | 0), X = S, Y = S;
+  const hue = o.hue, jungle = !o.oak, leafL = jungle ? 0.16 : 0.1;
+  // soft ground shadow cast toward the bottom-right
+  { const g = c.createRadialGradient(X + can * 0.22, Y + can * 0.28, can * 0.2, X + can * 0.22, Y + can * 0.28, can * 1.05); g.addColorStop(0, 'rgba(0,0,0,.42)'); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(X + can * 0.22, Y + can * 0.28, can * 1.05, 0, 7); c.fill(); }
+  // buttress roots spreading over the ground
+  const nR = 5 + Math.floor(R() * 3);
+  for (let k = 0; k < nR; k++) { const a = k / nR * 6.283 + R() * 0.5, L = o.r * (1.5 + R() * 0.9), b1 = a + (R() - 0.5) * 0.6;
+    tube(c, [[X, Y], [X + Math.cos(a) * L * 0.5, Y + Math.sin(a) * L * 0.5], [X + Math.cos(b1) * L, Y + Math.sin(b1) * L]], [o.r * 0.42, o.r * 0.26, o.r * 0.05], '#4a3018');
+    tube(c, [[X - 1, Y - 1], [X + Math.cos(a) * L * 0.5 - 1, Y + Math.sin(a) * L * 0.5 - 1], [X + Math.cos(b1) * L - 1, Y + Math.sin(b1) * L - 1]], [o.r * 0.18, o.r * 0.1, o.r * 0.02], 'rgba(255,220,170,.12)'); }
+  // trunk with bark rings
+  { const g = c.createRadialGradient(X - o.r * 0.35, Y - o.r * 0.35, 1, X, Y, o.r); g.addColorStop(0, '#8a6038'); g.addColorStop(0.6, '#5a3a1e'); g.addColorStop(1, '#2e1c0c'); c.fillStyle = g; c.beginPath(); c.arc(X, Y, o.r, 0, 7); c.fill();
+    c.strokeStyle = 'rgba(30,16,6,.45)'; c.lineWidth = 1.5; for (let k = 1; k < 4; k++) { c.beginPath(); c.arc(X + R() * 2, Y + R() * 2, o.r * k / 4, R() * 6, R() * 6 + 4); c.stroke(); } }
+  // main branches reaching out to the leaf clusters
+  const cl = [], nC = jungle ? 9 + Math.floor(R() * 4) : 11 + Math.floor(R() * 5);
+  for (let k = 0; k < nC; k++) { const a = k / nC * 6.283 + R() * 0.4, d = can * (0.32 + R() * 0.38); cl.push([X + Math.cos(a) * d, Y + Math.sin(a) * d - can * 0.05, can * (0.3 + R() * 0.18), a]); }
+  cl.push([X - can * 0.05, Y - can * 0.1, can * 0.42, 0]);
+  c.lineCap = 'round'; for (const [x, y] of cl) { c.strokeStyle = '#3e2812'; c.lineWidth = o.r * 0.32; c.beginPath(); c.moveTo(X, Y); c.quadraticCurveTo((X + x) / 2 + (R() - 0.5) * can * 0.15, (Y + y) / 2 + (R() - 0.5) * can * 0.15, x, y); c.stroke(); }
+  // leaf clusters: shadowed underside, then hundreds of individual leaves, brighter on the lit (top-left) side
+  const leaf = (x, y, len, a, h, l) => { c.fillStyle = `hsl(${h},${jungle ? 55 : 48}%,${l}%)`; c.beginPath(); c.ellipse(x, y, len, len * (jungle ? 0.42 : 0.55), a, 0, 7); c.fill(); };
+  for (const [x, y, rr] of cl) { const g = c.createRadialGradient(x + rr * 0.2, y + rr * 0.25, rr * 0.2, x, y, rr * 1.05); g.addColorStop(0, `hsla(${hue},45%,14%,.95)`); g.addColorStop(1, `hsla(${hue},45%,10%,0)`); c.fillStyle = g; c.beginPath(); c.arc(x + rr * 0.12, y + rr * 0.15, rr * 1.05, 0, 7); c.fill(); }
+  cl.sort((p, q) => (p[0] + p[1]) - (q[0] + q[1])); // back to front
+  for (const [x, y, rr] of cl) { c.fillStyle = `hsl(${hue},46%,19%)`; c.beginPath(); c.arc(x, y, rr * 0.86, 0, 7); c.fill();
+    const n = Math.floor(rr * rr / (can * can * leafL * leafL) * 1.6) + 14;
+    for (let i = 0; i < n; i++) { const a = R() * 6.283, d = Math.sqrt(R()) * rr * 0.95, lx = x + Math.cos(a) * d, ly = y + Math.sin(a) * d, lit = clamp(0.5 - ((lx - x) + (ly - y)) / (rr * 2.6) + (R() - 0.5) * 0.3, 0, 1);
+      leaf(lx, ly, can * leafL * (0.55 + R() * 0.5), R() * 6.283, hue + (R() - 0.5) * 16, 16 + lit * 26 + R() * 4); }
+    if (jungle) { c.strokeStyle = 'rgba(200,255,170,.18)'; c.lineWidth = 1; for (let i = 0; i < 6; i++) { const a = R() * 6.283, d = R() * rr * 0.7, lx = x + Math.cos(a) * d, ly = y + Math.sin(a) * d, la = R() * 6.283, L2 = can * leafL * 0.8; c.beginPath(); c.moveTo(lx - Math.cos(la) * L2, ly - Math.sin(la) * L2); c.lineTo(lx + Math.cos(la) * L2, ly + Math.sin(la) * L2); c.stroke(); } }
+    const hl = c.createRadialGradient(x - rr * 0.35, y - rr * 0.4, 0, x - rr * 0.35, y - rr * 0.4, rr * 0.75); hl.addColorStop(0, 'rgba(255,255,210,.16)'); hl.addColorStop(1, 'rgba(255,255,210,0)'); c.fillStyle = hl; c.beginPath(); c.arc(x - rr * 0.35, y - rr * 0.4, rr * 0.75, 0, 7); c.fill(); }
+  // fruit or flowers dotted through the canopy
+  if (R() < 0.6) { const fc = jungle ? ['#ff6ab8', '#ffd23f', '#ff7a3d'][Math.floor(R() * 3)] : ['#d8312a', '#f2c94c', '#f0f0e0'][Math.floor(R() * 3)]; for (let i = 0; i < 10; i++) { const a = R() * 6.283, d = R() * can * 0.75; c.fillStyle = fc; c.beginPath(); c.arc(X + Math.cos(a) * d, Y + Math.sin(a) * d, Math.max(2, can * 0.025), 0, 7); c.fill(); c.fillStyle = 'rgba(255,255,255,.5)'; c.beginPath(); c.arc(X + Math.cos(a) * d - 1, Y + Math.sin(a) * d - 1, Math.max(0.8, can * 0.008), 0, 7); c.fill(); } }
+  return cv2;
+}
 function drawObstacle2(o) {
   if (o.k === 'boulder') { ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.translate(12, 16); blobPath(o.x, o.y, o.sh); ctx.fill(); ctx.translate(-12, -16); const g = ctx.createRadialGradient(o.x - o.r * 0.35, o.y - o.r * 0.4, 2, o.x, o.y, o.r * 1.1); g.addColorStop(0, '#b8b4a6'); g.addColorStop(0.6, '#85816f'); g.addColorStop(1, '#4e4b40'); ctx.fillStyle = g; blobPath(o.x, o.y, o.sh); ctx.fill(); if (o.moss) { ctx.fillStyle = 'rgba(80,130,50,.55)'; ctx.beginPath(); ctx.ellipse(o.x - o.r * 0.2, o.y - o.r * 0.25, o.r * 0.5, o.r * 0.32, -0.4, 0, 7); ctx.fill(); } ctx.strokeStyle = 'rgba(40,36,28,.45)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(o.x - o.r * 0.3, o.y + o.r * 0.1); ctx.lineTo(o.x + o.r * 0.1, o.y + o.r * 0.3); ctx.lineTo(o.x + o.r * 0.4, o.y + o.r * 0.15); ctx.stroke(); ctx.restore(); return; }
   if (o.k === 'column') { ctx.save(); ctx.fillStyle = 'rgba(80,60,20,.25)'; ctx.beginPath(); ctx.ellipse(o.x + 14, o.y + 18, o.r * 1.05, o.r * 0.95, 0, 0, 7); ctx.fill(); const g = ctx.createRadialGradient(o.x - o.r * 0.35, o.y - o.r * 0.35, 2, o.x, o.y, o.r); g.addColorStop(0, '#ffffff'); g.addColorStop(0.7, '#e9e0c8'); g.addColorStop(1, '#bfae84'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 7); ctx.fill(); ctx.strokeStyle = 'rgba(150,130,90,.5)'; ctx.lineWidth = 2; for (let k = 0; k < 12; k++) { const a = k / 12 * 6.283; ctx.beginPath(); ctx.moveTo(o.x + Math.cos(a) * o.r * 0.55, o.y + Math.sin(a) * o.r * 0.55); ctx.lineTo(o.x + Math.cos(a) * o.r * 0.95, o.y + Math.sin(a) * o.r * 0.95); ctx.stroke(); } ctx.strokeStyle = '#d9a72a'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(o.x, o.y, o.r * 0.5, 0, 7); ctx.stroke(); ctx.fillStyle = '#fff8e6'; ctx.beginPath(); ctx.arc(o.x, o.y, o.r * 0.42, 0, 7); ctx.fill(); ctx.restore(); return; }
@@ -3417,10 +3504,9 @@ function drawObstacle2(o) {
       break;
     }
     case 'tree': {
-      ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(o.x + o.can * 0.25, o.y + o.can * 0.3, o.can, o.can * 0.8, 0, 0, 7); ctx.fill();
-      ctx.fillStyle = '#5a3a1e'; ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 7); ctx.fill(); ctx.strokeStyle = '#3a2410'; ctx.lineWidth = 3; for (let k = 0; k < 5; k++) { const a = k * 1.256; ctx.beginPath(); ctx.moveTo(o.x, o.y); ctx.quadraticCurveTo(o.x + Math.cos(a) * o.r * 1.3, o.y + Math.sin(a) * o.r * 1.3, o.x + Math.cos(a + 0.4) * o.r * 1.6, o.y + Math.sin(a + 0.4) * o.r * 1.6); ctx.stroke(); }
-      for (let k = 0; k < 7; k++) { const a = k * 0.9 + o.x, d = o.can * 0.45; ctx.fillStyle = `hsla(${o.hue + k * 4},55%,${26 + (k % 3) * 6}%,.92)`; ctx.beginPath(); ctx.arc(o.x + Math.cos(a) * d * 0.6, o.y + Math.sin(a) * d * 0.6 - 10, o.can * 0.55, 0, 7); ctx.fill(); }
-      ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.beginPath(); ctx.arc(o.x - o.can * 0.25, o.y - o.can * 0.3, o.can * 0.4, 0, 7); ctx.fill();
+      if (!o.spr) o.spr = paintTree(o);
+      const S = o.sprS, sw = Math.sin(t * 0.9 + o.x * 0.01) * Math.min(3, o.can * 0.02);
+      ctx.drawImage(o.spr, o.x - S + sw, o.y - S + sw * 0.4, S * 2, S * 2);
       break;
     }
     case 'factory': {
@@ -4642,16 +4728,73 @@ function canReach(a, b) { if (!b.perch) return true; const m = moves(a.def); ret
 function elevOf(e) { if (e.alt != null) return e.alt; const m = moves(e.def); return m.fly ? 0.55 : e.perch ? 0.75 : 0; }
 
 // ---- drawing
+// ---- underground caves: a detailed interior painted once (stone floor, cracks, rubble, stalagmites, puddles and
+// glowing crystals / fungi / lava seams per planet), then animated drips and light on top
+const CAVE_GLOW = { dune: null, ice: ['crystal', 195], dark: ['crystal', 275], hell: ['lava', 20], water: ['fungi', 175], jungle: ['fungi', 95], robo: ['lamp', 45], space: ['crystal', 230], heaven: ['crystal', 48], earth: ['fungi', 150], mars: ['lava', 15] };
+function paintCaveFloor(c) {
+  const pid = c.pid || G.planet, S = CAVE_STYLE[pid], R = c.R, W = Math.ceil(R * 2 + 8), cv2 = document.createElement('canvas'); cv2.width = cv2.height = W; const x = cv2.getContext('2d'), X = W / 2, rnd = mulberry32((c.x * 31 + c.y * 17) | 0), gl = CAVE_GLOW[pid];
+  x.save(); x.beginPath(); x.arc(X, X, R, 0, 7); x.clip();
+  // base: floor colour, lighter toward the entrance where daylight spills in
+  x.fillStyle = S.floor; x.fillRect(0, 0, W, W);
+  const ea = c.ent, lg = x.createRadialGradient(X + Math.cos(ea) * R, X + Math.sin(ea) * R, 0, X + Math.cos(ea) * R, X + Math.sin(ea) * R, R * 1.1); lg.addColorStop(0, hexA(S.rock, 0.55)); lg.addColorStop(1, hexA(S.rock, 0)); x.fillStyle = lg; x.fillRect(0, 0, W, W);
+  // flagstone-like rock plates with dark seams
+  for (let i = 0; i < 26; i++) { const a = rnd() * 6.283, d = Math.sqrt(rnd()) * R * 0.85, px = X + Math.cos(a) * d, py = X + Math.sin(a) * d, pr = R * (0.08 + rnd() * 0.1); x.fillStyle = rnd() < 0.5 ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.14)'; x.beginPath(); for (let k = 0; k < 7; k++) { const q = k / 7 * 6.283, rr = pr * (0.75 + rnd() * 0.4); x.lineTo(px + Math.cos(q) * rr, py + Math.sin(q) * rr); } x.closePath(); x.fill(); x.strokeStyle = 'rgba(0,0,0,.25)'; x.lineWidth = 1.5; x.stroke(); }
+  // cracks
+  x.strokeStyle = 'rgba(0,0,0,.4)'; x.lineWidth = 1.6; for (let k = 0; k < 7; k++) { let a = rnd() * 6.283, rr = R * rnd() * 0.4; x.beginPath(); x.moveTo(X + Math.cos(a) * rr, X + Math.sin(a) * rr); for (let j = 0; j < 5; j++) { a += (rnd() - 0.5) * 0.6; rr += R * 0.1; x.lineTo(X + Math.cos(a) * rr, X + Math.sin(a) * rr); } x.stroke(); }
+  // still puddles that catch the light
+  c.pools = []; for (let i = 0; i < 2 + Math.floor(rnd() * 2); i++) { const a = rnd() * 6.283, d = R * (0.2 + rnd() * 0.45), px = X + Math.cos(a) * d, py = X + Math.sin(a) * d, pw = R * (0.09 + rnd() * 0.07);
+    x.fillStyle = pid === 'hell' || pid === 'mars' ? 'rgba(255,90,20,.55)' : 'rgba(10,25,40,.75)'; x.beginPath(); x.ellipse(px, py, pw, pw * 0.65, rnd() * 3, 0, 7); x.fill(); x.fillStyle = pid === 'hell' || pid === 'mars' ? 'rgba(255,220,120,.35)' : 'rgba(170,210,240,.18)'; x.beginPath(); x.ellipse(px - pw * 0.25, py - pw * 0.2, pw * 0.45, pw * 0.18, -0.4, 0, 7); x.fill(); c.pools.push([px - X, py - X, pw]); }
+  // rubble and pebbles
+  for (let i = 0; i < 60; i++) { const a = rnd() * 6.283, d = Math.sqrt(rnd()) * R * 0.95, px = X + Math.cos(a) * d, py = X + Math.sin(a) * d, pr = 1.5 + rnd() * 4.5, sh2 = Array.from({ length: 6 }, () => pr * (0.6 + rnd() * 0.5)), stone = (ox, oy) => { x.beginPath(); sh2.forEach((v, k) => { const q = k / 6 * 6.283; x.lineTo(px + ox + Math.cos(q) * v, py + oy + Math.sin(q) * v * 0.8); }); x.closePath(); };
+    x.fillStyle = 'rgba(0,0,0,.35)'; stone(1.2, 1.6); x.fill(); x.fillStyle = rnd() < 0.5 ? S.rock : S.rock2; stone(0, 0); x.fill(); x.fillStyle = 'rgba(255,255,255,.1)'; x.beginPath(); x.ellipse(px - pr * 0.2, py - pr * 0.25, pr * 0.45, pr * 0.25, -0.5, 0, 7); x.fill(); }
+  // stalagmites rising from the floor (seen from above: a cone, lit on one side, with a wet tip), mostly near the walls
+  c.mites = []; for (let i = 0; i < 9 + Math.floor(rnd() * 6); i++) { const a = rnd() * 6.283; if (Math.abs(((a - ea) % 6.283 + 9.425) % 6.283 - 3.1416) < 0.6) continue; const d = R * (0.55 + rnd() * 0.38), px = X + Math.cos(a) * d, py = X + Math.sin(a) * d, mr = R * (0.035 + rnd() * 0.05);
+    x.fillStyle = 'rgba(0,0,0,.45)'; x.beginPath(); x.ellipse(px + mr * 0.5, py + mr * 0.7, mr * 1.25, mr * 0.95, 0.5, 0, 7); x.fill();
+    const g = x.createRadialGradient(px - mr * 0.35, py - mr * 0.4, mr * 0.05, px, py, mr * 1.1); g.addColorStop(0, S.rock); g.addColorStop(0.7, S.rock2); g.addColorStop(1, 'rgba(0,0,0,.8)'); x.fillStyle = g; x.beginPath(); x.arc(px, py, mr, 0, 7); x.fill();
+    x.strokeStyle = 'rgba(0,0,0,.25)'; x.lineWidth = 1; for (let k = 1; k < 3; k++) { x.beginPath(); x.arc(px, py, mr * k / 3, 0, 7); x.stroke(); }
+    x.fillStyle = 'rgba(255,255,255,.55)'; x.beginPath(); x.arc(px - mr * 0.12, py - mr * 0.12, mr * 0.16, 0, 7); x.fill(); c.mites.push([px - X, py - X, mr]); }
+  // per-planet glow sources: crystal clusters, bioluminescent fungi, lava seams or old lamps
+  c.glows = []; if (gl) { const [kind, h] = gl; for (let i = 0; i < 6 + Math.floor(rnd() * 4); i++) { const a = rnd() * 6.283, d = R * (0.35 + rnd() * 0.55), px = X + Math.cos(a) * d, py = X + Math.sin(a) * d, sz = R * (0.03 + rnd() * 0.03);
+      if (kind === 'crystal') for (let k = 0; k < 4; k++) { const q = rnd() * 6.283, L = sz * (1.2 + rnd() * 1.4), w = sz * 0.35; x.save(); x.translate(px, py); x.rotate(q); const cg = x.createLinearGradient(0, 0, L, 0); cg.addColorStop(0, `hsl(${h},70%,30%)`); cg.addColorStop(1, `hsl(${h},90%,80%)`); x.fillStyle = cg; x.beginPath(); x.moveTo(0, -w); x.lineTo(L * 0.8, -w * 0.7); x.lineTo(L, 0); x.lineTo(L * 0.8, w * 0.7); x.lineTo(0, w); x.closePath(); x.fill(); x.fillStyle = 'rgba(255,255,255,.45)'; x.beginPath(); x.moveTo(L * 0.2, -w * 0.5); x.lineTo(L * 0.85, -w * 0.3); x.lineTo(L * 0.2, 0); x.fill(); x.restore(); }
+      else if (kind === 'fungi') for (let k = 0; k < 5; k++) { const q = rnd() * 6.283, dd = rnd() * sz * 1.6, fx = px + Math.cos(q) * dd, fy = py + Math.sin(q) * dd, fr = sz * (0.35 + rnd() * 0.45); x.fillStyle = 'rgba(0,0,0,.4)'; x.beginPath(); x.arc(fx + 1, fy + 1.5, fr, 0, 7); x.fill(); x.fillStyle = `hsl(${h + rnd() * 30},70%,${45 + rnd() * 20}%)`; x.beginPath(); x.arc(fx, fy, fr, 0, 7); x.fill(); x.fillStyle = 'rgba(255,255,255,.4)'; for (let j = 0; j < 3; j++) { x.beginPath(); x.arc(fx + (rnd() - 0.5) * fr, fy + (rnd() - 0.5) * fr, fr * 0.13, 0, 7); x.fill(); } }
+      else if (kind === 'lava') { x.strokeStyle = `hsl(${h},100%,55%)`; x.lineWidth = 3; let q = rnd() * 6.283, fx = px, fy = py; x.beginPath(); x.moveTo(fx, fy); for (let j = 0; j < 5; j++) { q += (rnd() - 0.5) * 1.1; fx += Math.cos(q) * sz * 1.2; fy += Math.sin(q) * sz * 1.2; x.lineTo(fx, fy); } x.stroke(); x.strokeStyle = 'rgba(255,240,170,.8)'; x.lineWidth = 1; x.stroke(); }
+      else { x.fillStyle = '#2a2e34'; x.fillRect(px - sz * 0.5, py - sz * 0.5, sz, sz); x.fillStyle = `hsl(${h},100%,65%)`; x.beginPath(); x.arc(px, py, sz * 0.32, 0, 7); x.fill(); }
+      c.glows.push([px - X, py - X, sz * (kind === 'lava' ? 5 : 4.2), h, rnd() * 6]); } }
+  // the wall's foot: floor darkens and rubble piles up where it meets the rock
+  const wg = x.createRadialGradient(X, X, R * 0.55, X, X, R); wg.addColorStop(0, 'rgba(0,0,0,0)'); wg.addColorStop(0.85, 'rgba(0,0,0,.35)'); wg.addColorStop(1, 'rgba(0,0,0,.8)'); x.fillStyle = wg; x.fillRect(0, 0, W, W);
+  x.restore(); return cv2;
+}
 function drawCaveFloor(c) {
-  const S = CAVE_STYLE[c.pid || G.planet], g = ctx.createRadialGradient(c.x, c.y, c.R * 0.2, c.x, c.y, c.R);
-  g.addColorStop(0, S.floor); g.addColorStop(1, 'rgba(0,0,0,.85)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, c.R, 0, 7); ctx.fill();
+  if (!c.spr) c.spr = paintCaveFloor(c);
+  const W = c.spr.width; ctx.drawImage(c.spr, c.x - W / 2, c.y - W / 2);
+  if (!LOD_HI) return; const t = G.t;
+  // water dripping from the ceiling into the puddles: expanding rings
+  for (const [px, py, pw] of c.pools || []) { const k = ((t * 0.55 + px * 0.01) % 1 + 1) % 1; ctx.strokeStyle = `rgba(200,230,255,${0.45 * (1 - k)})`; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(c.x + px, c.y + py, pw * 0.15 + pw * 0.7 * k, (pw * 0.15 + pw * 0.7 * k) * 0.65, 0, 0, 7); ctx.stroke(); }
+}
+function caveDarkness(c, p) { // inside: the cave is dark except around you and its own glowing crystals / fungi / lava
+  const L = p.r * 2.2 + 150, g = ctx.createRadialGradient(p.x, p.y, L * 0.35, p.x, p.y, L);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(2,2,6,.82)'); ctx.save(); ctx.beginPath(); ctx.arc(c.x, c.y, c.R + 6, 0, 7); ctx.clip(); ctx.fillStyle = g; ctx.fillRect(c.x - c.R - 10, c.y - c.R - 10, c.R * 2 + 20, c.R * 2 + 20);
+  // daylight shaft from the entrance
+  const ex = c.x + Math.cos(c.ent) * c.R, ey = c.y + Math.sin(c.ent) * c.R, sg = ctx.createRadialGradient(ex, ey, 0, ex, ey, c.R * 0.75); sg.addColorStop(0, 'rgba(255,245,215,.16)'); sg.addColorStop(1, 'rgba(255,245,215,0)'); ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(ex, ey, c.R * 0.75, 0, 7); ctx.fill();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const [gx, gy, gr, h, ph] of c.glows || []) { const pu = 0.75 + 0.25 * Math.sin(G.t * 1.7 + ph), lg = ctx.createRadialGradient(c.x + gx, c.y + gy, 0, c.x + gx, c.y + gy, gr * 2.2); lg.addColorStop(0, `hsla(${h},90%,60%,${0.32 * pu})`); lg.addColorStop(1, `hsla(${h},90%,60%,0)`); ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(c.x + gx, c.y + gy, gr * 2.2, 0, 7); ctx.fill(); }
+  ctx.restore();
+  // falling drips
+  for (let i = 0; i < 4; i++) { const k = (G.t * 0.8 + i * 0.27) % 1, a = i * 2.1 + Math.floor(G.t * 0.8 + i * 0.27) * 1.3, d = c.R * (0.25 + (i * 0.17) % 0.5), dx = c.x + Math.cos(a) * d, dy = c.y + Math.sin(a) * d; ctx.fillStyle = `rgba(190,225,255,${0.7 * (1 - k)})`; ctx.beginPath(); ctx.ellipse(dx, dy, 1.6 + k * 1.5, 1.6 + k * 1.5, 0, 0, 7); ctx.fill(); }
 }
 function caveRoofPath(c, k = 1) { const n = c.sh.length, P = c.sh.map((v, i) => { const a = i / n * 6.283, rr = (c.R + 26) * v * k; return [c.x + Math.cos(a) * rr, c.y + Math.sin(a) * rr]; }); ctx.beginPath(); ctx.moveTo((P[n - 1][0] + P[0][0]) / 2, (P[n - 1][1] + P[0][1]) / 2); for (let i = 0; i < n; i++) { const q = P[(i + 1) % n]; ctx.quadraticCurveTo(P[i][0], P[i][1], (P[i][0] + q[0]) / 2, (P[i][1] + q[1]) / 2); } ctx.closePath(); }
 function drawCaveRoof(c, playerInside) {
   const S = CAVE_STYLE[c.pid || G.planet], ex = c.x + Math.cos(c.ent) * c.R, ey = c.y + Math.sin(c.ent) * c.R;
-  if (playerInside) { // see inside: draw only the rock wall ring, with a dark ceiling haze
+  if (playerInside) { // see inside: darkness lit by you and the cave's own glow, then the rock wall ring
+    caveDarkness(c, G.player);
     ctx.save(); ctx.strokeStyle = S.rock2; ctx.lineWidth = 46; ctx.setLineDash([]); ctx.beginPath(); ctx.arc(c.x, c.y, c.R + 4, c.ent + 0.42, c.ent + 6.283 - 0.42); ctx.stroke();
-    ctx.strokeStyle = S.rock; ctx.lineWidth = 14; ctx.beginPath(); ctx.arc(c.x, c.y, c.R - 14, c.ent + 0.45, c.ent + 6.283 - 0.45); ctx.stroke(); ctx.restore();
+    ctx.strokeStyle = S.rock; ctx.lineWidth = 14; ctx.beginPath(); ctx.arc(c.x, c.y, c.R - 14, c.ent + 0.45, c.ent + 6.283 - 0.45); ctx.stroke();
+    // jagged rock wall: boulders and stalactite tips hanging from the ceiling edge, lit from the cave's centre
+    const wr2 = mulberry32((c.x * 5 + c.y) | 0);
+    for (let k = 0; k < 34; k++) { const a = c.ent + 0.5 + k / 34 * (6.283 - 1.0), rr = c.R - 16 + wr2() * 10, br = 7 + wr2() * 12, bx = c.x + Math.cos(a) * rr, by = c.y + Math.sin(a) * rr;
+      const g = ctx.createRadialGradient(bx - Math.cos(a) * br * 0.5, by - Math.sin(a) * br * 0.5, 1, bx, by, br); g.addColorStop(0, S.rock); g.addColorStop(1, S.rock2); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(bx, by, br, 0, 7); ctx.fill();
+      if (k % 3 === 0) { const tl = 10 + wr2() * 16, tx = c.x + Math.cos(a) * (c.R - 22 - tl), ty = c.y + Math.sin(a) * (c.R - 22 - tl), nx = -Math.sin(a) * 5, ny = Math.cos(a) * 5; ctx.fillStyle = S.rock2; ctx.beginPath(); ctx.moveTo(bx + nx, by + ny); ctx.lineTo(tx, ty); ctx.lineTo(bx - nx, by - ny); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(tx, ty, 1.6, 0, 7); ctx.fill(); } }
+    ctx.restore();
     return;
   }
   ctx.save();
@@ -4665,9 +4808,16 @@ function drawCaveRoof(c, playerInside) {
   if ((c.pid || G.planet) === 'ice') { ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(c.x - c.R * 0.15, c.y - c.R * 0.2, c.R * 0.55, c.R * 0.35, -0.4, 0, 7); ctx.fill(); }
   if ((c.pid || G.planet) === 'robo') { ctx.strokeStyle = 'rgba(255,200,40,.5)'; ctx.lineWidth = 8; ctx.setLineDash([16, 16]); ctx.beginPath(); ctx.arc(c.x, c.y, c.R * 0.6, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
   if ((c.pid || G.planet) === 'hell') { ctx.strokeStyle = `rgba(255,110,30,${0.45 + 0.2 * Math.sin(G.t * 2 + c.x)})`; ctx.lineWidth = 4; const cr = mulberry32(c.x | 0); for (let k = 0; k < 4; k++) { let a = cr() * 6.28, rr = c.R * 0.15; ctx.beginPath(); ctx.moveTo(c.x + Math.cos(a) * rr, c.y + Math.sin(a) * rr); for (let j = 0; j < 4; j++) { a += (cr() - 0.5) * 0.7; rr += c.R * 0.18; ctx.lineTo(c.x + Math.cos(a) * rr, c.y + Math.sin(a) * rr); } ctx.stroke(); } }
+  { const pl = c.pid || G.planet; if (LOD_HI && (pl === 'earth' || pl === 'jungle' || pl === 'water' || pl === 'heaven')) { // grass, shrubs and hanging vines over the cave roof
+    const vr = mulberry32((c.y * 9 + c.x) | 0), hue = pl === 'jungle' ? 105 : pl === 'water' ? 160 : pl === 'heaven' ? 80 : 95;
+    for (let k = 0; k < 10; k++) { const a = vr() * 6.283, d = c.R * (0.2 + vr() * 0.75), bx = c.x + Math.cos(a) * d, by = c.y + Math.sin(a) * d, br = c.R * (0.06 + vr() * 0.07);
+      ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.arc(bx + br * 0.25, by + br * 0.3, br, 0, 7); ctx.fill();
+      for (let j = 0; j < 9; j++) { const q = vr() * 6.283, dd = vr() * br * 0.8, lit = clamp(0.5 - (Math.cos(q) + Math.sin(q)) * dd / br * 0.5, 0, 1); ctx.fillStyle = `hsl(${hue + (vr() - 0.5) * 20},45%,${20 + lit * 22}%)`; ctx.beginPath(); ctx.ellipse(bx + Math.cos(q) * dd, by + Math.sin(q) * dd, br * 0.42, br * 0.24, vr() * 3, 0, 7); ctx.fill(); } }
+    ctx.strokeStyle = `hsla(${hue},45%,28%,.8)`; ctx.lineWidth = 2; for (let k = 0; k < 7; k++) { const a = c.ent + (k - 3) * 0.1, x0 = c.x + Math.cos(a) * (c.R + 8), y0 = c.y + Math.sin(a) * (c.R + 8), L = 18 + vr() * 26, sw = Math.sin(G.t * 1.3 + k) * 3; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.quadraticCurveTo(x0 + Math.cos(a) * L * 0.5 + sw, y0 + Math.sin(a) * L * 0.5, x0 + Math.cos(a) * L + sw, y0 + Math.sin(a) * L); ctx.stroke(); } } }
   // entrance mouth
   ctx.translate(ex, ey); ctx.rotate(c.ent);
-  ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 0, 34, 70, 0, 0, 7); ctx.fill();
+  { const rg = ctx.createLinearGradient(34, 0, -34, 0); rg.addColorStop(0, S.rock2); rg.addColorStop(0.45, 'rgba(10,8,6,.95)'); rg.addColorStop(1, '#000'); ctx.fillStyle = rg; ctx.beginPath(); ctx.ellipse(0, 0, 34, 70, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 2; for (let k = 1; k < 5; k++) { const sx = 26 - k * 11, hh = 70 * Math.sqrt(Math.max(0, 1 - (sx / 34) ** 2)); ctx.beginPath(); ctx.moveTo(sx, -hh * 0.9); ctx.lineTo(sx, hh * 0.9); ctx.stroke(); } } // worn steps leading down
   ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(14, 0, 30, 78, 0, 0, 7); ctx.fill();
   ctx.strokeStyle = S.rock2; ctx.lineWidth = 8; ctx.beginPath(); ctx.ellipse(0, 0, 34, 70, 0, -1.4, 1.4); ctx.stroke();
   if ((c.pid || G.planet) === 'ice') { ctx.fillStyle = '#e8f7ff'; for (let k = -3; k <= 3; k++) { ctx.beginPath(); ctx.moveTo(4, k * 18 - 6); ctx.lineTo(-14, k * 18); ctx.lineTo(4, k * 18 + 6); ctx.fill(); } }
@@ -4678,7 +4828,7 @@ function drawCover(c, pIn) {
   ctx.save(); if (pIn) ctx.globalAlpha = 0.4;
   if (c.k === 'seagrass' || c.k === 'fern') {
     ctx.lineCap = 'round';
-    for (const [a, d, s, q] of c.b) { const bx = c.x + Math.cos(a) * d, by = c.y + Math.sin(a) * d; for (let k = 0; k < (c.k === 'fern' ? 6 : 8); k++) { const aa = k / (c.k === 'fern' ? 6 : 8) * 6.283 + q * 3 + (c.k === 'seagrass' ? Math.sin(t * 1.5 + k + q * 5) * 0.25 : Math.sin(t * 1.2 + k) * 0.06), L = s * (0.8 + 0.3 * ((k * 7 + q * 10) % 3) / 3); ctx.strokeStyle = S.c[k % 3]; ctx.lineWidth = c.k === 'fern' ? 9 : 5; ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(bx + Math.cos(aa + 0.3) * L * 0.6, by + Math.sin(aa + 0.3) * L * 0.6, bx + Math.cos(aa) * L, by + Math.sin(aa) * L); ctx.stroke(); if (c.k === 'fern' && LOD_HI) { ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(160,220,110,.5)'; ctx.stroke(); } } }
+    for (const [a, d, s, q] of c.b) { const bx = c.x + Math.cos(a) * d, by = c.y + Math.sin(a) * d; for (let k = 0; k < (c.k === 'fern' ? 6 : 8); k++) { const aa = k / (c.k === 'fern' ? 6 : 8) * 6.283 + q * 3 + (c.k === 'seagrass' ? Math.sin(t * 1.5 + k + q * 5) * 0.25 : Math.sin(t * 1.2 + k) * 0.06), L = s * (0.8 + 0.3 * ((k * 7 + q * 10) % 3) / 3); ctx.strokeStyle = S.c[k % 3]; ctx.lineWidth = c.k === 'fern' ? 9 : 5; ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(bx + Math.cos(aa + 0.3) * L * 0.6, by + Math.sin(aa + 0.3) * L * 0.6, bx + Math.cos(aa) * L, by + Math.sin(aa) * L); ctx.stroke(); if (c.k === 'fern' && LOD_HI) { ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(160,220,110,.5)'; ctx.stroke(); ctx.fillStyle = S.c[(k + 1) % 3]; for (let j = 1; j < 7; j++) { const u = j / 7, px = bx + Math.cos(aa + 0.3 * (1 - u)) * L * u, py = by + Math.sin(aa + 0.3 * (1 - u)) * L * u, lw = L * 0.16 * (1 - u * 0.7); for (const sd of [-1, 1]) { ctx.beginPath(); ctx.ellipse(px + Math.cos(aa + sd * 1.1) * lw * 0.6, py + Math.sin(aa + sd * 1.1) * lw * 0.6, lw * 0.7, lw * 0.25, aa + sd * 1.1, 0, 7); ctx.fill(); } } } } }
   } else if (c.k === 'ash' || c.k === 'nebula') {
     for (const [a, d, s, q] of c.b) { const bx = c.x + Math.cos(a + t * 0.1) * d, by = c.y + Math.sin(a + t * 0.1) * d - Math.sin(t + q * 6) * 6; ctx.fillStyle = S.c[Math.floor(q * 3)]; ctx.globalAlpha = (pIn ? 0.3 : 0.85); ctx.beginPath(); ctx.arc(bx, by, s, 0, 7); ctx.fill(); }
     if (c.k === 'ash') { ctx.fillStyle = `rgba(255,90,30,${0.25 + 0.15 * Math.sin(t * 3 + c.x)})`; ctx.beginPath(); ctx.arc(c.x, c.y, c.r * 0.25, 0, 7); ctx.fill(); }
