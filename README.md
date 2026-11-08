@@ -74,3 +74,15 @@ Players can report a player or a bug from the main menu or the pause menu. Repor
   server-side checks.
 - Leaderboards show the in-game name players type on the main menu (their Google first name by default),
   never their email.
+
+## Payments: Lemon Squeezy (preferred) or Stripe
+
+Lemon Squeezy is used when all four of these are set on the server (it is the seller of record and handles sales tax):
+
+- `LEMONSQUEEZY_API_KEY`: Settings → API in Lemon Squeezy
+- `LEMONSQUEEZY_STORE_ID`: the number in Settings → Stores
+- `LEMONSQUEEZY_VARIANT_ID`: the variant ID of one product (any price; each checkout sets its own name and price)
+- `LEMONSQUEEZY_WEBHOOK_SECRET`: the signing secret of a webhook pointing at `https://<your-site>/api/lemonsqueezy/webhook` with the `order_created` event
+- optional `LEMONSQUEEZY_TEST=1` while the store is in test mode
+
+Without them, `STRIPE_SECRET_KEY` (Stripe) is used if set; with neither, the store shows "opening soon".

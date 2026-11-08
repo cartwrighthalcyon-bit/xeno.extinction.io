@@ -16,7 +16,25 @@ const DEV_LOGIN = process.env.DEV_LOGIN === '1';
 // Stripe payments: set STRIPE_SECRET_KEY (sk_test_... or sk_live_...) on the server. STRIPE_WEBHOOK_SECRET (whsec_...) is optional but recommended.
 const STRIPE_RAW = String(process.env.STRIPE_SECRET_KEY || '').trim(), STRIPE_KEY = /^(sk|rk)_(live|test)_/.test(STRIPE_RAW) ? STRIPE_RAW : '', STRIPE_WH = String(process.env.STRIPE_WEBHOOK_SECRET || '').trim();
 const STRIPE_KIND = (STRIPE_RAW.match(/^[a-z]{2}_[a-z]{4}_/) || [''])[0] || (STRIPE_RAW ? 'unrecognised' : 'none'); // prefix only, never the key
-console.log('[pay] payments ' + (STRIPE_KEY ? 'ON (' + (/_live_/.test(STRIPE_KEY) ? 'live' : 'test') + ' mode)' + (STRIPE_WH ? ', webhook signed' : '') : STRIPE_RAW ? 'OFF: STRIPE_SECRET_KEY looks like a ' + STRIPE_KIND + ' key; it must be the secret key, starting sk_live_ (or sk_test_ for testing)' : 'OFF: set STRIPE_SECRET_KEY to turn them on') + (STRIPE_KEY ? ' [key type ' + STRIPE_KIND + ']' : ''));
+// Lemon Squeezy (merchant of record, preferred when configured): LEMONSQUEEZY_API_KEY, LEMONSQUEEZY_STORE_ID, LEMONSQUEEZY_VARIANT_ID
+// (one product variant; each checkout sets its own name and price) and LEMONSQUEEZY_WEBHOOK_SECRET (purchases are delivered by the order_created webhook).
+const LS = { key: String(process.env.LEMONSQUEEZY_API_KEY || '').trim(), store: String(process.env.LEMONSQUEEZY_STORE_ID || '').trim(), variant: String(process.env.LEMONSQUEEZY_VARIANT_ID || '').trim(), wh: String(process.env.LEMONSQUEEZY_WEBHOOK_SECRET || '').trim(), test: process.env.LEMONSQUEEZY_TEST === '1' };
+const LS_MISSING = [['LEMONSQUEEZY_API_KEY', LS.key], ['LEMONSQUEEZY_STORE_ID', /^\d+$/.test(LS.store)], ['LEMONSQUEEZY_VARIANT_ID', /^\d+$/.test(LS.variant)], ['LEMONSQUEEZY_WEBHOOK_SECRET', LS.wh]].filter(x => !x[1]).map(x => x[0]);
+const LS_ON = !!(LS.key || LS.store || LS.variant || LS.wh) && !LS_MISSING.length;
+const PROVIDER = LS_ON ? 'lemonsqueezy' : STRIPE_KEY ? 'stripe' : '', PAY_ON = !!PROVIDER;
+console.log('[pay] payments ' + (LS_ON ? 'ON via Lemon Squeezy' + (LS.test ? ' (test mode)' : '') : (LS.key || LS.store || LS.variant || LS.wh) ? 'Lemon Squeezy is missing ' + LS_MISSING.join(', ') + (STRIPE_KEY ? '; using Stripe meanwhile' : '; payments OFF') : '')
+  + (!LS_ON ? (STRIPE_KEY ? ' ON via Stripe (' + (/_live_/.test(STRIPE_KEY) ? 'live' : 'test') + ' mode)' + (STRIPE_WH ? ', webhook signed' : '') + ' [key type ' + STRIPE_KIND + ']' : STRIPE_RAW ? ' OFF: STRIPE_SECRET_KEY looks like a ' + STRIPE_KIND + ' key' : (LS.key || LS.store || LS.variant || LS.wh) ? '' : 'OFF: set the LEMONSQUEEZY_* variables (or STRIPE_SECRET_KEY) to turn them on') : ''));
+async function lemon(method, pathName, body) {
+  const r = await fetch((process.env.LEMONSQUEEZY_API_BASE || 'https://api.lemonsqueezy.com/v1/') + pathName, { method, headers: { Authorization: 'Bearer ' + LS.key, Accept: 'application/vnd.api+json', 'Content-Type': 'application/vnd.api+json' }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = (j.errors && j.errors[0]) || {}; throw new Error('Lemon Squeezy: ' + (e.detail || e.title || ('HTTP ' + r.status))); }
+  return j;
+}
+function verifyLemonSig(raw, header) {
+  if (!LS.wh || !header) return false;
+  const want = Buffer.from(crypto.createHmac('sha256', LS.wh).update(raw).digest('hex')), got = Buffer.from(String(header));
+  return want.length === got.length && crypto.timingSafeEqual(want, got);
+}
 // Ads: ADSENSE_CLIENT = your AdSense publisher id (ca-pub-...). ADSENSE_TEST=1 shows test ads while you wait for approval.
 const ADS_CLIENT = /^ca-pub-\d{6,20}$/.test(process.env.ADSENSE_CLIENT || '') ? process.env.ADSENSE_CLIENT : '';
 const CATALOG = (() => { try { return require('./catalog.json'); } catch (e) { return { packs: [], aliens: [] }; } })();
@@ -178,16 +196,20 @@ function readRaw(req) {
 // A paid Stripe checkout session becomes a gift in the recipient's inbox (the buyer, or the friend they bought for).
 async function grantSession(sess) {
   if (!sess || sess.payment_status !== 'paid') return { ok: false, status: sess ? sess.payment_status : 'missing' };
-  const md = sess.metadata || {}, it = catalogItem(md.item); if (!it) return { ok: false, status: 'unknown item' };
+  return grantOrder({ id: sess.id, cents: sess.amount_total, md: sess.metadata || {} });
+}
+// A paid order (Stripe session or Lemon Squeezy order) becomes a gift in the recipient's inbox: the buyer, or the friend they bought for.
+async function grantOrder(o) {
+  const md = o.md, it = catalogItem(md.item); if (!it) return { ok: false, status: 'unknown item' };
   const buyer = await store.get(md.uid); if (!buyer) return { ok: false, status: 'unknown buyer' };
   const to = md.to ? await store.byCode(md.to) : buyer; if (!to) return { ok: false, status: 'unknown recipient' };
   to.purchases = to.purchases || [];
-  if (to.purchases.some(x => x.id === sess.id)) return { ok: true, status: 'already granted' };
-  to.purchases.push({ id: sess.id, item: it.key, cents: sess.amount_total, at: Date.now(), from: buyer.id }); to.purchases = to.purchases.slice(-500);
+  if (to.purchases.some(x => x.id === o.id)) return { ok: true, status: 'already granted' };
+  to.purchases.push({ id: o.id, item: it.key, cents: o.cents, at: Date.now(), from: buyer.id }); to.purchases = to.purchases.slice(-500);
   if (it.grant.type === 'alien') { to.entitled = [...new Set([...(to.entitled || []), it.grant.id])]; }
   to.gifts = (to.gifts || []).slice(-49); to.gifts.push({ from: to === buyer ? 'Store purchase' : publicName(buyer), item: it.grant, at: Date.now(), paid: true });
   await store.put(to.id, to);
-  console.log('[pay] granted', it.key, 'session', sess.id, to === buyer ? '' : '(gift)');
+  console.log('[pay] granted', it.key, 'order', o.id, to === buyer ? '' : '(gift)');
   return { ok: true, status: 'granted' };
 }
 async function handle(req, res) {
@@ -197,7 +219,7 @@ async function handle(req, res) {
     const route = req.method + ' ' + url.pathname;
     if (route === 'GET /api/config') { let servers = []; try { servers = JSON.parse(process.env.SERVERS || '[]').filter(x => x && x.name && /^https?:\/\//.test(x.url)).slice(0, 8); } catch (e) {}
       res.__servers = [{ name: process.env.REGION_NAME || 'US West', url: '' }].concat(servers); }
-    if (route === 'GET /api/config') return send(res, 200, { servers: res.__servers, guest: true, login: !!CLIENT_ID || DEV_LOGIN, googleClientId: CLIENT_ID, dev: DEV_LOGIN, storage: store.kind, payments: !!STRIPE_KEY, testMode: STRIPE_KEY.startsWith('sk_test_'), ads: ADS_CLIENT ? { client: ADS_CLIENT, test: process.env.ADSENSE_TEST === '1' } : null }), true;
+    if (route === 'GET /api/config') return send(res, 200, { servers: res.__servers, guest: true, login: !!CLIENT_ID || DEV_LOGIN, googleClientId: CLIENT_ID, dev: DEV_LOGIN, storage: store.kind, payments: PAY_ON, provider: PROVIDER, testMode: PROVIDER === 'lemonsqueezy' ? LS.test : STRIPE_KEY.startsWith('sk_test_'), ads: ADS_CLIENT ? { client: ADS_CLIENT, test: process.env.ADSENSE_TEST === '1' } : null }), true;
 
     if (route === 'POST /api/login') {
       const body = await readBody(req);
@@ -229,6 +251,17 @@ async function handle(req, res) {
       if (!verifyStripeSig(raw, req.headers['stripe-signature'])) return send(res, 400, { error: 'Bad signature' }), true;
       const ev = JSON.parse(raw);
       if (ev.type === 'checkout.session.completed' || ev.type === 'checkout.session.async_payment_succeeded') await grantSession(ev.data.object);
+      return send(res, 200, { received: true }), true;
+    }
+    if (route === 'POST /api/lemonsqueezy/webhook') {
+      const raw = await readRaw(req);
+      if (!verifyLemonSig(raw, req.headers['x-signature'])) return send(res, 401, { error: 'Bad signature' }), true;
+      const ev = JSON.parse(raw), name = ev.meta && ev.meta.event_name, a = (ev.data && ev.data.attributes) || {};
+      if (name === 'order_created' && a.status === 'paid') {
+        const cd = (ev.meta && ev.meta.custom_data) || {};
+        const r = await grantOrder({ id: 'ls_' + ev.data.id, cents: a.subtotal, md: { uid: String(cd.uid || ''), item: String(cd.item || ''), to: String(cd.to || '') } });
+        if (!r.ok) console.warn('[pay] Lemon Squeezy order', ev.data.id, 'not granted:', r.status);
+      } else if (name === 'order_refunded') console.log('[pay] Lemon Squeezy order refunded', ev.data && ev.data.id);
       return send(res, 200, { received: true }), true;
     }
     const auth = readToken(req);
@@ -279,11 +312,22 @@ async function handle(req, res) {
       return send(res, 200, { ok: true, id }), true;
     }
     if (route === 'POST /api/checkout') {
-      if (!STRIPE_KEY) return send(res, 503, { error: 'Payments are not set up on this server yet' }), true;
+      if (!PAY_ON) return send(res, 503, { error: 'Payments are not set up on this server yet' }), true;
       const body = await readBody(req), it = catalogItem(body.item); if (!it) return send(res, 400, { error: 'Unknown item' }), true;
       let to = '';
       if (body.to) { to = String(body.to).toUpperCase().replace(/[^0-9A-F]/g, '').slice(0, 8); if (to.length !== 8) return send(res, 400, { error: 'Enter an 8-character friend code' }), true; if (to === (rec.code || friendCode(rec.id))) return send(res, 400, { error: 'You cannot gift yourself' }), true; if (!(await store.byCode(to))) return send(res, 404, { error: 'No player has that friend code' }), true; }
       const base = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || ('https://' + req.headers.host)).replace(/\/$/, '');
+      if (PROVIDER === 'lemonsqueezy') {
+        const back = base + '/?checkout=success&provider=ls';
+        const co = await lemon('POST', 'checkouts', { data: { type: 'checkouts', attributes: {
+          custom_price: it.cents,
+          product_options: { name: 'XENO.IO: ' + it.name + (to ? ' (gift)' : ''), description: to ? 'A gift for another player. It arrives in their game inbox.' : 'Delivered to your XENO.IO account as soon as payment goes through.', redirect_url: back, receipt_button_text: 'Back to XENO.IO', receipt_link_url: back, enabled_variants: [+LS.variant] },
+          checkout_options: { embed: false, media: false, logo: true },
+          checkout_data: { custom: { uid: rec.id, item: it.key, to } },
+          expires_at: new Date(Date.now() + 3600e3).toISOString(), test_mode: LS.test,
+        }, relationships: { store: { data: { type: 'stores', id: LS.store } }, variant: { data: { type: 'variants', id: LS.variant } } } } });
+        return send(res, 200, { url: co.data.attributes.url }), true;
+      }
       const sess = await stripe('POST', 'checkout/sessions', {
         mode: 'payment', 'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': 'usd', 'line_items[0][price_data][unit_amount]': String(it.cents),
         'line_items[0][price_data][product_data][name]': 'XENO.IO: ' + it.name + (to ? ' (gift)' : ''), 'line_items[0][price_data][product_data][tax_code]': process.env.STRIPE_TAX_CODE || 'txcd_10201000', // in-game items; needed for Stripe Managed Payments (Stripe handles sales tax)
@@ -293,7 +337,7 @@ async function handle(req, res) {
       return send(res, 200, { url: sess.url }), true;
     }
     if (route === 'POST /api/checkout/confirm') { // backup path when the webhook is not set up: ask Stripe directly
-      if (!STRIPE_KEY) return send(res, 503, { error: 'Payments are not set up' }), true;
+      if (PROVIDER !== 'stripe') return send(res, 200, { ok: false, status: 'webhook' }), true;
       const body = await readBody(req), id = String(body.session || ''); if (!/^cs_[A-Za-z0-9_]{10,200}$/.test(id)) return send(res, 400, { error: 'Bad session' }), true;
       const sess = await stripe('GET', 'checkout/sessions/' + id);
       if ((sess.metadata || {}).uid !== rec.id) return send(res, 403, { error: 'Not your purchase' }), true;
@@ -304,7 +348,7 @@ async function handle(req, res) {
       const body = await readBody(req);
       const sv = cleanSave(body.save);
       if (!sv) return send(res, 400, { error: 'Bad save' }), true;
-      { const ent = new Set(rec.entitled || []), codeIds = new Set(Object.values(CATALOG.codes || {})); sv.owned = sv.owned.filter(id => ent.has(id) || (codeIds.has(id) ? false : (!STRIPE_KEY || !PREMIUM_IDS.has(id)))); }
+      { const ent = new Set(rec.entitled || []), codeIds = new Set(Object.values(CATALOG.codes || {})); sv.owned = sv.owned.filter(id => ent.has(id) || (codeIds.has(id) ? false : (!PAY_ON || !PREMIUM_IDS.has(id)))); }
       rec.save = sv; rec.stats.collected = sv.owned.length; if (sv.equipped) rec.stats.alien = sv.equipped;
       await store.put(rec.id, rec);
       return send(res, 200, { ok: true }), true;
@@ -328,7 +372,7 @@ async function handle(req, res) {
 
     // Gifts: send a bought item to another player by their friend code; they claim it next time they sign in.
     if (route === 'POST /api/gift') {
-      if (STRIPE_KEY || !DEV_LOGIN) return send(res, 402, { error: 'Gifts are bought through checkout' }), true;
+      if (PAY_ON || !DEV_LOGIN) return send(res, 402, { error: 'Gifts are bought through checkout' }), true;
       const body = await readBody(req), code = String(body.to || '').toUpperCase().replace(/[^0-9A-F]/g, '').slice(0, 8), it = body.item || {};
       if (code.length !== 8) return send(res, 400, { error: 'Enter an 8-character friend code' }), true;
       if (code === (rec.code || friendCode(rec.id))) return send(res, 400, { error: 'You cannot gift yourself' }), true;
