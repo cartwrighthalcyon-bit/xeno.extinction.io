@@ -286,7 +286,7 @@ async function handle(req, res) {
       const base = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || ('https://' + req.headers.host)).replace(/\/$/, '');
       const sess = await stripe('POST', 'checkout/sessions', {
         mode: 'payment', 'line_items[0][quantity]': '1', 'line_items[0][price_data][currency]': 'usd', 'line_items[0][price_data][unit_amount]': String(it.cents),
-        'line_items[0][price_data][product_data][name]': 'XENO.IO: ' + it.name + (to ? ' (gift)' : ''),
+        'line_items[0][price_data][product_data][name]': 'XENO.IO: ' + it.name + (to ? ' (gift)' : ''), 'line_items[0][price_data][product_data][tax_code]': process.env.STRIPE_TAX_CODE || 'txcd_10201000', // in-game items; needed for Stripe Managed Payments (Stripe handles sales tax)
         success_url: base + '/?checkout=success&session_id={CHECKOUT_SESSION_ID}', cancel_url: base + '/?checkout=cancel',
         client_reference_id: rec.id.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 200), 'metadata[uid]': rec.id, 'metadata[item]': it.key, 'metadata[to]': to,
       });
