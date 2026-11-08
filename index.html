@@ -6065,7 +6065,7 @@ function drawHUD() {
     if (p.alive && Math.hypot(p.x - G.zone.x, p.y - G.zone.y) > G.zone.r) { ctx.fillStyle = '#ff5a5a'; ctx.font = 'bold 15px system-ui'; ctx.fillText('METEOR STORM! Get inside the safe zone!', VW / 2, topY + 104); }
   } else { ctx.font = 'bold 14px system-ui'; ctx.fillStyle = '#9fe3ff'; ctx.fillText(G.mode === 'tutorial' ? 'TUTORIAL: FIRST STEPS' : G.open ? 'OPEN WORLD · ' + G.P.name.toUpperCase() + ' · ' + fmtTime(G.t) : 'SURVIVAL — ' + fmtTime(G.t), cx, 26);
     if (G.wev) { const W = G.wev; ctx.font = 'bold 13px system-ui'; ctx.fillStyle = WEV_INFO[W.id].col; ctx.fillText(WEV_INFO[W.id].name + (W.label ? ' (' + W.label + ')' : '') + ' · ' + fmtTime(W.t), cx, 44); } else if (G.open && G.nextWev != null) { ctx.font = '12px system-ui'; ctx.fillStyle = '#aaa'; ctx.fillText('Next world event in ' + fmtTime(G.nextWev), cx, 44); } }
-  if (G.alphaNext != null && !G.royale) { ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillStyle = '#ff9a8a'; ctx.fillText('Alpha boss returns in ' + fmtTime(G.alphaNext), narrow ? (VW - 70) / 2 : VW / 2, 64); }
+  if (G.alphaNext != null && !G.royale) { ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillStyle = '#ff9a8a'; ctx.fillText('Alpha boss returns in ' + fmtTime(G.alphaNext), VW / 2, narrow ? 158 : 64); } // on phones the stats panel fills the top-left, so the timer goes below it
   // minimap
   const mx = VW - ms - 12, my = narrow ? topY : 52;
   ctx.fillStyle = 'rgba(10,6,20,.65)'; ctx.fillRect(mx, my, ms, ms); ctx.strokeStyle = '#5a46a0'; ctx.strokeRect(mx, my, ms, ms);
