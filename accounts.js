@@ -19,10 +19,10 @@ const STRIPE_KIND = (STRIPE_RAW.match(/^[a-z]{2}_[a-z]{4}_/) || [''])[0] || (STR
 // Lemon Squeezy (merchant of record, preferred when configured): LEMONSQUEEZY_API_KEY, LEMONSQUEEZY_STORE_ID, LEMONSQUEEZY_VARIANT_ID
 // (one product variant; each checkout sets its own name and price) and LEMONSQUEEZY_WEBHOOK_SECRET (purchases are delivered by the order_created webhook).
 const LS = { key: String(process.env.LEMONSQUEEZY_API_KEY || '').trim(), store: String(process.env.LEMONSQUEEZY_STORE_ID || '').trim(), variant: String(process.env.LEMONSQUEEZY_VARIANT_ID || '').trim(), wh: String(process.env.LEMONSQUEEZY_WEBHOOK_SECRET || '').trim(), test: process.env.LEMONSQUEEZY_TEST === '1' };
-const LS_MISSING = [['LEMONSQUEEZY_API_KEY', LS.key], ['LEMONSQUEEZY_STORE_ID', /^\d+$/.test(LS.store)], ['LEMONSQUEEZY_VARIANT_ID', /^\d+$/.test(LS.variant)], ['LEMONSQUEEZY_WEBHOOK_SECRET', LS.wh]].filter(x => !x[1]).map(x => x[0]);
-const LS_ON = !!(LS.key || LS.store || LS.variant || LS.wh) && !LS_MISSING.length;
-const PROVIDER = LS_ON ? 'lemonsqueezy' : STRIPE_KEY ? 'stripe' : '', PAY_ON = !!PROVIDER;
-console.log('[pay] payments ' + (LS_ON ? 'ON via Lemon Squeezy' + (LS.test ? ' (test mode)' : '') : (LS.key || LS.store || LS.variant || LS.wh) ? 'Lemon Squeezy is missing ' + LS_MISSING.join(', ') + (STRIPE_KEY ? '; using Stripe meanwhile' : '; payments OFF') : '')
+let LS_MISSING = [['LEMONSQUEEZY_API_KEY', LS.key], ['LEMONSQUEEZY_STORE_ID', /^\d+$/.test(LS.store)], ['LEMONSQUEEZY_VARIANT_ID', /^\d+$/.test(LS.variant)], ['LEMONSQUEEZY_WEBHOOK_SECRET', LS.wh]].filter(x => !x[1]).map(x => x[0]);
+let LS_ON = !!(LS.key || LS.store || LS.variant || LS.wh) && !LS_MISSING.length;
+let PROVIDER = LS_ON ? 'lemonsqueezy' : STRIPE_KEY ? 'stripe' : '', PAY_ON = !!PROVIDER;
+console.log('[pay] payments ' + (LS_ON ? 'ON via Lemon Squeezy' + (LS.test ? ' (test mode)' : '') : (LS.key && LS.wh && LS_MISSING.every(m => /STORE_ID|VARIANT_ID/.test(m))) ? 'pending: looking up your Lemon Squeezy store and product…' + (STRIPE_KEY ? ' (Stripe meanwhile)' : '') : (LS.key || LS.store || LS.variant || LS.wh) ? 'Lemon Squeezy is missing ' + LS_MISSING.join(', ') + (STRIPE_KEY ? '; using Stripe meanwhile' : '; payments OFF') : '')
   + (!LS_ON ? (STRIPE_KEY ? ' ON via Stripe (' + (/_live_/.test(STRIPE_KEY) ? 'live' : 'test') + ' mode)' + (STRIPE_WH ? ', webhook signed' : '') + ' [key type ' + STRIPE_KIND + ']' : STRIPE_RAW ? ' OFF: STRIPE_SECRET_KEY looks like a ' + STRIPE_KIND + ' key' : (LS.key || LS.store || LS.variant || LS.wh) ? '' : 'OFF: set the LEMONSQUEEZY_* variables (or STRIPE_SECRET_KEY) to turn them on') : ''));
 async function lemon(method, pathName, body) {
   const r = await fetch((process.env.LEMONSQUEEZY_API_BASE || 'https://api.lemonsqueezy.com/v1/') + pathName, { method, headers: { Authorization: 'Bearer ' + LS.key, Accept: 'application/vnd.api+json', 'Content-Type': 'application/vnd.api+json' }, body: body ? JSON.stringify(body) : undefined });
@@ -35,6 +35,21 @@ function verifyLemonSig(raw, header) {
   const want = Buffer.from(crypto.createHmac('sha256', LS.wh).update(raw).digest('hex')), got = Buffer.from(String(header));
   return want.length === got.length && crypto.timingSafeEqual(want, got);
 }
+// With only the API key and webhook secret set, find the store and the product to sell through by asking Lemon Squeezy (the first store, and the first published product in it).
+if (LS.key && LS.wh && (!/^\d+$/.test(LS.store) || !/^\d+$/.test(LS.variant))) (async () => {
+  try {
+    if (!/^\d+$/.test(LS.store)) { const st = await lemon('GET', 'stores'); if (!st.data || !st.data.length) throw new Error('no store yet'); LS.store = String(st.data[0].id); }
+    if (!/^\d+$/.test(LS.variant)) {
+      const pr = await lemon('GET', 'products?filter[store_id]=' + LS.store); const prod = (pr.data || []).find(x => x.attributes.status === 'published') || (pr.data || [])[0];
+      if (!prod) throw new Error('no product yet: create one in Lemon Squeezy');
+      const vs = await lemon('GET', 'variants?filter[product_id]=' + prod.id); const v = (vs.data || []).find(x => x.attributes.status !== 'draft') || (vs.data || [])[0];
+      if (!v) throw new Error('the product has no variant');
+      LS.variant = String(v.id);
+    }
+    LS_MISSING = []; LS_ON = true; PROVIDER = 'lemonsqueezy'; PAY_ON = true;
+    console.log('[pay] payments ON via Lemon Squeezy: found store ' + LS.store + ' and product variant ' + LS.variant + (LS.test ? ' (test mode)' : ''));
+  } catch (e) { console.warn('[pay] Lemon Squeezy setup incomplete: ' + e.message); }
+})();
 // Ads: ADSENSE_CLIENT = your AdSense publisher id (ca-pub-...). ADSENSE_TEST=1 shows test ads while you wait for approval.
 const ADS_CLIENT = /^ca-pub-\d{6,20}$/.test(process.env.ADSENSE_CLIENT || '') ? process.env.ADSENSE_CLIENT : '';
 const CATALOG = (() => { try { return require('./catalog.json'); } catch (e) { return { packs: [], aliens: [] }; } })();

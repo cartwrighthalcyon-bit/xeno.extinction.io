@@ -80,8 +80,8 @@ Players can report a player or a bug from the main menu or the pause menu. Repor
 Lemon Squeezy is used when all four of these are set on the server (it is the seller of record and handles sales tax):
 
 - `LEMONSQUEEZY_API_KEY`: Settings → API in Lemon Squeezy
-- `LEMONSQUEEZY_STORE_ID`: the number in Settings → Stores
-- `LEMONSQUEEZY_VARIANT_ID`: the variant ID of one product (any price; each checkout sets its own name and price)
+- `LEMONSQUEEZY_STORE_ID`: optional; found automatically (first store)
+- `LEMONSQUEEZY_VARIANT_ID`: optional; found automatically (first published product). Each checkout sets its own name and price
 - `LEMONSQUEEZY_WEBHOOK_SECRET`: the signing secret of a webhook pointing at `https://<your-site>/api/lemonsqueezy/webhook` with the `order_created` event
 - optional `LEMONSQUEEZY_TEST=1` while the store is in test mode
 
