@@ -867,6 +867,70 @@ Object.assign(AB, {
   regrow:    { name: 'Regrow', cd: 10, mutant: true, desc: 'MUTANT: regrow lost flesh. Heal 30% and shake off poison, burns, slows and stuns.' },
   bloodboil: { name: 'Blood Boil', cd: 9, mutant: true, desc: 'MUTANT: boil your own blood for +50% damage and speed for 4 seconds (costs 8% health).' },
 });
+// ---- v2.2 realistic Earth-animal skills: what the real animal does at each stage of life
+Object.assign(AB, {
+  hide:       { name: 'Hide', cd: 8, real: true, run: false, desc: 'Lie flat and still like a real baby animal: vanish from hunters for 3s and dodge the next hit.' },
+  mothercall: { name: 'Distress Call', cd: 14, real: true, desc: 'Cry out for help: a grown adult of your kind runs in to protect you for 7 seconds.' },
+  zigzag:     { name: 'Zigzag', cd: 6, real: true, run: true, desc: 'Bolt away in sharp zigzags: faster for 2.5s and the first hit misses.' },
+  sprint:     { name: 'Sprint', cd: 7, real: true, run: true, desc: 'Flat-out sprint: almost double speed for 3s and your next bite hits harder.' },
+  pounce:     { name: 'Pounce', cd: 6, real: true, run: true, desc: 'Leap onto the nearest prey in front of you: heavy hit and a short pin.' },
+  stalk:      { name: 'Stalk', cd: 11, real: true, desc: 'Creep low and unseen for 4s; the ambush bite that ends it hits for double.' },
+  maul:       { name: 'Maul', cd: 6, real: true, desc: 'Rear up and swipe with claws: big damage in front that leaves prey bleeding.' },
+  venombite:  { name: 'Venom Bite', cd: 5, real: true, desc: 'Strike with fangs: inject venom that poisons and slows the bitten animal.' },
+  constrict:  { name: 'Constrict', cd: 9, real: true, desc: 'Coil around the nearest prey: it cannot move for 2s and is crushed over time.' },
+  deathroll:  { name: 'Death Roll', cd: 9, real: true, desc: 'Clamp your jaws and roll: huge damage and a stun on the animal you grab.' },
+  snap:       { name: 'Snap', cd: 5, real: true, desc: 'A single crushing bite with enormous jaw force on the closest animal.' },
+  kick:       { name: 'Kick', cd: 5, real: true, desc: 'A powerful kick that hits hard and sends attackers flying back.' },
+  talondive:  { name: 'Talon Dive', cd: 7, real: true, run: true, desc: 'Fold your wings and stoop onto prey from the sky: a fast, crushing talon strike.' },
+  swoop:      { name: 'Silent Swoop', cd: 8, real: true, desc: 'Fly in on silent feathers: unseen for a moment, then a heavy surprise strike.' },
+  howl:       { name: 'Pack Howl', cd: 15, real: true, desc: 'Howl to call your pack: two packmates join the hunt for 8 seconds.' },
+  sting:      { name: 'Sting', cd: 4, real: true, desc: 'Jab with a venomous stinger: poisons the target.' },
+  curl:       { name: 'Curl Up', cd: 9, real: true, desc: 'Roll into an armored ball: take almost no damage for 3s and heal a little.' },
+  stampede:   { name: 'Stampede', cd: 8, real: true, run: true, desc: 'Thunder forward with lowered horns: a long, heavy charge that tramples everything.' },
+  chestbeat:  { name: 'Chest Beat', cd: 11, real: true, desc: 'Drum your chest: rivals nearby are frightened and your strength surges.' },
+  trumpet:    { name: 'Trumpet', cd: 11, real: true, desc: 'A deafening trumpet blast that scares and briefly stuns everything nearby.' },
+  spray:      { name: 'Musk Spray', cd: 9, real: true, desc: 'Spray foul musk behind you: attackers are blinded and run away.' },
+  ink:        { name: 'Ink Cloud', cd: 9, real: true, run: true, desc: 'Squirt a cloud of ink and jet away: nearby hunters are blinded and lose you.' },
+  shock:      { name: 'Electric Shock', cd: 7, real: true, desc: 'Discharge up to 600 volts: damages and stuns everything close by.' },
+  camo:       { name: 'Camouflage', cd: 12, real: true, desc: 'Change skin color to match the ground: invisible for 5s while you hold still or creep.' },
+  tailshed:   { name: 'Tail Drop', cd: 12, real: true, run: true, desc: 'Drop your wriggling tail as a decoy and dash away while hunters chase it.' },
+  toxin:      { name: 'Toxic Skin', cd: 10, real: true, desc: 'Ooze poison from your skin: anything near you is poisoned and slowed.' },
+  breach:     { name: 'Breach', cd: 8, real: true, run: true, desc: 'Explode up from below in a burst of speed for a massive surprise bite.' },
+  leap:       { name: 'Leap', cd: 5, real: true, desc: 'A long jump in the direction you face, out of reach of attackers.' },
+  spit:       { name: 'Spit', cd: 4, real: true, desc: 'Spit a gob of slime that slows and blinds a pursuer.' },
+  dig:        { name: 'Dig In', cd: 8, real: true, desc: 'Grubs and burrowers dig into the ground: hidden and safe for 2s while you heal.' },
+});
+// [baby, juvenile, adult]: elders and alphas keep their adult skill (unless their species evolves)
+const REAL_KIT = {
+  'Bengal Tiger': 'hide,pounce,stalk', 'Siberian Tiger': 'hide,pounce,maul', 'African Lion': 'hide,pounce,roar', 'Leopard': 'hide,pounce,stalk',
+  'Jaguar': 'hide,pounce,snap', 'Cheetah': 'hide,zigzag,sprint', 'Snow Leopard': 'hide,leap,pounce', 'Cougar': 'hide,leap,pounce', 'Eurasian Lynx': 'hide,leap,pounce',
+  'Black Panther': 'hide,pounce,stalk', 'Serval': 'hide,leap,pounce', 'Ocelot': 'hide,pounce,stalk', 'Ring-tailed Lemur': 'mothercall,leap,spray',
+  'Gray Wolf': 'mothercall,sprint,howl', 'Arctic Wolf': 'mothercall,sprint,howl', 'Red Fox': 'hide,pounce,zigzag', 'Arctic Fox': 'hide,burrow,pounce', 'Fennec Fox': 'hide,burrow,echo',
+  'Coyote': 'hide,sprint,howl', 'African Wild Dog': 'mothercall,sprint,howl', 'Spotted Hyena': 'mothercall,howl,snap', 'Maned Wolf': 'hide,leap,pounce', 'Dingo': 'mothercall,sprint,howl',
+  'Honey Badger': 'hide,dig,maul', 'Common Raccoon': 'hide,leap,dig', 'Striped Skunk': 'hide,spray,spray', 'Eurasian Otter': 'mothercall,zigzag,snap', 'Meerkat': 'burrow,echo,mothercall', 'Red Panda': 'hide,leap,maul',
+  'Grizzly Bear': 'mothercall,dig,maul', 'Polar Bear': 'mothercall,stalk,maul', 'American Black Bear': 'mothercall,leap,maul', 'Giant Panda': 'mothercall,leap,maul', 'Sun Bear': 'mothercall,leap,maul',
+  'Spectacled Bear': 'mothercall,leap,maul', 'Wolverine': 'hide,dig,maul', 'Koala': 'mothercall,leap,heal',
+  'African Elephant': 'mothercall,stampede,trumpet', 'Asian Elephant': 'mothercall,stampede,trumpet', 'White Rhinoceros': 'mothercall,charge,stampede', 'Black Rhinoceros': 'mothercall,charge,stampede',
+  'Hippopotamus': 'mothercall,snap,stampede', 'Giraffe': 'hide,sprint,kick', 'Plains Zebra': 'hide,zigzag,kick', 'American Bison': 'mothercall,sprint,stampede', 'Cape Buffalo': 'mothercall,charge,stampede',
+  'Moose': 'hide,kick,charge', 'White-tailed Deer': 'hide,zigzag,sprint', 'Reindeer': 'mothercall,sprint,charge', 'Wild Horse': 'mothercall,sprint,kick', 'Dromedary Camel': 'mothercall,spit,kick',
+  'Wild Boar': 'hide,charge,stampede', 'Bighorn Sheep': 'hide,leap,charge', 'Red Kangaroo': 'hide,leap,kick', 'European Rabbit': 'hide,zigzag,burrow', 'North American Porcupine': 'hide,quills,quills',
+  'European Hedgehog': 'curl,curl,quills', 'Nine-banded Armadillo': 'curl,dig,curl', 'Ground Pangolin': 'curl,curl,dig', 'North American Beaver': 'hide,dig,snap', 'Giant Anteater': 'mothercall,dig,maul',
+  'Silverback Gorilla': 'mothercall,leap,chestbeat', 'Chimpanzee': 'mothercall,leap,roar', 'Bornean Orangutan': 'mothercall,leap,heal', 'Mandrill': 'mothercall,leap,terror', 'Olive Baboon': 'mothercall,leap,roar',
+  'Saltwater Crocodile': 'hide,snap,deathroll', 'American Alligator': 'hide,snap,deathroll',
+  'Komodo Dragon': 'leap,stalk,venombite', 'Green Iguana': 'tailshed,leap,tailshed', 'Gila Monster': 'hide,venombite,venombite', 'Tokay Gecko': 'tailshed,leap,snap', 'Panther Chameleon': 'camo,camo,acid',
+  'King Cobra': 'venombite,venombite,venombite', 'Black Mamba': 'venombite,zigzag,venombite', 'Reticulated Python': 'hide,snap,constrict', 'Green Anaconda': 'hide,snap,constrict', 'Western Diamondback': 'hide,venombite,venombite',
+  'Galapagos Tortoise': 'curl,curl,shield', 'Alligator Snapping Turtle': 'curl,snap,snap',
+  'Poison Dart Frog': 'leap,toxin,toxin', 'American Bullfrog': 'leap,leap,vinewhip', 'Axolotl': 'hide,heal,heal', 'Fire Salamander': 'hide,toxin,toxin',
+  'Bald Eagle': 'mothercall,dash,talondive', 'Golden Eagle': 'mothercall,dash,talondive', 'Harpy Eagle': 'mothercall,dash,talondive', 'Peregrine Falcon': 'mothercall,dash,talondive',
+  'Great Horned Owl': 'mothercall,echo,swoop', 'Snowy Owl': 'mothercall,echo,swoop', 'Barn Owl': 'mothercall,echo,swoop', 'Common Raven': 'mothercall,mirage,swarm',
+  'Common Ostrich': 'hide,sprint,kick', 'Southern Cassowary': 'hide,sprint,kick', 'Emperor Penguin': 'mothercall,dash,dash', 'Greater Flamingo': 'mothercall,sprint,mirage',
+  'Emperor Scorpion': 'mothercall,sting,sting', 'Goliath Birdeater': 'hide,quills,venombite', 'Black Widow': 'web,web,venombite', 'Praying Mantis': 'camo,pounce,shadowstep',
+  'Hercules Beetle': 'dig,shield,charge', 'Stag Beetle': 'dig,shield,tremor', 'Asian Giant Hornet': 'dig,sting,swarm', 'Giant Centipede': 'hide,venombite,venombite', 'Monarch Butterfly': 'toxin,toxin,mirage',
+  'Great White Shark': 'hide,snap,breach', 'Orca': 'mothercall,breach,tidalwave', 'Bottlenose Dolphin': 'mothercall,echo,charge', 'Giant Pacific Octopus': 'ink,camo,ink', 'Manta Ray': 'zigzag,breach,leap', 'Electric Eel': 'hide,shock,shock',
+};
+const REAL_KIT_BY = {}; for (const n in REAL_KIT) REAL_KIT_BY[n.toLowerCase().replace(/[^a-z0-9]/g, '')] = REAL_KIT[n].split(',');
+function realKit(d) { if (!d || d.kind !== 'wild' || d.planet !== 'earth' || !d.look || !d.look.sp) return null; return REAL_KIT_BY[d.look.sp] || null; }
+function realAbAt(d, lvl) { const k = realKit(d); if (!k) return null; if (d.evo && lvl >= d.evo.lvl) return null; return k[Math.min(lvl, 3) - 1]; }
 Object.assign(PASSIVES, {
   mutant:     { name: 'Mutant Physiology', desc: 'Adapted to every planet, and natural disasters can\'t harm you.' },
   toxicblood: { name: 'Toxic Blood', desc: 'Anything that bites you is poisoned.' },
@@ -1427,7 +1491,7 @@ function buildBody(P, r, st, t, ph, moving) {
   const wid = P.wid * r * (st >= 4 ? 1.08 : 1) * (st === 5 ? 1.05 : 1) * (baby ? 1.08 : 1) * (1 + 0.028 * Math.sin(t * 2.2 + ph));
   const headS = P.head * (baby ? 1.32 : st === 2 ? 1.12 : 1);
   const hw = headS * r * 0.66, hl = headS * r * (P.arch === 'toad' ? 0.85 : 1.0);
-  const gt = P.gait || 'trot', freq = (moving ? 9 : 2) * (P.gs || 1), amp = moving ? 1 : 0.4, tA = P.tailAmp || 1;
+  const gt = P.gait || 'trot', freq = (moving ? 9 : 2) * (P.gs || 1), amp = moving ? 1 + 0.45 * RUN : 0.4, tA = P.tailAmp || 1;
   const hipX = -len * 0.45, shX = len * 0.32, neckX = shX + P.neck * r, headBack = neckX + r * 0.04, headMid = headBack + hl * 0.45, snoutX = headBack + hl + P.snout * r * (baby ? 0.45 : 1);
   const tl = P.tail * r * (baby ? 0.6 : st === 2 ? 0.85 : 1);
   const N = [];
@@ -1792,6 +1856,38 @@ function limb(c, pts, w0, w1, col, outline) { // jointed limb: shoulder → elbo
   for (let i = 1; i < n0 - 1; i++) { const [x, y] = pts[i], r = (w0 + (w1 - w0) * i / (n0 - 1)) * 1.14; c.fillStyle = col; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
     if (LOD_HI && r > 1.4) { c.fillStyle = 'rgba(255,255,255,.12)'; c.beginPath(); c.arc(x - r * 0.3, y - r * 0.3, r * 0.5, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.18)'; c.lineWidth = Math.max(0.5, r * 0.14); c.beginPath(); c.arc(x, y, r * 0.92, 0.4, 2.2); c.stroke(); } }
 }
+function realHand(c, x, y, a, s, col, palm, side, tip, curl) { // a jointed hand seen from above: palm, four fingers with knuckles, an opposable thumb on the body side and nails or claws
+  const ca = Math.cos(a), sa = Math.sin(a), P = (u, v) => [x + ca * u - sa * v, y + sa * u + ca * v];
+  // fingers first so the back of the hand overlaps their bases
+  const fl = [0.5, 0.58, 0.55, 0.42], fw = [0.12, 0.125, 0.12, 0.1];
+  for (let i = 0; i < 4; i++) { const v = (-0.27 + i * 0.18) * s * side, L = fl[i] * s * (1 - 0.25 * curl), bend = (0.25 + 0.5 * curl) * side * (i - 1.5) * -0.12;
+    const k0 = P(s * 0.28, v), k1 = P(s * 0.28 + L * 0.55, v + L * bend), k2 = P(s * 0.28 + L, v + L * bend * 2.2);
+    tube(c, [k0, k1, k2], [s * fw[i], s * fw[i] * 0.92, s * fw[i] * 0.7], col, 'rgba(0,0,0,.35)');
+    if (LOD_HI && s > 6) { c.fillStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.arc(k1[0], k1[1], s * fw[i] * 0.55, 0, 7); c.fill(); }
+    if (tip === 'claw') { c.fillStyle = '#f2eee0'; c.beginPath(); c.moveTo(k2[0] - sa * s * 0.06, k2[1] + ca * s * 0.06); c.quadraticCurveTo(k2[0] + ca * s * 0.2, k2[1] + sa * s * 0.2, k2[0] + ca * s * 0.24 + sa * s * 0.05 * side, k2[1] + sa * s * 0.24 - ca * s * 0.05 * side); c.lineTo(k2[0] + sa * s * 0.06, k2[1] - ca * s * 0.06); c.fill(); }
+    else if (LOD_HI && s > 5) { c.fillStyle = 'rgba(255,240,225,.55)'; c.beginPath(); c.ellipse(k2[0] - ca * s * 0.03, k2[1] - sa * s * 0.03, s * fw[i] * 0.55, s * fw[i] * 0.42, a, 0, 7); c.fill(); } }
+  // thumb: sticks out from the inner edge of the palm, toward the body
+  { const t0 = P(-s * 0.02, -side * s * 0.26), t1 = P(s * 0.18, -side * s * 0.46), t2 = P(s * 0.36, -side * s * (0.5 - 0.15 * curl));
+    tube(c, [t0, t1, t2], [s * 0.15, s * 0.12, s * 0.09], col, 'rgba(0,0,0,.35)');
+    if (tip === 'claw') { c.fillStyle = '#f2eee0'; c.beginPath(); c.arc(t2[0] + ca * s * 0.08, t2[1] + sa * s * 0.08, s * 0.06, 0, 7); c.fill(); } }
+  // back of the hand, with a little shading and the knuckle ridge
+  const [cx, cy] = P(s * 0.06, 0); c.fillStyle = col; c.beginPath(); c.ellipse(cx, cy, s * 0.36, s * 0.33, a, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = Math.max(0.5, s * 0.04); c.stroke();
+  if (palm) { const [px, py] = P(s * 0.02, side * s * 0.12); c.fillStyle = palm; c.globalAlpha *= 0.55; c.beginPath(); c.ellipse(px, py, s * 0.26, s * 0.14, a, 0, 7); c.fill(); c.globalAlpha /= 0.55; }
+  if (LOD_HI && s > 6) { c.strokeStyle = 'rgba(255,255,255,.14)'; c.lineWidth = s * 0.05; c.beginPath(); for (let i = 0; i < 4; i++) { const k = P(s * 0.26, (-0.27 + i * 0.18) * s * side); c.moveTo(k[0] + 0.01, k[1]); c.arc(k[0], k[1], s * 0.06, a - 1.2, a + 1.2); } c.stroke(); }
+}
+function realArm(c, s, sh, sw, r, legT, col, deep, palm, tip, ape, curl) { // shoulder (deltoid) → upper arm (biceps) → elbow → forearm → wrist → hand
+  const len = ape ? 1.25 : 1, w = r * 0.085 * legT * (ape ? 1.3 : 1), sy = s * sh * 0.84;
+  const elbow = [sw * 0.4 - r * 0.06 * len, s * (sh * 1.1 + w * 0.7)], wrist = [sw + r * 0.17 * len, s * (sh * 1.02 + w * 0.6)];
+  // deltoid cap rounding the shoulder into the torso
+  c.fillStyle = col; c.beginPath(); c.ellipse(-r * 0.01, sy, w * 1.4, w * 1.15, 0, 0, 7); c.fill();
+  if (LOD_HI) { c.fillStyle = 'rgba(255,255,255,.1)'; c.beginPath(); c.ellipse(-r * 0.03, sy - s * w * 0.3, w * 0.9, w * 0.6, 0, 0, 7); c.fill(); }
+  limb(c, [[0, sy], elbow, wrist], w * 1.05, w * (ape ? 0.85 : 0.7), col, Math.max(0.6, r * 0.012));
+  // forearm muscle swelling just below the elbow, then a narrow wrist
+  const fm = [elbow[0] * 0.7 + wrist[0] * 0.3, elbow[1] * 0.7 + wrist[1] * 0.3]; c.fillStyle = col; c.beginPath(); c.ellipse(fm[0], fm[1], w * 1.0, w * 0.82, Math.atan2(wrist[1] - elbow[1], wrist[0] - elbow[0]), 0, 7); c.fill();
+  if (LOD_HI) { c.strokeStyle = 'rgba(0,0,0,.2)'; c.lineWidth = Math.max(0.5, w * 0.12); c.beginPath(); c.arc(elbow[0], elbow[1], w * 0.8, Math.PI * 0.6, Math.PI * 1.3); c.stroke(); }
+  const ha = Math.atan2(wrist[1] - elbow[1], wrist[0] - elbow[0]) * 0.55;
+  realHand(c, wrist[0] + Math.cos(ha) * w * 0.6, wrist[1] + Math.sin(ha) * w * 0.6, ha - s * 0.15, w * (ape ? 2.3 : 2.0), col, palm, s, tip, curl);
+}
 function clawFoot(c, x, y, a, s, col, n, claw, web) { // foot: a padded palm, tapered jointed toes and hooked claws, pointing along angle a
   const spread = n >= 5 ? 1.5 : n === 4 ? 1.2 : 0.95, toes = [];
   for (let k = 0; k < n; k++) { const ta = a + (n === 1 ? 0 : (k / (n - 1) - 0.5) * spread), len = s * (k === Math.floor(n / 2) ? 1.1 : n >= 4 && (k === 0 || k === n - 1) ? 0.7 : 0.88), bend = (n === 1 ? 0 : (k / (n - 1) - 0.5)) * 0.35;
@@ -1864,7 +1960,7 @@ function membraneWings(c, root, r, t, ph, moving, col, C) {
     c.fillStyle = '#e8dcc4'; c.beginPath(); c.arc(arm[0], arm[1], r * 0.03, 0, 7); c.fill(); c.restore(); }
 }
 function drawAlienBody(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
-  const A = P.arch, seed = hashStr(def.id), trait = L.trait, mv = moving ? 1 : 0, gt = t * 9 * (P.gs || 1) + ph, hk = [1.25, 1.15, 1.06, 1, 1][st - 1];
+  const A = P.arch, seed = hashStr(def.id), trait = L.trait, mv = moving ? 1 + 0.5 * RUN : 0, gt = t * 9 * (P.gs || 1) + ph, hk = [1.25, 1.15, 1.06, 1, 1][st - 1];
   const body = C.body, dark = C.dark, light = C.light, deep = C.deep, claw = '#efe6d2', limbCol = dark;
   const bodyFill = (x, y, rr) => rGrad(c, x, y, rr, body, dark, light);
   const fly = L.wings && A !== 'fish' && A !== 'squid';
@@ -1933,9 +2029,10 @@ function drawAlienBody(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
     c.fillStyle = bodyFill(0, 0, sh); c.beginPath(); c.ellipse(-r * 0.02, 0, r * 0.3, sh, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = Math.max(0.7, r * 0.012); c.stroke();
     alienSkin(c, () => { c.beginPath(); c.ellipse(-r * 0.02, 0, r * 0.3, sh, 0, 0, 7); }, L, r, C, -r * 0.35, r * 0.3, sh, seed);
     traitAlong(c, trait, [[-r * 0.3, 0], [-r * 0.15, 0], [0, 0], [r * 0.1, 0]], [sh * 0.4, sh * 0.5, sh * 0.5, sh * 0.4], r, t, ph, C, L);
-    for (const s of [-1, 1]) { const sw = -Math.sin(gt + (s > 0 ? Math.PI : 0)) * r * 0.22 * mv + (opt.cast ? r * 0.3 : 0), ex = sw * 0.4 - r * 0.06, hx2 = sw + r * 0.26;
-      limb(c, [[0, s * sh * 0.85], [ex, s * (sh * 1.45)], [hx2, s * sh * 1.25]], r * 0.11 * legT, r * 0.075 * legT, body, Math.max(0.6, r * 0.012));
-      clawFoot(c, hx2, s * sh * 1.25, s * 0.2, r * 0.09, body, 3, claw, false); }
+    { const SPh = L.sp && SPECIES[L.sp], ape = !!(SPh && SPh.tpl === 'gorilla') || /ape|yeti|bigfoot|sasquatch|gorilla/i.test(def.name), robo = def.planet === 'robo' || (P.cover === 'metal');
+      const tip = ape || (SPh && !/lizard|wolf|beast|wendigo/i.test(SPh.name)) ? 'nail' : 'claw', palm = ape ? '#2a2420' : robo ? null : deep, armCol = ape && SPh && /chimp|gorilla|bigfoot/i.test(SPh.name) ? body : body;
+      for (const s of [-1, 1]) { const sw = -Math.sin(gt + (s > 0 ? Math.PI : 0)) * r * 0.22 * mv * (1 + 0.6 * RUN) + (opt.cast ? r * 0.3 : 0);
+        realArm(c, s, sh, sw, r, legT, armCol, deep, palm, tip, ape, opt.cast ? 0.1 : moving ? 0.55 + 0.25 * RUN : 0.35); } }
     c.fillStyle = bodyFill(headX, 0, hr * 1.2); c.beginPath(); c.ellipse(headX + hr * 0.1, 0, hr * 1.05, hr, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.3)'; c.stroke();
     if (L.mouth >= 2) { c.fillStyle = 'rgba(0,0,0,.4)'; c.beginPath(); c.ellipse(headX + hr * 0.95, 0, hr * 0.12, hr * 0.35, 0, 0, 7); c.fill(); }
     alienEyes(c, headX + hr * 0.35, 0, hr * 0.9, L, P, t, ph); alienHorns(c, headX, 0, hr * 0.9, L, P, C);
@@ -2036,6 +2133,7 @@ function rGrad(c, x0, y0, rad, mid, edge, hi) { const g = c.createRadialGradient
 function hsl(h, s, l, a) { return a == null ? `hsl(${h},${clamp(s, 0, 100)}%,${clamp(l, 0, 100)}%)` : `hsla(${h},${clamp(s, 0, 100)}%,${clamp(l, 0, 100)}%,${a})`; }
 let RST = 4; // growth stage of the creature being drawn (1 baby ... 5 alpha)
 let RCOV = 'skin', RANG = 0; // body covering and heading of the creature being drawn, for vol3d
+let RUN = 0; // 0..1: how hard the drawn creature is running (sprint/charge/pounce skills): faster cadence, longer stride, gallop footfalls
 let RAIR = 1, RAIR_SET = false; // how far the drawn creature's wings are spread: 1 in flight, 0 folded after landing (set when the game knows; thumbnails keep their usual pose)
 const AIRK = () => clamp((RAIR - 0.15) / 0.85, 0, 1);
 // ---- 3D body volume: real surface texture (fur, scales, feathers...), cylinder shading lit from one world direction,
@@ -2329,13 +2427,13 @@ function drawMammal(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   const panda = feats.includes('panda'), noFur = feats.includes('noFur') || S.cover === 'skin';
   const neckL = r * (f.neck != null ? f.neck * 0.6 : M.giraffe ? 0.9 : M.horse || M.deer || M.camel ? 0.3 : S.tpl === 'hoof' ? 0.2 : 0.08) * (M.giraffe ? 1.4 : 1);
   const sh = r * tp.sh * wid, wa = r * tp.wa * wid, hp = r * tp.hp * wid, rump = -r * 0.95, chest = r * 0.62;
-  const fq = 9 * (P.gs || 1), gt = t * fq + ph, mv = moving ? 1 : 0, sway = Math.sin(gt * 0.5) * r * 0.03 * mv;
+  const fq = 9 * (P.gs || 1), gt = t * fq + ph, mv = moving ? 1 + 0.5 * RUN : 0, sway = Math.sin(gt * 0.5) * r * 0.03 * mv;
   const yAt = x => sway * Math.sin((x / r + 1) * 1.6), breathe = 1 + 0.015 * Math.sin(t * 2 + ph);
   const HK = hk * 1.3, headX = chest + neckL + r * tp.hl * 0.45 * HK, hl = r * tp.hl * HK, hw = r * tp.hw * HK * (M.hippo ? 1.5 : 1) * (S.tpl === 'hoof' && !M.hippo && !M.boar ? 0.95 : 1);
   if (opt.shadow !== false) rShadow(c, ang, elev, r, r * 1.15 + neckL * 0.5, sh * 1.25);
   const legCol = panda ? '#141414' : L.legCol || dark;
   // legs under the body: feet peek out at the shoulders and hips and swing fore and aft
-  const gal = P.gait === 'gallop' || P.gait === 'sprint';
+  const gal = P.gait === 'gallop' || P.gait === 'sprint' || RUN > 0.3; // break from a walk/trot into a gallop when sprinting
   for (const [lx, w0, k] of [[chest * 0.62, sh, 0], [rump * 0.62, hp, 1]]) for (const s of [-1, 1]) {
     const phs = gal ? (k ? Math.PI * 0.8 : 0) + (s > 0 ? 0.35 : 0) : (k ? Math.PI : 0) + (s > 0 ? Math.PI : 0), swing = Math.sin(gt + phs) * r * 0.24 * legL * mv, lift = Math.max(0, Math.cos(gt + phs)) * mv;
     const fx = lx + swing, fy = s * (w0 * breathe + r * 0.11 * legL), th = r * 0.12 * legT * (S.tpl === 'mammoth' ? 1.5 : S.tpl === 'bear' || S.tpl === 'rhino' ? 1.25 : 1);
@@ -2450,9 +2548,10 @@ function drawAlien(ctx, def, x, y, r, ang, t, opt = {}) {
   const L = def.look, P = anatomy(def), ph = opt.phase || 0, st = clamp(opt.lvl || 3, 1, 5), F = STG.feat[st];
   const NAT = !!(L.sig || (L.theme && (L.theme.k === 'animal' || L.theme.k === 'plant'))), TR = NAT && L.trait !== 'fins' ? null : L.trait;
   const apex = L.apex || opt.apex, moving = !!opt.moving, hi = (opt.lod != null ? opt.lod : 99) >= (PERF_LOW && !opt.self ? 26 : 12); LOD_HI = hi; LOD_FULL = (opt.lod != null ? opt.lod : 99) >= (PERF_LOW && !opt.self ? 34 : 20);
-  const elev = opt.elev || 0; RAIR_SET = opt.air != null; RAIR = RAIR_SET ? opt.air : 1;
+  const elev = opt.elev || 0; RAIR_SET = opt.air != null; RAIR = RAIR_SET ? opt.air : 1; RUN = moving ? clamp(opt.run || 0, 0, 1) : 0;
   ctx.save(); ctx.translate(x, y); ctx.rotate(ang); if (elev) { const ek = 1 + 0.07 * elev; ctx.scale(ek, ek); }
   if (moving && P.gait) { const fq = 9 * (P.gs || 1); let lift = 0; if (P.gait === 'hop') lift = Math.pow(Math.max(0, Math.sin(t * fq * 0.5 + ph)), 2) * 0.1; else if (P.gait === 'gallop' || P.gait === 'sprint') lift = Math.abs(Math.sin(t * fq * 0.5 + ph)) * 0.035; else if (P.gait === 'lumber' || P.gait === 'knuckle') lift = Math.abs(Math.sin(t * fq * 0.5 + ph)) * 0.02; if (lift) { ctx.translate(r * lift * 1.5, 0); ctx.scale(1 + lift, 1 + lift); } }
+  if (RUN > 0) { const bob = Math.abs(Math.sin(t * 9 * (P.gs || 1) * 0.5 + ph)); ctx.translate(r * 0.06 * RUN * bob, 0); ctx.scale(1 + 0.09 * RUN, 1 - 0.06 * RUN + 0.03 * RUN * bob); } // stretched out at full speed, bounding
   if (opt.alpha != null) ctx.globalAlpha = opt.alpha;
   const cast = opt.cast, form = opt.form || null; let ck = null, cK = 0, csw = 0, ccol = '#ffffff';
   if (cast) {
@@ -3752,7 +3851,7 @@ function bodySkill(def) {
   else if (K === 'mammal') { const M = mamStyle(S.name), f = L.feats || [];
     if (f.includes('trunk') || M.elephant) add('charge', 'Tusk Charge', 'its tusks', 3); if (S.tpl === 'rhino' || M.unicorn) add('charge', 'Horn Charge', 'its horn', 3);
     if (M.deer || M.bovid) add('charge', 'Antler Ram', M.deer ? 'its antlers' : 'its horns', 3); if (M.skunk) add('acid', 'Musk Spray', 'its scent glands', 2);
-    if (S.tpl === 'cat') add('shadowstep', 'Pounce', 'its claws', 2); if (S.tpl === 'wolf') add('roar', 'Howl', 'its voice', 2); if (S.tpl === 'bear' || M.hippo) add('tremor', 'Paw Slam', 'its massive paws', 3);
+    if (S.tpl === 'cat') add('shadowstep', 'Ambush', 'its claws', 2); if (S.tpl === 'wolf') add('roar', 'Howl', 'its voice', 2); if (S.tpl === 'bear' || M.hippo) add('tremor', 'Paw Slam', 'its massive paws', 3);
     if (M.horse || M.camel) add('dash', 'Gallop', 'its hooves', 2); add('dash', 'Sprint', 'its legs', 2); }
   else {
     if ((L.horns || 0) === 1) add('charge', 'Horn Charge', 'its horn', 3); else if (L.horns) { const hs = P.hornStyle || 0; if (hs === 2) add('tremor', 'Ram Slam', 'its curled horns', 3); else if (hs === 1) add('charge', 'Gore', 'its forward horns', 3); else add('charge', 'Horn Toss', 'its swept-back horns', 3); } if (L.tail === 1) add('tremor', 'Tail Club', 'its club tail', 3); if (L.tail === 2) add('acid', 'Stinger', 'its tail stinger', 3);
@@ -3812,6 +3911,7 @@ function curAbility(e) {
   if (G && G.dis && inForm(e)) return FORM_SKILL[G.dis.id];
   if (e.abOverride) return e.abOverride;
   if (e.form && d.forms && e.form !== d.planet) return formSkill(d, e.form);
+  const rk = realAbAt(d, e.lvl); if (rk) return rk;
   if (d.evo && e.lvl >= d.evo.lvl) return d.evo.ab;
   if (d.learn && e.lvl < d.learn) return 'scurry';
   return d.ability;
@@ -3829,6 +3929,8 @@ function useAbility(e, ult = false) {
   const fx = Math.cos(e.ang), fy = Math.sin(e.ang);
   const near = R => G.creatures.filter(o => !allied(o, e) && o.alive && d2(o, e) < (R + o.r) ** 2);
   const P = e === G.player;
+  const front = (R, cosMin) => G.creatures.filter(o => !allied(o, e) && o.alive && !o.decoy && d2(o, e) < (R + o.r) ** 2 && ((o.x - e.x) * fx + (o.y - e.y) * fy) / (Math.sqrt(d2(o, e)) || 1) > cosMin).sort((p, q) => d2(p, e) - d2(q, e))[0];
+  if (AB[a] && AB[a].run) e.runT = 0.7;
   switch (a) {
     case 'dash': e.fx.dash = 0.3; e.fx.power = 1.5; burst(e.x, e.y, '#fff', 10); break;
     case 'burrow': e.fx.burrow = 2; burst(e.x, e.y, G.P.dark2, 18); break;
@@ -3877,6 +3979,40 @@ function useAbility(e, ult = false) {
     case 'worldtree': G.zones.push({ x: e.x, y: e.y, r: 260, k: 'worldtree', temp: 6, owner: e }); burst(e.x, e.y, '#7ce35a', 24); if (P) banner('WORLD TREE!', '#7ce35a'); break;
     case 'sandtomb': { const ts2 = near(380).filter(o => !o.decoy).sort((p2, q) => d2(p2, e) - d2(q, e)).slice(0, 3); if (!ts2.length) { e.cdAb = 1.5; break; } ts2.forEach(o => { o.fx.stun = 2; o.fx.dot = 3; hurt(o, e.dmg * 0.8, e); G.zones.push({ x: o.x, y: o.y, r: o.r + 34, k: 'tomb', temp: 2 }); }); e.fx.invis = 1.5; if (P) banner('SAND TOMB!', '#e8c48a'); break; }
     // ---- life-stage and disaster skills
+    // ---- v2.2 realistic Earth-animal skills
+    case 'hide': e.fx.invis = 3; e.fx.evade = 0.9; e.vx *= 0.2; e.vy *= 0.2; G.creatures.forEach(o => { if (o.target === e) o.target = null; }); burst(e.x, e.y, '#7a8a5a', 8); break;
+    case 'mothercall': { if (e.minion || e.decoy) { e.fx.invis = 2; break; } summon(e, e.def, 1, 3, 7, { hpK: 0.9, dmgK: 0.9 }); ring(e.x, e.y, 260, '#ffe7a8'); if (P) floatText(e.x, e.y - e.r, 'HELP!', '#ffe7a8'); break; }
+    case 'zigzag': e.fx.haste = 2.5; e.fx.evade = 0.6; e.fx.dash = 0.15; e.fx.run = 2.5; e.zig = 0; break;
+    case 'sprint': e.fx.haste = 3; e.fx.sprint = 3; e.fx.power = 1.4; e.fx.run = 3; break;
+    case 'pounce': case 'talondive': case 'breach': { const R = a === 'talondive' ? 420 : a === 'breach' ? 300 : 320; const t = front(R, 0.35);
+      e.fx.run = 0.6; if (!t) { e.fx.dash = 0.3; break; }
+      const ta = Math.atan2(t.y - e.y, t.x - e.x); burst(e.x, e.y, a === 'breach' ? '#bfe9ff' : '#d8c8a0', 10);
+      e.x = clamp(t.x - Math.cos(ta) * (t.r + e.r * 0.6), 20, WORLD - 20); e.y = clamp(t.y - Math.sin(ta) * (t.r + e.r * 0.6), 20, WORLD - 20); e.ang = ta;
+      hurt(t, e.dmg * (a === 'breach' ? 2 : a === 'talondive' ? 1.7 : 1.5), e); t.fx.stun = Math.max(t.fx.stun || 0, a === 'breach' ? 0.5 : 0.7); burst(t.x, t.y, '#ff3d4e', 12); break; }
+    case 'stalk': e.fx.invis = 4; e.fx.power = 2; e.fx.slowSelf = 4; break;
+    case 'maul': case 'kick': { const R = a === 'kick' ? 140 : 120; G.creatures.forEach(o => { if (allied(o, e) || !o.alive) return; const dx = o.x - e.x, dy = o.y - e.y, dd = Math.hypot(dx, dy) || 1; const back = a === 'kick' && /horse|zebra|camel|giraffe|moose/.test(e.def.name.toLowerCase()); const dot = (dx * fx + dy * fy) / dd; if (dd < R + e.r + o.r && (back ? Math.abs(dot) > 0.25 : dot > 0.25)) { hurt(o, e.dmg * (a === 'kick' ? 1.4 : 1.7), e); if (a === 'kick') knock(o, e.x, e.y, 650); else o.fx.dot = Math.max(o.fx.dot || 0, 3); } }); e.swipeT = 0.35; G.parts.push({ claw: true, x: e.x + fx * e.r, y: e.y + fy * e.r, a: e.ang, r: R * 0.7, life: 0.3, c: a === 'kick' ? '#e8d6b0' : '#ffffff' }); break; }
+    case 'venombite': case 'snap': case 'constrict': case 'deathroll': { const t = near(e.r + 90).filter(o => !o.decoy).sort((p, q) => d2(p, e) - d2(q, e))[0]; if (!t) { e.cdAb = 1; if (P) floatText(e.x, e.y - e.r, 'Get closer!', '#ffd77a'); break; }
+      e.ang = Math.atan2(t.y - e.y, t.x - e.x);
+      if (a === 'venombite') { hurt(t, e.dmg * 0.9, e); t.fx.dot = Math.max(t.fx.dot || 0, 4); t.fx.slow = Math.max(t.fx.slow || 0, 2); burst(t.x, t.y, '#b6ff4a', 10); }
+      else if (a === 'snap') { hurt(t, e.dmg * 2, e); burst(t.x, t.y, '#ff3d4e', 12); }
+      else if (a === 'constrict') { hurt(t, e.dmg * 0.8, e); t.fx.stun = Math.max(t.fx.stun || 0, 2); t.fx.dot = Math.max(t.fx.dot || 0, 2.5); e.fx.slowSelf = 2; ring(t.x, t.y, t.r + 14, '#8a7a4a'); }
+      else { hurt(t, e.dmg * 2.2, e); t.fx.stun = Math.max(t.fx.stun || 0, 1.2); e.rollT = 0.8; burst(t.x, t.y, '#5a8aaa', 18); burst(t.x, t.y, '#ff3d4e', 10); }
+      break; }
+    case 'howl': if (e.minion || e.decoy) { e.fx.haste = 2; break; } summon(e, e.def, 2, Math.max(1, e.lvl - 1), 8, { scale: 0.85, hpK: 0.45, dmgK: 0.55 }); ring(e.x, e.y, 300, '#cfd8ff'); if (P) floatText(e.x, e.y - e.r, 'AWOOO!', '#cfd8ff'); break;
+    case 'sting': shoot(e, fx, fy, 620, e.dmg * 0.9, '#e8ff7a', { dot: 3, r: 5, life: 0.35 }); break;
+    case 'curl': e.fx.shield = 3; e.fx.curl = 3; e.hp = Math.min(e.maxhp, e.hp + e.maxhp * 0.1); e.vx = e.vy = 0; break;
+    case 'stampede': e.fx.charge = 0.85; e.chargeHit = new Set(); e.chargeAng = e.ang; e.fx.power = 1.3; e.fx.run = 0.9; for (let i = 0; i < 16; i++) G.parts.push({ x: e.x - fx * e.r, y: e.y - fy * e.r, vx: rand(-90, 90) - fx * 80, vy: rand(-90, 90) - fy * 80, life: 0.8, c: '#b89a6a', s: rand(6, 12) }); break;
+    case 'chestbeat': case 'trumpet': near(a === 'trumpet' ? 280 : 240).forEach(o => { o.fx.fear = 2.5; o.fearFrom = e; if (a === 'trumpet') o.fx.stun = Math.max(o.fx.stun || 0, 0.6); }); if (a === 'chestbeat') { e.fx.rage = 4; e.beatT = 0.9; } ring(e.x, e.y, a === 'trumpet' ? 280 : 240, '#ffd77a'); ring(e.x, e.y, 140, '#ffd77a'); break;
+    case 'spray': G.creatures.forEach(o => { if (allied(o, e) || !o.alive) return; const dx = o.x - e.x, dy = o.y - e.y, dd = Math.hypot(dx, dy) || 1; if (dd < 230 + e.r && (dx * fx + dy * fy) / dd < -0.2 || dd < 90 + e.r) { o.fx.blind = 3; o.fx.fear = 2; o.fearFrom = e; hurt(o, e.dmg * 0.3, e); } }); for (let i = 0; i < 26; i++) G.parts.push({ x: e.x - fx * e.r, y: e.y - fy * e.r, vx: (-fx + rand(-0.5, 0.5)) * rand(150, 300), vy: (-fy + rand(-0.5, 0.5)) * rand(150, 300), life: 0.9, c: pick(['#c8d86a', '#a8b84a', '#e0e8a0']), s: rand(6, 12) }); break;
+    case 'ink': near(200).forEach(o => { o.fx.blind = 3; if (o.target === e) o.target = null; }); e.fx.invis = 1.5; e.fx.dash = 0.35; e.fx.run = 0.6; for (let i = 0; i < 30; i++) G.parts.push({ x: e.x, y: e.y, vx: rand(-120, 120), vy: rand(-120, 120), life: 1.4, c: pick(['#141018', '#2a2030', '#0a080c']), s: rand(10, 20) }); break;
+    case 'shock': near(210 + e.r).forEach(o => { hurt(o, e.dmg * 1.2, e); o.fx.stun = Math.max(o.fx.stun || 0, 0.8); line(e, o, '#e8fbff'); }); ring(e.x, e.y, 210 + e.r, '#9fe3ff'); break;
+    case 'camo': e.fx.invis = 5; e.fx.camo = 5; G.creatures.forEach(o => { if (o.target === e) o.target = null; }); break;
+    case 'tailshed': summon(e, e.def, 1, e.lvl, 4, { decoy: true, scale: 0.5 }); e.fx.dash = 0.3; e.fx.evade = 0.5; e.fx.run = 0.8; burst(e.x, e.y, '#9a8a6a', 8); break;
+    case 'toxin': near(150 + e.r).forEach(o => { o.fx.dot = Math.max(o.fx.dot || 0, 4); o.fx.slow = Math.max(o.fx.slow || 0, 2); hurt(o, e.dmg * 0.4, e); }); ring(e.x, e.y, 150 + e.r, '#b6ff4a'); e.fx.toxic = 4; break;
+    case 'leap': burst(e.x, e.y, '#d8c8a0', 8); e.x = clamp(e.x + fx * 200, 20, WORLD - 20); e.y = clamp(e.y + fy * 200, 20, WORLD - 20); e.fx.evade = 0.3; e.leapT = 0.35; burst(e.x, e.y, '#d8c8a0', 8); break;
+    case 'spit': shoot(e, fx, fy, 520, e.dmg * 0.5, '#e8e8c8', { slow: 2, r: 7 }); break;
+    case 'dig': e.fx.burrow = 2; e.hp = Math.min(e.maxhp, e.hp + e.maxhp * 0.12); burst(e.x, e.y, G.P.dark2, 14); break;
+    case 'swoop': e.fx.invis = 1.2; e.fx.power = 2.2; e.fx.dash = 0.25; break;
     case 'scurry': e.fx.dash = 0.2; e.fx.evade = 0.45; burst(e.x, e.y, '#ffffff', 6); break;
     case 'dustdevil': e.fx.dustdevil = 3; e.fx.haste = 3; break;
     case 'avalanche': for (let k = -2; k <= 2; k++) { const a2 = e.ang + k * 0.17; shoot(e, Math.cos(a2), Math.sin(a2), 520, e.dmg * 0.9, '#e6f7ff', { slow: 1.5, r: 11 }); } break;
@@ -4149,6 +4285,10 @@ function update(dt) {
     let dt = DT0;
     if (G.mode !== 'tutorial' && !e.isPlayer && !e.isBot && (!e.boss || e.worldBoss) && p && (e.x - p.x) ** 2 + (e.y - p.y) ** 2 > 2300 * 2300) { e._acc = (e._acc || 0) + DT0; if (e._acc < 0.1) continue; dt = Math.min(e._acc, 0.12); e._acc = 0; }
     for (const k in e.fx) if (e.fx[k] > 0) e.fx[k] -= dt;
+    { if (e.runT > 0) e.runT -= dt; const spdNow = Math.hypot(e.vx || 0, e.vy || 0), runGoal = spdNow > 40 && (e.fx.sprint > 0 || e.fx.charge > 0 || e.fx.dash > 0 || e.fx.run > 0 || e.runT > 0 || e.fx.haste > 0) ? 1 : 0;
+      e.runK = (e.runK || 0) + (runGoal - (e.runK || 0)) * Math.min(1, dt * 8); e.animT = (e.animT || G.t) + dt * (1 + 1.1 * e.runK);
+      if (e.runK > 0.5 && !(e.air > 0.5) && !(e.alt > 0.3) && !e.minion && (e.dustT = (e.dustT || 0) - dt) <= 0) { e.dustT = 0.07; const ca = Math.cos(e.ang), sa = Math.sin(e.ang), sd = (Math.random() - 0.5) * e.r * 0.9;
+        G.parts.push({ puff: true, x: e.x - ca * e.r * 0.8 - sa * sd, y: e.y - sa * e.r * 0.8 + ca * sd, vx: -ca * 40 + rand(-20, 20), vy: -sa * 40 + rand(-20, 20), life: 0.55, max: 0.55, s: e.r * 0.28, c: e.biome === 'ice' ? '#eef6ff' : e.biome === 'water' ? '#cfefff' : '#cdb894' }); } }
     if (e.def.immune && e.def.immune.length) for (const k of e.def.immune) { const F = IMM_FX[k]; if (F) for (const q of F) if (e.fx[q] > 0) e.fx[q] = 0; }
     if (!jammed(e)) { e.cdAb -= dt; e.cdUlt -= dt; } e.cdBite -= dt; if (e.hitFlash > 0) e.hitFlash -= dt;
     if (e.cast) { e.cast.t += dt; if (e.cast.t >= e.cast.d) e.cast = null; }
@@ -4163,6 +4303,9 @@ function update(dt) {
     let sp = e.spd;
     const mv = moves(e.def); e.waterZone = null; sp *= envPre(e, dt);
     if (e.fx.haste > 0) sp *= 1.35;
+    if (e.fx.sprint > 0) sp *= 1.45;
+    if (e.fx.slowSelf > 0) sp *= 0.6;
+    if (e.fx.curl > 0) sp *= 0.15;
     if (e.fx.charge > 0) sp *= 3.2;
     if (e.fx.slow > 0) sp *= 0.45;
     if (e.fx.stun > 0) sp = 0;
@@ -5411,7 +5554,9 @@ function showInspect(a) {
   <div style="margin-top:4px"><span class="pill" style="color:${tc}">${tl}</span> <span class="pill">${a.sizeClass || 'Medium'}</span> <span class="pill">${PLANETS[a.planet].name}</span></div>
   ${a.look.theme ? `<div style="color:${a.look.mut ? '#e05cff' : '#ffd9a0'};margin-top:6px">${a.look.mut ? 'Spliced from ' : 'Inspired by '}${themeName(a)}</div>` : ''}
   <div style="margin-top:8px">${statBar('Health', a.hp, STAT_MAX.hp, '#ff5a6b')}${statBar('Bite damage', a.dmg, STAT_MAX.dmg, '#ffb347')}${statBar('Speed', a.spd, STAT_MAX.spd, '#6ad7ff')}${statBar('Size', Math.round(a.size), Math.round(STAT_MAX.size), '#9be36a')}</div>`;
-  html += sec('SKILLS', li(ab.name, ab.desc, '#7fd8ff') + (a.learn ? li('Baby skill', 'Starts with Scurry; learns ' + ab.name + ' at ' + STAGE_NAMES[a.learn] + '.', '#9fe3ff') : '') + (a.evo ? li('Evolves', ab.name + ' becomes ' + AB[a.evo.ab].name + ' at ' + STAGE_NAMES[a.evo.lvl] + ': ' + AB[a.evo.ab].desc, '#ffd25a') : '') + (fs ? li(dis.name.toLowerCase() + ' form', dis.form + ' unlocks ' + fs.name + ': ' + fs.desc, '#ffb35a') : '') + (a.ult ? li('Ultimate: ' + AB[a.ult].name, AB[a.ult].desc, '#ffd25a') : ''));
+  const rkit = realKit(a);
+  if (rkit) html += sec('SKILLS BY LIFE STAGE', ['Baby', 'Juvenile', 'Adult+'].map((n, i) => li(n + ': ' + AB[rkit[i]].name, AB[rkit[i]].desc, ['#9fe3ff', '#7fd8ff', '#7dffb2'][i])).join('') + (a.ult ? li('Ultimate: ' + AB[a.ult].name, AB[a.ult].desc, '#ffd25a') : ''));
+  else html += sec('SKILLS', li(ab.name, ab.desc, '#7fd8ff') + (a.learn ? li('Baby skill', 'Starts with Scurry; learns ' + ab.name + ' at ' + STAGE_NAMES[a.learn] + '.', '#9fe3ff') : '') + (a.evo ? li('Evolves', ab.name + ' becomes ' + AB[a.evo.ab].name + ' at ' + STAGE_NAMES[a.evo.lvl] + ': ' + AB[a.evo.ab].desc, '#ffd25a') : '') + (fs ? li(dis.name.toLowerCase() + ' form', dis.form + ' unlocks ' + fs.name + ': ' + fs.desc, '#ffb35a') : '') + (a.ult ? li('Ultimate: ' + AB[a.ult].name, AB[a.ult].desc, '#ffd25a') : ''));
   html += sec('TRAITS', a.passives.map(k => li(PASSIVES[k].name, PASSIVES[k].desc, '#c9b6ff')).join('') + mv.list.map(k => li(MOVE_INFO[k].icon + ' ' + MOVE_INFO[k].name, MOVE_INFO[k].desc, MOVE_INFO[k].col)).join(''));
   html += sec('SURVIVAL', `<div style="font-size:13px;color:#ccc">Diet: <b style="color:#9be36a">${DIETS[a.diet].name}</b> (eats ${DIETS[a.diet].eats.map(x => FOODS[x].name.toLowerCase()).join(', ')})<br>Adapted to: <b>${a.res.length >= PLANET_IDS.length ? 'every world' : a.res.map(r => PLANETS[r].name).join(', ')}</b>${a.immune && a.immune.length ? `<br>Immune to: <b style="color:#9fe3ff">${a.immune.map(k => IMM_NAME[k]).join(', ')}</b>` : ''}</div>`);
   html += sec('LORE', `<div style="font-size:13px;color:#ccc;font-style:italic">${a.lore}</div>`);
@@ -5872,8 +6017,10 @@ function render() {
     if (e.fx.shield > 0) { ctx.fillStyle = 'rgba(160,220,255,.25)'; ctx.beginPath(); ctx.arc(e.x, e.y, e.r * 1.4, 0, 7); ctx.fill(); }
     if (e.shiftAnim && G.t - e.shiftAnim < 0.6) { const k = (G.t - e.shiftAnim) / 0.6; ctx.save(); ctx.globalAlpha = 1 - k; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(e.x, e.y, e.r * (1 + k * (1.2 + i * 0.5)), 0, 7); ctx.stroke(); } ctx.restore(); }
     const shK = (e.shiftAnim && G.t - e.shiftAnim < 0.5 ? 1 + Math.sin((G.t - e.shiftAnim) / 0.5 * Math.PI) * 0.22 : 1) * (1 + 0.13 * (e.alt || 0)) * (e.climbT > 0 ? 1 + Math.sin(G.t * 40) * 0.015 : 1);
+    if (e.runK > 0.35) { const ca = Math.cos(e.ang), sa = Math.sin(e.ang); ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,' + (0.35 * e.runK).toFixed(2) + ')'; ctx.lineWidth = Math.max(1.5, e.r * 0.05); ctx.lineCap = 'round';
+      for (let i = -2; i <= 2; i++) { const o = i * e.r * 0.42, j = ((e.animT || 0) * 7 + i * 0.37) % 1, b0 = e.r * (1.05 + j * 0.6), L2 = e.r * (0.5 + 0.35 * (1 - Math.abs(i) / 3)); ctx.beginPath(); ctx.moveTo(e.x - ca * b0 - sa * o, e.y - sa * b0 + ca * o); ctx.lineTo(e.x - ca * (b0 + L2) - sa * o, e.y - sa * (b0 + L2) + ca * o); ctx.stroke(); } ctx.restore(); }
     if (e.elder) drawElderAura(e);
-    drawAlien(CL || ctx, e.form ? formDef(e.def, e.form) : e.def, e.x, e.y, e.r * shK, e.ang, G.t, { air: e.air, lod: e.r * zoom, self: e === p, cast: e.cast, form: inForm(e) ? G.dis.id : null, apex: e.boss, lvl: e.minion ? Math.max(1, e.lvl - 1) : e.lvl, moving: Math.hypot(e.vx, e.vy) > 20, phase: e.phase, alpha, elev: elevOf(e), worldBoss: !!e.worldBoss, titan: !!e.titan, env: e.biome, adapted: e.biome ? resists(e, e.biome) : true, fx: e.fx, ab: e.def.ability, abK: AB[e.def.ability] ? 1 - e.cdAb / AB[e.def.ability].cd : 1, shadow: !CL, aura: e.hitFlash > 0 ? '#ff2a2a' : (e.fx.slow > 0 ? '#9fe3ff' : null) });
+    drawAlien(CL || ctx, e.form ? formDef(e.def, e.form) : e.def, e.x, e.y, e.r * shK, e.ang, e.animT || G.t, { run: e.runK || 0, air: e.air, lod: e.r * zoom, self: e === p, cast: e.cast, form: inForm(e) ? G.dis.id : null, apex: e.boss, lvl: e.minion ? Math.max(1, e.lvl - 1) : e.lvl, moving: Math.hypot(e.vx, e.vy) > 20, phase: e.phase, alpha, elev: elevOf(e), worldBoss: !!e.worldBoss, titan: !!e.titan, env: e.biome, adapted: e.biome ? resists(e, e.biome) : true, fx: e.fx, ab: e.def.ability, abK: AB[e.def.ability] ? 1 - e.cdAb / AB[e.def.ability].cd : 1, shadow: !CL, aura: e.hitFlash > 0 ? '#ff2a2a' : (e.fx.slow > 0 ? '#9fe3ff' : null) });
   }
   if (CL) lit3dEnd(zoom);
   for (const e of list) {
@@ -5914,6 +6061,8 @@ function render() {
     else if (q.meteor && q.bolt) { ctx.strokeStyle = `rgba(150,220,255,${0.4 + 0.4 * Math.sin(G.t * 20)})`; ctx.lineWidth = 3; ctx.setLineDash([6, 6]); ctx.beginPath(); ctx.arc(q.x, q.y, q.rad, 0, 7); ctx.stroke(); ctx.setLineDash([]); if (q.life < 0.15) { ctx.strokeStyle = '#ffffff'; ctx.shadowColor = '#6ad7ff'; ctx.shadowBlur = 20; ctx.lineWidth = 5; let lx = q.x + rand(-40, 40), ly = q.y - 500; ctx.beginPath(); ctx.moveTo(lx, ly); while (ly < q.y) { ly += 50; lx += rand(-30, 30); ctx.lineTo(ly >= q.y ? q.x : lx, Math.min(ly, q.y)); } ctx.stroke(); ctx.shadowBlur = 0; } }
     else if (q.meteor) { const k = Math.min(1, q.life / 0.6); ctx.strokeStyle = '#ff5a2a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(q.x, q.y, q.rad || 140, 0, 7); ctx.stroke(); ctx.fillStyle = '#ffb347'; ctx.beginPath(); ctx.arc(q.x - k * 200, q.y - k * 400, 22, 0, 7); ctx.fill(); }
     else if (q.meteorFx) { ctx.fillStyle = `rgba(255,${120 + q.life * 200 | 0},40,${q.life * 2})`; ctx.beginPath(); ctx.arc(q.x, q.y, 10 + (0.5 - q.life) * 50, 0, 7); ctx.fill(); }
+    else if (q.puff) { const k = 1 - q.life / q.max; ctx.fillStyle = q.c; ctx.globalAlpha = 0.45 * (1 - k); ctx.beginPath(); ctx.arc(q.x, q.y, q.s * (0.6 + k * 1.4), 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+    else if (q.claw) { ctx.strokeStyle = q.c; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.globalAlpha = clamp(q.life / 0.3, 0, 1); for (let i = -1; i <= 1; i++) { const o = i * 0.22; ctx.beginPath(); ctx.arc(q.x, q.y, q.r + i * 6, q.a - 0.7 + o, q.a + 0.7 + o); ctx.stroke(); } ctx.globalAlpha = 1; }
     else if (q.bite) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.globalAlpha = q.life / 0.15; for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(q.x - 8 + i * 6, q.y - q.r * 0.5); ctx.lineTo(q.x + i * 6, q.y + q.r * 0.5); ctx.stroke(); } ctx.globalAlpha = 1; }
     else { ctx.fillStyle = q.c; ctx.globalAlpha = clamp(q.life * 2, 0, 1); ctx.fillRect(q.x - q.s / 2, q.y - q.s / 2, q.s, q.s); ctx.globalAlpha = 1; }
   }
@@ -6344,6 +6493,14 @@ function walletHTML() {
 //  CHANGELOG: newest first. Add an entry here with every update; players see it once on the main page.
 // =====================================================================
 const CHANGELOG = [
+  { v: '2.2', date: 'Nov 2026', title: 'Real animal skills', items: [
+    'All 111 real Earth animals now use skills from real life, and the skill changes as they grow: a Baby, a Juvenile and an Adult each have their own.',
+    'Babies hide in the grass, call their mother for help, curl up, or drop their tail. Juveniles learn to pounce, leap, zigzag and dig.',
+    'Adults hunt like the real animal: tigers stalk, cheetahs sprint, crocodiles death-roll, pythons constrict, cobras bite with venom, wolves howl in their pack, eagles dive with their talons, owls swoop in silence, elephants trumpet, gorillas beat their chest, skunks spray, octopuses squirt ink and electric eels shock.',
+    '30 new skills. Each creature card shows the skills for every life stage.',
+    'Humanoid creatures have realistic arms: a rounded shoulder, upper arm and forearm muscles, an elbow, a wrist, and a hand with four fingers, a thumb, and nails or claws.',
+    'Run animation: sprint, charge, pounce, dive and stampede skills make creatures break into a full run. Their legs move faster with a longer stride, four-legged animals switch to a gallop, and the body stretches and bounds. Dust puffs and speed lines trail behind them.',
+  ] },
   { v: '2.1', date: 'Nov 2026', title: 'Folded wings', items: [
     'Winged creatures now land when they stop and tuck their wings in: birds fold them along the body, bat and dragon wings fold back against the sides, and butterflies and wasps close theirs over the back',
     'Move again to take off: the wings spread and start flapping',
@@ -6598,13 +6755,14 @@ const LAB_TABS = [['all', 'All'], ['owned', 'Owned'], ['dune', 'Dune'], ['ice', 
 const RAR_TABS = [['any', 'Any rarity'], ['common', 'Common'], ['uncommon', 'Uncommon'], ['rare', 'Rare'], ['epic', 'Epic'], ['legendary', 'Legendary']];
 const LAB_PAGE = 24;
 let labTab = 'all', labRar = 'any', labQ = '', labPage = 0, labSort = 'price';
-function abilityAt(d, lvl) { if (d.evo && lvl >= d.evo.lvl) return d.evo.ab; if (d.learn && lvl < d.learn) return 'scurry'; return d.ability; }
+function abilityAt(d, lvl) { const rk = realAbAt(d, lvl); if (rk) return rk; if (d.evo && lvl >= d.evo.lvl) return d.evo.ab; if (d.learn && lvl < d.learn) return 'scurry'; return d.ability; }
 function skillHTML(a) {
   const bs = bodySkill(a), bsl = bs ? `<div class="ab" style="color:#ffcf8a">Body: ${bs.name} <span style="color:#a99fc4">(${STAGE_NAME[bs.need - 1]}+)</span></div>` : '';
   return skillHTML0(a) + bsl;
 }
 function skillHTML0(a) {
   if (a.elderAbs) return `<div class="ab" style="color:${a.elderCol}">${a.elderAbs.map(k => AB[k].name).join(' · ')}</div>`;
+  const rkit = realKit(a); if (rkit) return `<div class="ab">${rkit.map(k => AB[k].name).filter((n, i, A) => A.indexOf(n) === i).join(' → ')}</div>`;
   const ex = AB[a.ability].exclusive ? ' <span style="color:#ffd25a;font-weight:900">★ EXCLUSIVE</span>' : '';
   let h = a.learn ? `<div class="ab">Scurry → <b>${AB[a.ability].name}</b> at ${STAGE_NAMES[a.learn]}${ex}</div>` : `<div class="ab">${AB[a.ability].name}${ex}</div>`;
   if (a.evo) h += `<div class="ab" style="color:#ffd77a">Evolves: ${AB[a.evo.ab].name} at ${STAGE_NAMES[a.evo.lvl]}</div>`;
