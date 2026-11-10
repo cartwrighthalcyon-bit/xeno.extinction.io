@@ -1338,12 +1338,37 @@ const NAME_LOOKS = [ // [pattern in the name, real animal per planet ('*' = any 
   [/crest/, { '*': ['greeniguana', 'harpyeagle'] }],
   [/yeti/, { '*': ['yeti'] }],
 ];
+// Hell and Heaven creatures are the beasts of myth, drawn exactly as the myth (its own colours)
+const MYTH_LOOKS = {
+  hell: [
+    [/hound|pup|fang|jaw|wolf/, ['cerberus', 'fenrir']],
+    [/wing/, ['westerndragon', 'phoenix', 'jerseydevil']],
+    [/worm|wyrm|serpent/, ['basilisk', 'jormungandr']],
+    [/toad|maw/, ['lernaeanhydra', 'westerndragon']],
+    [/imp|demon|fiend/, ['jerseydevil', 'manticore']],
+    [/brute|golem|titan|horn/, ['minotaur']],
+    [/tail|mite|crawler/, ['manticore', 'basilisk']],
+  ],
+  heaven: [
+    [/lion|throne/, ['nemeanlion', 'sphinx']],
+    [/dove|wing/, ['pegasus', 'roc', 'thunderbird']],
+    [/herald|choir/, ['thunderbird', 'roc']],
+    [/keeper|guard|warden/, ['griffin', 'sphinx']],
+    [/grace|glimmer|spirit/, ['unicorn', 'kitsune', 'qilin']],
+  ],
+};
+const MYTH_DEFAULT = { hell: ['westerndragon', 'cerberus', 'manticore', 'minotaur', 'jerseydevil'], heaven: ['pegasus', 'unicorn', 'griffin', 'qilin', 'lungdragon'] };
 const NAME_LOOK_SKIP = ['premium', 'boss', 'mutant', 'event', 'exclusive', 'basic', 'lucky', 'elder'];
 const CLASSIC_LOOKS_KEY = 'xenoio_classic_looks';
 const NAME_LOOKED = {}; // id -> real animal it now looks like
 function nameLookFor(def) {
   if (def.planet === 'earth' || def.look.sp || def.look.sig || NAME_LOOK_SKIP.includes(def.kind)) return null;
   const n = def.name.toLowerCase(); let best = null;
+  if (MYTH_LOOKS[def.planet]) { // myth worlds: last matching word in the name wins, otherwise a myth picked by name
+    let pool = MYTH_DEFAULT[def.planet], end = -1;
+    for (const [rx, p] of MYTH_LOOKS[def.planet]) { const g = new RegExp(rx.source, 'g'); let m; while ((m = g.exec(n))) if (m.index + m[0].length > end) { end = m.index + m[0].length; pool = p; } }
+    pool = pool.filter(k => SPECIES[k]); return pool.length ? pool[hashStr(def.id + '|myth') % pool.length] : null;
+  }
   for (const [rx, pools] of NAME_LOOKS) { const g = new RegExp(rx.source, 'g'); let m;
     while ((m = g.exec(n))) { const end = m.index + m[0].length; if (!best || end > best.end || (end === best.end && m[0].length > best.len)) best = { end, len: m[0].length, pools }; } }
   if (!best) return null;
@@ -1384,7 +1409,8 @@ function planetTint(planet, h, s, l) { // keep the real animal's colouring, shif
       const flier = has('wingsF') || has('wingsM') || has('insectWings') || has('butterfly') || (['eagle', 'owl'].includes(S.tpl) && S.arch === 'raptor' && !has('flightless'));
       L.wings = flier ? 1 : 0; L.wingF = has('wingsF') || (['eagle', 'owl'].includes(S.tpl) && !has('wingsM'));
       L.beakCol = /Raven|Penguin|Cassowary|Harpy/.test(S.name) ? '#2a2a2e' : /Ostrich/.test(S.name) ? '#e6a890' : '#e8b030';
-      [L.hue, L.sat, L.lig] = planetTint(def.planet, S.hsl[0], S.hsl[1], S.hsl[2]); L.hue2 = L.hue;
+      [L.hue, L.sat, L.lig] = MYTH_LOOKS[def.planet] ? S.hsl : planetTint(def.planet, S.hsl[0], S.hsl[1], S.hsl[2]); L.hue2 = L.hue;
+      if (MYTH_LOOKS[def.planet]) { L.glow = has('fire'); }
       if (S.pat < 0) { L.noMark = true; delete L.markCol; } else { L.noMark = false; L.pattern = S.pat; L.markCol = S.mark || 'dark'; L.patN = 7; }
       if (has('panda')) L.legCol = '#141414'; else delete L.legCol;
     }
