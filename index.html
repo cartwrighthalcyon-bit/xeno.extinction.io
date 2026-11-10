@@ -1278,6 +1278,30 @@ const CODE_HASHES = {
   const lev = ALIENS.find(a => a.kind === 'premium' && /leviathan/i.test(a.name));
   if (lev) make(lev.id, { id: 'firstcontact', name: 'First Contact Leviathan', lore: 'The first alien ever to answer a signal from Earth.' }, { hue: 140, sat: 70, lig: 48, hue2: 60, glow: true });
 })();
+// =====================================================================
+//  CREATURE MODS: your hand-made changes to any creature (made in the Creature Workshop: open the game with ?workshop)
+//  Paste the Workshop's "Export" text between the braces below to ship the changes to every player.
+// =====================================================================
+const CREATURE_MODS = {};
+const WORKSHOP_KEY = 'xenoio_workshop';
+const CREATURE_BASE = {}; // each modded creature as the game first built it, so the Workshop can reset it
+function applyCreatureMod(id, m) {
+  const def = ALIEN[id]; if (!def || !m) return;
+  if (!CREATURE_BASE[id]) CREATURE_BASE[id] = JSON.parse(JSON.stringify(def, (k, v) => k === 'an' ? undefined : v));
+  for (const k of ['name', 'lore', 'ability', 'ult', 'hp', 'dmg', 'spd', 'size']) if (m[k] !== undefined) def[k] = m[k];
+  if (m.look) { const L = def.look;
+    if (m.look.tpl !== undefined) { const t = m.look.tpl;
+      if (t && t.startsWith('sp:') && SPECIES[t.slice(3)]) { const S = SPECIES[t.slice(3)]; L.sp = t.slice(3); L.feats = S.feats.slice(); L.spf = Object.assign({}, S.f); L.theme = { k: 'animal', s: S.tpl }; L.humanoid = S.arch === 'humanoid'; }
+      else if (t && t.startsWith('an:')) { delete L.sp; delete L.feats; delete L.spf; delete L.sig; L.theme = { k: 'animal', s: t.slice(3) }; }
+      else if (t === 'alien') { delete L.sp; delete L.feats; delete L.spf; delete L.sig; L.theme = null; } }
+    for (const k in m.look) if (k !== 'tpl') L[k] = m.look[k];
+    delete L.an; }
+}
+(function applyCreatureMods() {
+  let local = {}; try { local = JSON.parse(localStorage.getItem(WORKSHOP_KEY)) || {}; } catch (e) {}
+  for (const id in CREATURE_MODS) applyCreatureMod(id, CREATURE_MODS[id]);
+  for (const id in local) applyCreatureMod(id, local[id]);
+})();
 async function codeHash(code) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('xeno:' + String(code).toUpperCase().replace(/\s+/g, ''))); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
 function redeemDialog() {
   modal('Redeem a code', 'Codes unlock exclusive creatures you cannot get any other way.<br><input id="codeIn" maxlength="24" placeholder="Enter code" style="margin-top:8px;text-transform:uppercase;width:100%">', [['Redeem', () => redeemCode($('codeIn').value)], ['Cancel', null]]);
@@ -7065,6 +7089,177 @@ chatInit(); $('bTrials').onclick = () => eldersOverview(); $('bCodes').onclick =
 refreshMenu();
 cloudInit();
 requestAnimationFrame(t => { last = t; running = true; loop(t); });
+</script>
+<script>
+// =====================================================================
+//  CREATURE WORKSHOP: open the game with ?workshop to edit any creature's look, stats, skills, name and story.
+//  Edits are saved on this device straight away; "Export" gives the text to paste into CREATURE_MODS to ship them to everyone.
+// =====================================================================
+(function creatureWorkshop() {
+  if (!/[?&]workshop\b/.test(location.search) && location.hash !== '#workshop' && !window.XENO_WORKSHOP) return;
+  const css = document.createElement('style');
+  css.textContent = `
+#ws{position:fixed;inset:0;z-index:9999;background:#0b0f14;color:#e6edf3;font:13px system-ui,sans-serif;display:grid;grid-template-columns:250px 1fr 340px;grid-template-rows:48px 1fr}
+#ws *{box-sizing:border-box}
+#ws header{grid-column:1/4;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid #222b36;background:#10161d}
+#ws header b{font-size:15px;letter-spacing:.5px;color:#7dffb2;margin-right:auto}
+#ws button{background:#1b2531;color:#e6edf3;border:1px solid #2c3a49;border-radius:6px;padding:6px 10px;cursor:pointer;font:inherit}
+#ws button:hover{background:#243243}#ws button.go{background:#1f6f45;border-color:#2a9a5f}#ws button.warn{background:#5a2323;border-color:#8a3434}
+#wsL{border-right:1px solid #222b36;display:flex;flex-direction:column;min-height:0}
+#wsL .f{padding:8px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid #222b36}
+#wsL input,#wsL select,#wsR input,#wsR select,#wsR textarea,#wsX textarea{width:100%;background:#0f151c;color:#e6edf3;border:1px solid #2c3a49;border-radius:5px;padding:5px 7px;font:inherit}
+#wsList{overflow:auto;flex:1}
+#wsList div{padding:5px 10px;cursor:pointer;display:flex;justify-content:space-between;gap:6px;border-bottom:1px solid #141b23}
+#wsList div:hover{background:#16202b}#wsList div.on{background:#1d3a2b}#wsList small{color:#7f8b99}#wsList i{color:#ffd25a;font-style:normal}
+#wsC{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:0;background:radial-gradient(#1a2633,#0b0f14 70%)}
+#wsC canvas{max-width:100%;max-height:70vh}
+#wsC .bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center}
+#wsC .bar button.on{background:#1f6f45}
+#wsR{border-left:1px solid #222b36;overflow:auto;padding:10px}
+#wsR h4{margin:14px 0 6px;color:#7dffb2;font-size:12px;text-transform:uppercase;letter-spacing:1px}
+#wsR label{display:grid;grid-template-columns:95px 1fr 42px;align-items:center;gap:6px;margin:4px 0}
+#wsR label.w{grid-template-columns:95px 1fr}
+#wsR label span{color:#9fb0c2}#wsR label em{font-style:normal;color:#7f8b99;text-align:right;font-size:12px}
+#wsR input[type=range]{padding:0}#wsR input[type=checkbox]{width:auto;justify-self:start}
+#wsR .sw{height:10px;border-radius:5px;grid-column:2/4}
+#wsX{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center}
+#wsX.on{display:flex}#wsX>div{background:#10161d;border:1px solid #2c3a49;border-radius:10px;padding:16px;width:min(680px,94vw)}
+#wsX textarea{height:300px;font:12px ui-monospace,monospace}#wsX p{color:#9fb0c2;margin:6px 0 10px}
+#wsMsg{color:#7dffb2;font-size:12px;min-width:120px;text-align:right}
+@media(max-width:900px){#ws{grid-template-columns:1fr;grid-template-rows:48px 180px 300px 1fr}#ws header{grid-column:1}#wsL{border:0}}`;
+  document.head.appendChild(css);
+  const W = document.createElement('div'); W.id = 'ws';
+  W.innerHTML = `<header><b>🧬 XENO.IO Creature Workshop</b><span id="wsMsg"></span><button id="wsExp">Export</button><button id="wsImp">Import</button><button id="wsClose">Close</button></header>
+<div id="wsL"><div class="f"><input id="wsQ" placeholder="Search ${ALIENS.length} creatures…"><select id="wsP"><option value="">All planets</option>${PLANET_IDS.map(p => `<option value="${p}">${esc(PLANETS[p].name)}</option>`).join('')}</select><label style="display:flex;gap:6px;align-items:center;color:#9fb0c2"><input type="checkbox" id="wsOnly" style="width:auto"> Edited only</label></div><div id="wsList"></div></div>
+<div id="wsC"><canvas id="wsCv" width="560" height="560"></canvas><div class="bar"><span style="color:#9fb0c2">Stage</span>${[1, 2, 3, 4, 5].map(n => `<button data-st="${n}">${['Baby', 'Juvenile', 'Adult', 'Elder', 'Alpha'][n - 1]}</button>`).join('')}</div><div class="bar"><button id="wsMove" class="on">Walking</button><button id="wsSpin">Turn</button><button class="warn" id="wsReset">Reset this creature</button></div></div>
+<div id="wsR"></div>`;
+  document.body.appendChild(W);
+  const X = document.createElement('div'); X.id = 'wsX'; X.innerHTML = `<div><b id="wsXT"></b><p id="wsXP"></p><textarea id="wsXA" spellcheck="false"></textarea><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px" id="wsXB"></div></div>`; document.body.appendChild(X);
+  const q = id => document.getElementById(id);
+
+  let local = {}; try { local = JSON.parse(localStorage.getItem(WORKSHOP_KEY)) || {}; } catch (e) {}
+  const store = () => { try { localStorage.setItem(WORKSHOP_KEY, JSON.stringify(local)); } catch (e) {} };
+  const flash = t => { q('wsMsg').textContent = t; clearTimeout(flash.t); flash.t = setTimeout(() => q('wsMsg').textContent = '', 1800); };
+  const edited = id => !!(local[id] || CREATURE_MODS[id]);
+  const merged = id => { const a = CREATURE_MODS[id] || {}, b = local[id] || {}; return Object.assign({}, a, b, { look: Object.assign({}, a.look, b.look) }); };
+  const snap = def => { if (!CREATURE_BASE[def.id]) CREATURE_BASE[def.id] = JSON.parse(JSON.stringify(def, (k, v) => k === 'an' ? undefined : v)); };
+  function restore(def) { const B = JSON.parse(JSON.stringify(CREATURE_BASE[def.id]));
+    for (const k of ['name', 'lore', 'ability', 'ult', 'hp', 'dmg', 'spd', 'size']) def[k] = B[k];
+    for (const k in def.look) delete def.look[k]; Object.assign(def.look, B.look); }
+  function rebuild(def) { snap(def); restore(def); applyCreatureMod(def.id, merged(def.id)); }
+
+  // ---- list
+  let cur = null, stage = 3, moving = true, spin = false;
+  function renderList() {
+    const t = q('wsQ').value.trim().toLowerCase(), p = q('wsP').value, only = q('wsOnly').checked;
+    const rows = ALIENS.filter(a => (!p || a.planet === p) && (!only || edited(a.id)) && (!t || a.name.toLowerCase().includes(t) || a.id.includes(t))).slice(0, 400);
+    q('wsList').innerHTML = rows.map(a => `<div data-id="${a.id}" class="${cur && cur.id === a.id ? 'on' : ''}"><span>${edited(a.id) ? '<i>✎ </i>' : ''}${esc(a.name)}</span><small>${esc(a.rarity || a.kind)}</small></div>`).join('') || '<div><small>No creatures match.</small></div>';
+  }
+  q('wsList').onclick = e => { const d = e.target.closest('[data-id]'); if (d) select(d.dataset.id); };
+  q('wsQ').oninput = q('wsP').onchange = q('wsOnly').onchange = renderList;
+
+  // ---- editor
+  const ANIMALS = Object.keys(NATURAL).sort(), SPS = Object.keys(SPECIES).filter(k => k !== 'halcyon' || ALIEN.halcyon).sort((a, b) => SPECIES[a].name.localeCompare(SPECIES[b].name));
+  const SKILLS = Object.keys(AB).filter(k => !AB[k].ult && !AB[k].exclusive).sort((a, b) => AB[a].name.localeCompare(AB[b].name));
+  const ULTL = ULTS.filter(k => AB[k]);
+  const BODY = ['Toad', 'Lizard', 'Beetle', 'Insect', 'Squid', 'Shell beetle', 'Serpent', 'Four-legged'];
+  const opts = (list, val, lab) => list.map(([v, l]) => `<option value="${esc(v)}"${String(v) === String(val) ? ' selected' : ''}>${esc(l)}</option>`).join('');
+  function tplOf(L) { return L.sp ? 'sp:' + L.sp : L.theme && L.theme.k === 'animal' ? 'an:' + L.theme.s : L.sig ? 'sig' : 'alien'; }
+  function select(id) {
+    cur = ALIEN[id]; if (!cur) return; snap(cur); renderList();
+    const d = cur, L = d.look, hsl = (h, s, l) => `hsl(${h},${s}%,${l}%)`;
+    const rng = (k, lab, min, max, step = 1, v = L[k]) => `<label><span>${lab}</span><input type="range" data-l="${k}" min="${min}" max="${max}" step="${step}" value="${+v || 0}"><em>${Math.round((+v || 0) * 10) / 10}</em></label>`;
+    const chk = (k, lab) => `<label class="w"><span>${lab}</span><input type="checkbox" data-l="${k}"${L[k] ? ' checked' : ''}></label>`;
+    const sel = (k, lab, list, v = L[k], attr = 'data-l') => `<label class="w"><span>${lab}</span><select ${attr}="${k}">${opts(list, v)}</select></label>`;
+    const tpl = tplOf(L);
+    q('wsR').innerHTML = `
+<h4>Identity</h4>
+<label class="w"><span>Name</span><input data-d="name" value="${esc(d.name)}" maxlength="40"></label>
+<label class="w"><span>Story</span><textarea data-d="lore" rows="3">${esc(d.lore || '')}</textarea></label>
+<small style="color:#7f8b99">${esc(PLANETS[d.planet].name)} · ${esc(d.rarity || d.kind)} · id: ${d.id}</small>
+<h4>Body</h4>
+<label class="w"><span>Based on</span><select data-l="tpl">${tpl === 'sig' ? '<option value="sig" selected>Signature (premium) body</option>' : ''}<option value="alien"${tpl === 'alien' ? ' selected' : ''}>Pure alien body</option><optgroup label="Animal-inspired">${opts(ANIMALS.map(a => ['an:' + a, a[0].toUpperCase() + a.slice(1)]), tpl)}</optgroup><optgroup label="Earth species & myths">${opts(SPS.map(k => ['sp:' + k, SPECIES[k].name]), tpl)}</optgroup></select></label>
+${L.sp ? '<small style="color:#7f8b99">Earth-species bodies use the real animal\'s shape, so some body sliders below have little effect. Switch to an alien or animal-inspired body for full control.</small>' : ''}
+${sel('body', 'Body shape', BODY.map((b, i) => [i, b]))}
+${chk('humanoid', 'Walks upright')}
+${rng('legs', 'Legs', 0, 8)}${rng('legStyle', 'Leg style', 0, 2)}
+${rng('tail', 'Tail', 0, 3)}${rng('wings', 'Wings', 0, 2)}
+${rng('heads', 'Heads', 1, 3)}
+<h4>Face</h4>
+${rng('eyes', 'Eyes', 1, 6)}${rng('eyeStyle', 'Eye style', 0, 4)}${rng('eyeHue', 'Eye colour', 0, 360)}
+${rng('mouth', 'Mouth', 0, 3)}${rng('horns', 'Horns', 0, 2)}
+<h4>Colour</h4>
+${rng('hue', 'Hue', 0, 360)}${rng('sat', 'Saturation', 0, 100)}${rng('lig', 'Lightness', 5, 95)}
+<label><span></span><div class="sw" id="wsSw1" style="background:${hsl(L.hue, L.sat, L.lig)}"></div></label>
+${rng('hue2', 'Second hue', 0, 360)}
+<label><span></span><div class="sw" id="wsSw2" style="background:${hsl(L.hue2, L.sat, L.lig)}"></div></label>
+${chk('noMark', 'No markings')}${rng('pattern', 'Pattern', 0, 3)}${rng('patN', 'Pattern count', 2, 10)}
+${chk('glow', 'Glow')}${chk('rainbow', 'Rainbow shimmer')}
+<h4>Stats</h4>
+<label><span>Health</span><input type="range" data-d="hp" min="40" max="1200" value="${d.hp}"><em>${d.hp}</em></label>
+<label><span>Damage</span><input type="range" data-d="dmg" min="3" max="150" value="${d.dmg}"><em>${d.dmg}</em></label>
+<label><span>Speed</span><input type="range" data-d="spd" min="80" max="400" value="${d.spd}"><em>${d.spd}</em></label>
+<label><span>Size</span><input type="range" data-d="size" min="8" max="70" step="0.5" value="${Math.round(d.size * 2) / 2}"><em>${Math.round(d.size * 10) / 10}</em></label>
+<h4>Skills</h4>
+${sel('ability', 'Skill', SKILLS.map(k => [k, AB[k].name]).concat(SKILLS.includes(d.ability) ? [] : [[d.ability, (AB[d.ability] || {}).name || d.ability]]), d.ability, 'data-d')}
+<small id="wsAbD" style="color:#7f8b99">${esc((AB[d.ability] || {}).desc || '')}</small>
+${sel('ult', 'Ultimate', [['', '(none)']].concat(ULTL.map(k => [k, AB[k].name])), d.ult || '', 'data-d')}
+<p style="color:#7f8b99;font-size:12px;margin-top:16px">Changes save on this device as you go. Use <b>Export</b> to ship them to every player.</p>`;
+  }
+  function setMod(path, k, v) { const m = local[cur.id] || (local[cur.id] = {}); if (path === 'l') (m.look || (m.look = {}))[k] = v; else m[k] = v; store(); }
+  q('wsR').addEventListener('input', e => {
+    const el = e.target; if (!cur) return;
+    const k = el.dataset.l || el.dataset.d; if (!k) return;
+    let v = el.type === 'checkbox' ? el.checked : el.type === 'range' ? +el.value : el.value;
+    if (k === 'ult' && v === '') v = null;
+    setMod(el.dataset.l ? 'l' : 'd', k, k === 'body' ? +v : v);
+    rebuild(cur);
+    if (el.nextElementSibling && el.nextElementSibling.tagName === 'EM') el.nextElementSibling.textContent = Math.round(v * 10) / 10;
+    if (k === 'tpl' || k === 'ability') select(cur.id);
+    const L = cur.look; if (q('wsSw1')) { q('wsSw1').style.background = `hsl(${L.hue},${L.sat}%,${L.lig}%)`; q('wsSw2').style.background = `hsl(${L.hue2},${L.sat}%,${L.lig}%)`; }
+    if (k === 'name') renderList(); flash('Saved on this device');
+  });
+  q('wsReset').onclick = () => { if (!cur) return; delete local[cur.id]; store(); rebuild(cur); select(cur.id); flash(CREATURE_MODS[cur.id] ? 'Back to the shipped version' : 'Back to the original'); };
+
+  // ---- preview
+  W.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { stage = +b.dataset.st; W.querySelectorAll('[data-st]').forEach(x => x.classList.toggle('on', x === b)); });
+  W.querySelector('[data-st="3"]').classList.add('on');
+  q('wsMove').onclick = () => { moving = !moving; q('wsMove').classList.toggle('on', moving); };
+  q('wsSpin').onclick = () => { spin = !spin; q('wsSpin').classList.toggle('on', spin); };
+  const cv = q('wsCv'), cx = cv.getContext('2d');
+  function frame(ms) {
+    if (!document.body.contains(W)) return;
+    const t = ms / 1000; cx.clearRect(0, 0, cv.width, cv.height);
+    cx.strokeStyle = 'rgba(255,255,255,.05)'; for (let i = 0; i < cv.width; i += 40) { cx.beginPath(); cx.moveTo(i, 0); cx.lineTo(i, cv.height); cx.moveTo(0, i); cx.lineTo(cv.width, i); cx.stroke(); }
+    if (cur) {
+      const r = 60 + stage * 14, ang = spin ? t * 0.6 : -Math.PI / 2;
+      cx.fillStyle = 'rgba(0,0,0,.35)'; cx.beginPath(); cx.ellipse(cv.width / 2 + 6, cv.height / 2 + r * 0.95, r * 1.5, r * 0.4, 0, 0, 7); cx.fill();
+      try { drawAlien(cx, cur, cv.width / 2, cv.height / 2, r, ang, t, { lvl: stage, moving, self: true, lod: 99 }); }
+      catch (err) { cx.fillStyle = '#ff8080'; cx.font = '14px system-ui'; cx.fillText('This combination can\'t be drawn: ' + err.message, 20, 30); }
+      cx.fillStyle = '#e6edf3'; cx.font = 'bold 18px system-ui'; cx.textAlign = 'center'; cx.fillText(cur.name, cv.width / 2, 34); cx.textAlign = 'left';
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ---- export / import
+  function dialog(title, text, val, btns) { q('wsXT').textContent = title; q('wsXP').innerHTML = text; q('wsXA').value = val; const B = q('wsXB'); B.innerHTML = '';
+    for (const [l, fn, cls] of btns) { const b = document.createElement('button'); b.textContent = l; if (cls) b.className = cls; b.onclick = () => { if (!fn || fn() !== false) X.classList.remove('on'); }; B.appendChild(b); }
+    X.classList.add('on'); }
+  q('wsExp').onclick = () => {
+    const all = {}; for (const id of new Set([...Object.keys(CREATURE_MODS), ...Object.keys(local)])) all[id] = merged(id);
+    const txt = JSON.stringify(all, null, 1);
+    dialog('Export your creatures', `${Object.keys(all).length} edited creature(s). To ship them to every player, replace <code>const CREATURE_MODS = {...};</code> in index.html with <code>const CREATURE_MODS = </code> this text, then push to GitHub.`, txt,
+      [['Copy', () => { q('wsXA').select(); try { navigator.clipboard.writeText(txt).then(() => flash('Copied'), () => flash('Press Ctrl+C to copy')); } catch (e) { flash('Press Ctrl+C to copy'); } return false; }, 'go'], ['Download', () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['const CREATURE_MODS = ' + txt + ';\n'], { type: 'text/plain' })); a.download = 'creature-mods.js'; a.click(); }], ['Close', null]]);
+  };
+  q('wsImp').onclick = () => dialog('Import creatures', 'Paste text from Export. It is added on top of your current edits.', '', [['Import', () => {
+    try { const o = JSON.parse(q('wsXA').value.replace(/^\s*const CREATURE_MODS\s*=\s*/, '').replace(/;\s*$/, '')); let n = 0;
+      for (const id in o) if (ALIEN[id]) { local[id] = o[id]; rebuild(ALIEN[id]); n++; } store(); renderList(); if (cur) select(cur.id); flash(n + ' imported'); }
+    catch (e) { q('wsXP').textContent = 'That text could not be read: ' + e.message; return false; } }, 'go'], ['Cancel', null]]);
+  q('wsClose').onclick = () => { W.remove(); X.remove(); history.replaceState(null, '', location.pathname); };
+
+  renderList(); select((ALIEN[save.equipped] || ALIENS[0]).id);
+})();
 </script>
 </body>
 </html>
