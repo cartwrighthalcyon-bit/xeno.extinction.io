@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>XENO.IO — Free Online Alien Survival .io Game</title>
-<meta name="description" content="XENO.IO is a free multiplayer .io game: hatch as a baby alien, eat, grow and evolve through 1,200+ creatures across 11 worlds. Play free in your browser, no download.">
+<meta name="description" content="XENO.IO is a free multiplayer .io game: hatch as a baby alien, eat, grow and evolve through 1,100+ creatures across 11 worlds. Play free in your browser, no download.">
 <meta name="keywords" content="xeno.io, xeno io, xenoio, io game, alien game, multiplayer io game, browser game, survival game, evolution game">
 <meta name="theme-color" content="#07060c">
 <link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta property="og:type" content="website"><meta property="og:site_name" content="XENO.IO"><meta property="og:title" content="XENO.IO — Free Online Alien Survival .io Game">
-<meta property="og:description" content="Hatch, hunt and evolve through 1,200+ alien creatures. Free multiplayer .io game in your browser.">
+<meta property="og:description" content="Hatch, hunt and evolve through 1,100+ alien creatures. Free multiplayer .io game in your browser.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2307060c'/%3E%3Cellipse cx='32' cy='34' rx='20' ry='16' fill='%237dffb2'/%3E%3Ccircle cx='24' cy='30' r='5' fill='%23111'/%3E%3Ccircle cx='40' cy='30' r='5' fill='%23111'/%3E%3C/svg%3E">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"XENO.IO","alternateName":["Xeno io","XenoIO"],"description":"Free multiplayer alien survival .io game in the browser.","genre":["io game","Survival","Action"],"gamePlatform":"Web browser","applicationCategory":"Game","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
@@ -850,8 +850,97 @@ const EARTH_CRYPTIDS = [
   ['Ogopogo', '', 'eel', 'serpent', 'skin', 120, 20, 30, '', -1, 1.5, 'tidalwave', 'carnivore', 'territorial', 'swim spines', 'The lake serpent of Okanagan.', 3.0, 7, 'unstable'],
   ['Beast of Bray Road', '', 'wolf', 'humanoid', 'fur', 30, 10, 30, '', -1, 1.3, 'roar', 'carnivore', 'predator', 'eyesRed', 'A wolfman of rural Wisconsin.', 2.9, 6, 'adrenal'],
 ];
+// Hell and Heaven are home to the beasts of real-world myth (they replace the old generated natives of both worlds)
+// [name, rarity, body, build, covering, hue, sat, light, marking colour, pattern, size, skill, diet, behaviour, features, lore]
+const HELL_MYTHS = [
+  ['Garmr', 'legendary', 'wolf', 'quad', 'fur', 0, 35, 14, '', -1, 1.55, 'howl', 'carnivore', 'predator', 'mane eyesRed shaggy', 'The blood-soaked hound that guards the gates of Hel.'],
+  ['Nidhogg', 'legendary', 'cobra', 'lizard', 'scales', 260, 30, 16, '', -1, 1.7, 'acid', 'carnivore', 'predator', 'spines wingsM eyesGold legL=0.6 tail=1.8', 'The dragon that gnaws at the roots of the World Tree.'],
+  ['Apep', 'legendary', 'cobra', 'serpent', 'scales', 275, 45, 22, '#d0b040', 1, 1.75, 'constrict', 'carnivore', 'predator', 'hood eyesRed', 'The Egyptian serpent of chaos that tries to swallow the sun each night.'],
+  ['Chimera', 'legendary', 'cat', 'quad', 'fur', 28, 60, 42, '', -1, 1.45, 'fire', 'carnivore', 'predator', 'heads=2 mane hornsRam fire tail=1.5', 'Lion, goat and serpent in one fire-breathing body.'],
+  ['Fafnir', 'epic', 'croc', 'lizard', 'scales', 100, 35, 25, '', -1, 1.6, 'acid', 'carnivore', 'territorial', 'hornsRam spines', 'A dwarf turned dragon by greed, coiled on cursed gold.'],
+  ['Behemoth', 'epic', 'mammoth', 'quad', 'skin', 10, 25, 26, '', -1, 1.7, 'stampede', 'herbivore', 'territorial', 'tusks noFur smallEars hump', 'The unstoppable beast of the land, whose bones are tubes of bronze.'],
+  ['Ammit', 'epic', 'croc', 'quad', 'scales', 38, 45, 38, '', -1, 1.3, 'deathroll', 'carnivore', 'predator', 'mane legL=1.2', 'Crocodile, lion and hippo: she devours the hearts of the unworthy.'],
+  ['Ushi-oni', 'epic', 'spider', 'insect', 'chitin', 0, 55, 18, '', -1, 1.45, 'web', 'carnivore', 'predator', 'hornsBovid hairy eyesRed', 'An ox-headed spider demon that haunts the shores of Japan.'],
+  ['Pazuzu', 'epic', 'cat', 'humanoid', 'fur', 30, 35, 30, '', -1, 1.3, 'dustdevil', 'carnivore', 'predator', 'wingsF stinger eyesGold', 'The Assyrian demon king of the wind, bringer of storms.'],
+  ['Orthrus', 'rare', 'wolf', 'quad', 'fur', 20, 20, 22, '', -1, 1.25, 'maul', 'carnivore', 'predator', 'heads=2 eyesRed', 'The two-headed brother of Cerberus.'],
+  ['Wyvern', 'rare', 'croc', 'raptor', 'scales', 120, 40, 26, '', -1, 1.35, 'sting', 'carnivore', 'predator', 'wingsM spines tail=1.6', 'A two-legged dragon with a venomous barbed tail.'],
+  ['Peluda', 'rare', 'croc', 'lizard', 'scales', 80, 30, 24, '', -1, 1.3, 'quills', 'carnivore', 'predator', 'quills fire', 'The shaggy beast of La Ferté, whose quills shoot fire.'],
+  ['Ifrit', 'rare', 'gorilla', 'humanoid', 'skin', 8, 75, 34, '', -1, 1.35, 'fire', 'carnivore', 'territorial', 'fire hornsRam eyesOrange noFur', 'A jinn born of smokeless fire.'],
+  ['Oni', 'rare', 'gorilla', 'humanoid', 'skin', 2, 70, 40, '', -1, 1.4, 'tremor', 'carnivore', 'territorial', 'horn1 noFur eyesGold', 'A horned ogre of Japanese legend, club in hand.'],
+  ['Rakshasa', 'rare', 'cat', 'humanoid', 'fur', 28, 75, 48, 'dark', 1, 1.3, 'mirage', 'carnivore', 'predator', 'faceWhite', 'A tiger-headed shapeshifting demon of Hindu legend.'],
+  ['Mare of Diomedes', 'rare', 'hoof', 'quad', 'fur', 0, 10, 12, '', -1, 1.25, 'kick', 'carnivore', 'predator', 'maneNeck smallEars eyesRed fire legL=1.3 snout=0.35 gait=gallop', 'A man-eating horse tamed by Heracles.'],
+  ['Sirrush', 'rare', 'croc', 'quad', 'scales', 200, 35, 30, '', -1, 1.25, 'charge', 'carnivore', 'territorial', 'horn1 crest legL=1.3 tail=1.4', 'The scaly dragon on the Ishtar Gate of Babylon.'],
+  ['Black Shuck', 'uncommon', 'wolf', 'quad', 'fur', 0, 0, 8, '', -1, 1.2, 'howl', 'carnivore', 'predator', 'shaggy eyesRed', 'A ghostly black dog whose fiery eye means death is near.'],
+  ['Barghest', 'uncommon', 'wolf', 'quad', 'fur', 30, 15, 18, '', -1, 1.25, 'maul', 'carnivore', 'predator', 'shaggy eyesOrange', 'The goblin dog of Yorkshire, with claws like a bear.'],
+  ['Cockatrice', 'uncommon', 'eagle', 'raptor', 'feathers', 10, 70, 38, '', -1, 0.9, 'terror', 'carnivore', 'predator', 'beak crest wingsF tail=1.6', 'Half rooster, half serpent, its glance turns flesh to stone.'],
+  ['Gargoyle', 'uncommon', 'gorilla', 'humanoid', 'skin', 210, 6, 42, '', -1, 1.15, 'shield', 'carnivore', 'territorial', 'wingsM hornsRam noFur eyesOrange', 'A winged stone grotesque that wakes at night.'],
+  ['Kasha', 'uncommon', 'cat', 'quad', 'fur', 22, 40, 22, '', -1, 1.1, 'pounce', 'carnivore', 'predator', 'fire tail=1.4', 'A burning cat-demon that steals the dead from their funerals.'],
+  ['Krampus', 'uncommon', 'hoof', 'humanoid', 'fur', 25, 30, 18, '', -1, 1.25, 'charge', 'omnivore', 'territorial', 'hornsRam shaggy eyesRed', 'The horned goat-demon of Alpine winters.'],
+  ['Vritra', 'uncommon', 'cobra', 'serpent', 'scales', 140, 35, 22, '', -1, 1.35, 'constrict', 'carnivore', 'predator', 'hood', 'The serpent of drought that hoarded the world\'s rivers.'],
+  ['Stymphalian Bird', 'uncommon', 'eagle', 'raptor', 'feathers', 35, 45, 40, '', -1, 0.95, 'talondive', 'carnivore', 'predator', 'beak wingsF', 'A man-eating bird with feathers of bronze.'],
+  ['Tsuchigumo', 'uncommon', 'spider', 'insect', 'chitin', 30, 30, 20, '', -1, 1.25, 'web', 'carnivore', 'predator', 'hairy eyesRed', 'The giant earth spider of Japanese legend.'],
+  ['Aatxe', 'uncommon', 'hoof', 'quad', 'fur', 5, 65, 30, '', -1, 1.25, 'charge', 'herbivore', 'territorial', 'hornsBovid fire smallEars', 'A fiery red bull spirit of the Basque caves.'],
+  ['Hellhound', 'common', 'wolf', 'quad', 'fur', 0, 30, 16, '', -1, 1.05, 'fire', 'carnivore', 'predator', 'eyesRed spines', 'A black hound of the underworld with burning breath.'],
+  ['Imp', 'common', 'hoof', 'raptor', 'skin', 0, 60, 36, '', -1, 0.6, 'blink', 'omnivore', 'predator', 'wingsM hornsRam noFur eyesGold tail=1.3', 'A small mischievous demon.'],
+  ['Salamander', 'common', 'frog', 'lizard', 'skin', 18, 90, 45, '#ffd030', 1, 0.75, 'fire', 'carnivore', 'grazer', 'fire', 'The fire spirit of alchemy that lives inside flames.'],
+  ['Harpy', 'common', 'eagle', 'raptor', 'feathers', 25, 30, 28, '', -1, 0.9, 'swoop', 'carnivore', 'predator', 'beak crest wingsF', 'A storm-winged snatcher of Greek myth.'],
+  ['Nue', 'common', 'cat', 'quad', 'fur', 30, 50, 40, 'dark', 1, 1.0, 'terror', 'carnivore', 'predator', 'faceTan tail=1.6', 'Monkey face, tiger legs and a snake for a tail.'],
+  ['Helhest', 'common', 'hoof', 'quad', 'fur', 0, 0, 20, '', -1, 1.1, 'kick', 'herbivore', 'grazer', 'maneNeck smallEars eyesRed legL=1.3 snout=0.35', 'The Danish horse of Hel; seeing it foretells death.'],
+  ['Nian', 'common', 'cat', 'quad', 'fur', 0, 60, 42, '', -1, 1.0, 'roar', 'carnivore', 'predator', 'horn1 mane', 'A horned beast scared away by firecrackers and the colour red.'],
+  ['Cwn Annwn', 'common', 'wolf', 'quad', 'fur', 0, 0, 92, '', -1, 0.95, 'howl', 'carnivore', 'predator', 'eyesRed', 'The white, red-eared hounds of the Welsh Otherworld.'],
+  ['Kludde', 'common', 'wolf', 'quad', 'fur', 0, 10, 14, '', -1, 0.95, 'blink', 'carnivore', 'predator', 'wingsM eyesOrange', 'A Flemish demon dog with bat wings and a clanking chain.'],
+  ['Gwyllgi', 'common', 'wolf', 'quad', 'fur', 220, 10, 20, '', -1, 1.0, 'stalk', 'carnivore', 'predator', 'shaggy eyesRed', 'The Dog of Darkness that stalks lonely Welsh roads.'],
+  ['Lindworm', 'common', 'cobra', 'lizard', 'scales', 60, 40, 30, '', -1, 1.0, 'venombite', 'carnivore', 'predator', 'legL=0.5 tail=1.8', 'A wingless serpent-dragon with only two front legs.'],
+  ['Ghoul', 'common', 'wolf', 'quad', 'fur', 35, 30, 32, 'dark', 2, 1.0, 'leech', 'carnivore', 'predator', 'hump eyesRed', 'A graveyard demon that takes the shape of a hyena.'],
+  ['Basan', 'common', 'eagle', 'raptor', 'feathers', 0, 70, 42, '', -1, 0.7, 'fire', 'omnivore', 'grazer', 'beak crest fire', 'A fire-breathing rooster yokai of Japan.'],
+  ['Bakeneko', 'common', 'cat', 'quad', 'fur', 30, 15, 70, 'dark', 2, 0.8, 'mirage', 'carnivore', 'predator', 'tails=2', 'A cat that grew old enough to become a shapeshifting spirit.'],
+];
+const HEAVEN_MYTHS = [
+  ['Fenghuang', 'legendary', 'eagle', 'raptor', 'feathers', 0, 85, 50, '#ffd030', -1, 1.4, 'heal', 'herbivore', 'grazer', 'wingsF crest beak tail=2', 'The Chinese phoenix, a sign of peace and harmony.'],
+  ['Ziz', 'legendary', 'eagle', 'raptor', 'feathers', 40, 50, 60, '', -1, 1.75, 'talondive', 'carnivore', 'predator', 'wingsF beak', 'A bird so vast its wings can blot out the sun.'],
+  ['Sleipnir', 'legendary', 'hoof', 'quad', 'fur', 210, 8, 75, '', -1, 1.4, 'dash', 'herbivore', 'grazer', 'pairs=4 maneNeck smallEars legL=1.3 snout=0.35 gait=gallop', 'Odin\'s eight-legged horse, fastest of all steeds.'],
+  ['Azure Dragon', 'legendary', 'cobra', 'lizard', 'scales', 200, 70, 45, '#e0b030', -1, 1.6, 'tidalwave', 'herbivore', 'territorial', 'antlers maneNeck whiskers len=1.6 tail=1.8 legL=0.7', 'Qinglong, guardian dragon of the East.'],
+  ['Simurgh', 'epic', 'eagle', 'raptor', 'feathers', 160, 55, 45, '', -1, 1.55, 'heal', 'omnivore', 'territorial', 'wingsF crest beak tail=1.8', 'The ancient Persian bird whose feathers heal any wound.'],
+  ['Garuda', 'epic', 'eagle', 'raptor', 'feathers', 38, 85, 52, '', -1, 1.5, 'talondive', 'carnivore', 'predator', 'wingsF crest beak', 'The golden king of birds, mount of Vishnu and foe of serpents.'],
+  ['Airavata', 'epic', 'mammoth', 'quad', 'skin', 0, 0, 92, '', -1, 1.7, 'trumpet', 'herbivore', 'territorial', 'trunk tusks elephantEars noFur', 'The white elephant of Indra who brings the rain clouds.'],
+  ['Lamassu', 'epic', 'hoof', 'quad', 'fur', 40, 30, 62, '', -1, 1.55, 'shield', 'herbivore', 'territorial', 'wingsF hornsBovid maneNeck', 'The winged bull guardian of Assyrian palace gates.'],
+  ['Quetzalcoatl', 'epic', 'cobra', 'serpent', 'scales', 145, 75, 40, '#e03030', 1, 1.6, 'blizzard', 'carnivore', 'territorial', 'wingsF crest', 'The feathered serpent of the Aztecs, lord of wind.'],
+  ['Huma', 'rare', 'eagle', 'raptor', 'feathers', 45, 70, 62, '', -1, 1.1, 'blink', 'herbivore', 'grazer', 'wingsF crest beak', 'The Persian bird that never lands; its shadow makes kings.'],
+  ['Anzu', 'rare', 'eagle', 'raptor', 'feathers', 35, 40, 45, '', -1, 1.3, 'roar', 'carnivore', 'predator', 'wingsF mane beak', 'A lion-headed eagle of Mesopotamian storms.'],
+  ['Gandaberunda', 'rare', 'eagle', 'raptor', 'feathers', 42, 75, 50, '', -1, 1.25, 'talondive', 'carnivore', 'predator', 'heads=2 wingsF beak', 'The two-headed bird of Hindu myth, of immense strength.'],
+  ['Pixiu', 'rare', 'cat', 'quad', 'fur', 50, 60, 55, '', -1, 1.2, 'leech', 'carnivore', 'territorial', 'wingsF horn1 mane', 'A winged, horned lion that guards treasure.'],
+  ['White Tiger', 'rare', 'cat', 'quad', 'fur', 30, 10, 92, '#222', 1, 1.35, 'pounce', 'carnivore', 'predator', 'faceWhite', 'Baihu, the guardian tiger of the West.'],
+  ['Black Tortoise', 'rare', 'turtle', 'quad', 'scales', 180, 15, 18, '', -1, 1.4, 'shield', 'herbivore', 'territorial', 'neck=0.35 tail=1.5 gait=waddle', 'Xuanwu, guardian of the North, a tortoise twined with a snake.'],
+  ['Alicorn', 'rare', 'hoof', 'quad', 'fur', 280, 25, 90, '', -1, 1.2, 'blink', 'herbivore', 'grazer', 'wingsF horn1 maneNeck legL=1.35 snout=0.35 smallEars gait=gallop', 'A winged unicorn.'],
+  ['Tianma', 'rare', 'hoof', 'quad', 'fur', 40, 30, 80, '', -1, 1.2, 'dash', 'herbivore', 'grazer', 'wingsF maneNeck legL=1.35 snout=0.35 smallEars gait=gallop', 'The heavenly horse of China that sweats blood.'],
+  ['Bennu', 'uncommon', 'eagle', 'raptor', 'feathers', 200, 30, 55, '', -1, 1.0, 'heal', 'omnivore', 'grazer', 'wingsF crest beak legL=1.4', 'The Egyptian heron of the rising sun.'],
+  ['Yatagarasu', 'uncommon', 'eagle', 'raptor', 'feathers', 0, 0, 12, '', -1, 0.85, 'swoop', 'omnivore', 'grazer', 'wingsF beak', 'The three-legged crow of the sun goddess Amaterasu.'],
+  ['Firebird', 'uncommon', 'eagle', 'raptor', 'feathers', 25, 95, 55, '#ffd030', -1, 0.95, 'fire', 'omnivore', 'grazer', 'wingsF crest beak fire tail=1.8', 'The glowing bird of Slavic tales, whose feathers light dark rooms.'],
+  ['Hippogriff', 'uncommon', 'eagle', 'quad', 'feathers', 30, 30, 50, '', -1, 1.2, 'charge', 'carnivore', 'territorial', 'wingsF beak', 'Front of an eagle, back of a horse.'],
+  ['Kamadhenu', 'uncommon', 'hoof', 'quad', 'fur', 35, 15, 90, '', -1, 1.2, 'heal', 'herbivore', 'grazer', 'hornsBovid smallEars', 'The divine cow who grants every wish.'],
+  ['Ceryneian Hind', 'uncommon', 'hoof', 'quad', 'fur', 42, 80, 55, '', -1, 1.05, 'sprint', 'herbivore', 'grazer', 'antlers smallEars', 'Artemis\'s golden-antlered deer, faster than an arrow.'],
+  ['Shedu', 'uncommon', 'cat', 'quad', 'fur', 38, 45, 60, '', -1, 1.3, 'roar', 'carnivore', 'territorial', 'wingsF mane', 'The winged lion guardian of Mesopotamia.'],
+  ['Snow Lion', 'uncommon', 'cat', 'quad', 'fur', 175, 20, 92, '', -1, 1.25, 'avalanche', 'carnivore', 'territorial', 'mane', 'The white lion of Tibet with a turquoise mane.'],
+  ['Haetae', 'uncommon', 'cat', 'quad', 'fur', 40, 30, 70, '', -1, 1.15, 'shield', 'carnivore', 'territorial', 'horn1 mane', 'The horned lion-dog of Korea that guards against fire.'],
+  ['Peng', 'uncommon', 'eagle', 'raptor', 'feathers', 210, 25, 40, '', -1, 1.5, 'dustdevil', 'carnivore', 'predator', 'wingsF beak', 'A giant fish that turned into a bird with wings like clouds.'],
+  ['Caladrius', 'common', 'eagle', 'raptor', 'feathers', 0, 0, 96, '', -1, 0.7, 'heal', 'herbivore', 'grazer', 'wingsF beak', 'A snow-white bird that draws sickness out of the ill.'],
+  ['Vermilion Bird', 'common', 'eagle', 'raptor', 'feathers', 5, 85, 48, '', -1, 0.9, 'fire', 'omnivore', 'grazer', 'wingsF crest beak tail=1.6', 'Zhuque, guardian bird of the South.'],
+  ['Hamsa', 'common', 'eagle', 'raptor', 'feathers', 0, 0, 95, '', -1, 0.85, 'dash', 'herbivore', 'grazer', 'wingsF beak neck=0.6', 'The sacred swan of Hindu myth, able to separate milk from water.'],
+  ['Hraesvelgr', 'common', 'eagle', 'raptor', 'feathers', 30, 25, 35, '', -1, 1.1, 'dustdevil', 'carnivore', 'predator', 'wingsF beak', 'The giant eagle whose wingbeats make the world\'s winds.'],
+  ['Alkonost', 'common', 'eagle', 'raptor', 'feathers', 280, 45, 55, '', -1, 0.8, 'mirage', 'herbivore', 'grazer', 'wingsF crest beak', 'A Slavic bird of paradise whose song makes all forget.'],
+  ['Chrysomallos', 'common', 'hoof', 'quad', 'fur', 46, 90, 55, '', -1, 0.95, 'charge', 'herbivore', 'grazer', 'hornsRam smallEars shaggy', 'The winged ram with the Golden Fleece.'],
+  ['Bai Ze', 'common', 'hoof', 'quad', 'fur', 45, 10, 92, '', -1, 1.0, 'echo', 'herbivore', 'grazer', 'horn1 maneNeck', 'A wise white beast that knows every monster by name.'],
+  ['Xiezhi', 'common', 'hoof', 'quad', 'fur', 220, 15, 25, '', -1, 0.95, 'charge', 'herbivore', 'territorial', 'horn1 smallEars', 'The one-horned goat that can tell the guilty from the innocent.'],
+  ['Komainu', 'common', 'cat', 'quad', 'fur', 35, 35, 58, '', -1, 0.9, 'roar', 'carnivore', 'territorial', 'mane', 'A lion-dog statue that guards Shinto shrines.'],
+  ['Shisa', 'common', 'cat', 'quad', 'fur', 20, 55, 50, '', -1, 0.85, 'roar', 'carnivore', 'territorial', 'mane', 'The Okinawan lion-dog that keeps evil from the home.'],
+  ['Tiangou', 'common', 'wolf', 'quad', 'fur', 35, 50, 55, '', -1, 0.95, 'howl', 'carnivore', 'predator', 'bushy', 'The heavenly dog said to swallow the moon in an eclipse.'],
+  ['Chollima', 'common', 'hoof', 'quad', 'fur', 0, 0, 85, '', -1, 1.05, 'sprint', 'herbivore', 'grazer', 'wingsF maneNeck legL=1.35 snout=0.35 smallEars gait=gallop', 'The Korean winged horse too swift to be ridden.'],
+  ['Luan', 'common', 'eagle', 'raptor', 'feathers', 300, 45, 50, '', -1, 0.85, 'heal', 'herbivore', 'grazer', 'wingsF crest beak tail=1.7', 'A mythical bird of China whose song is all five notes.'],
+];
+const MYTH_WORLDS = { hell: HELL_MYTHS, heaven: HEAVEN_MYTHS };
+for (let i = RAW.length - 1; i >= 0; i--) if (MYTH_WORLDS[RAW[i][1]] && RAW[i][2] === 'common') RAW.splice(i, 1);
 const SPECIES = {};
-for (const [list, kind] of [[EARTH_ANIMALS, 'wild'], [EARTH_MYTHS, 'myth'], [EARTH_CRYPTIDS, 'cryptid']]) for (const r of list) {
+for (const [list, kind] of [[EARTH_ANIMALS, 'wild'], [EARTH_MYTHS, 'myth'], [EARTH_CRYPTIDS, 'cryptid'], [HELL_MYTHS, 'myth'], [HEAVEN_MYTHS, 'myth']]) for (const r of list) {
   const f = {}, feats = []; for (const tok of r[14].split(/\s+/).filter(Boolean)) { const m = tok.split('='); if (m.length === 2) f[m[0]] = isNaN(+m[1]) ? m[1] : +m[1]; else feats.push(tok); }
   SPECIES[slug(r[0])] = { name: r[0], rarity: r[1], tpl: r[2], arch: r[3], cover: r[4], hsl: [r[5], r[6], r[7]], mark: r[8], pat: r[9], size: r[10], ab: r[11], diet: r[12], beh: r[13], f, feats, lore: r[15], kind };
 }
@@ -961,8 +1050,10 @@ const ALIEN = {};
   // 1) generate extra species so every planet has exactly 100 natives
   const ALL = RAW.map(r => r.slice());
   for (const r of EARTH_ANIMALS) ALL.push([r[0], 'earth', 'wild', r[11], [], r[15], r[1]]);
+  for (const pid in MYTH_WORLDS) for (const r of MYTH_WORLDS[pid]) ALL.push([r[0], pid, 'wild', r[11], [], r[15], r[1]]);
   const used = new Set(ALL.map(r => slug(r[0])));
   for (const pid of PLANET_IDS) {
+    if (MYTH_WORLDS[pid]) continue; // Hell and Heaven hold only real myths
     const have = ALL.filter(r => r[1] === pid).length, need = 100 - have, g = GEN[pid], rr = mulberry32(hashStr('gen' + pid));
     const combos = []; for (const a of g.pre) for (const b of g.suf) combos.push(a + b);
     for (let i = combos.length - 1; i > 0; i--) { const j = Math.floor(rr() * (i + 1)); [combos[i], combos[j]] = [combos[j], combos[i]]; }
@@ -1338,37 +1429,12 @@ const NAME_LOOKS = [ // [pattern in the name, real animal per planet ('*' = any 
   [/crest/, { '*': ['greeniguana', 'harpyeagle'] }],
   [/yeti/, { '*': ['yeti'] }],
 ];
-// Hell and Heaven creatures are the beasts of myth, drawn exactly as the myth (its own colours)
-const MYTH_LOOKS = {
-  hell: [
-    [/hound|pup|fang|jaw|wolf/, ['cerberus', 'fenrir']],
-    [/wing/, ['westerndragon', 'phoenix', 'jerseydevil']],
-    [/worm|wyrm|serpent/, ['basilisk', 'jormungandr']],
-    [/toad|maw/, ['lernaeanhydra', 'westerndragon']],
-    [/imp|demon|fiend/, ['jerseydevil', 'manticore']],
-    [/brute|golem|titan|horn/, ['minotaur']],
-    [/tail|mite|crawler/, ['manticore', 'basilisk']],
-  ],
-  heaven: [
-    [/lion|throne/, ['nemeanlion', 'sphinx']],
-    [/dove|wing/, ['pegasus', 'roc', 'thunderbird']],
-    [/herald|choir/, ['thunderbird', 'roc']],
-    [/keeper|guard|warden/, ['griffin', 'sphinx']],
-    [/grace|glimmer|spirit/, ['unicorn', 'kitsune', 'qilin']],
-  ],
-};
-const MYTH_DEFAULT = { hell: ['westerndragon', 'cerberus', 'manticore', 'minotaur', 'jerseydevil'], heaven: ['pegasus', 'unicorn', 'griffin', 'qilin', 'lungdragon'] };
 const NAME_LOOK_SKIP = ['premium', 'boss', 'mutant', 'event', 'exclusive', 'basic', 'lucky', 'elder'];
 const CLASSIC_LOOKS_KEY = 'xenoio_classic_looks';
 const NAME_LOOKED = {}; // id -> real animal it now looks like
 function nameLookFor(def) {
   if (def.planet === 'earth' || def.look.sp || def.look.sig || NAME_LOOK_SKIP.includes(def.kind)) return null;
   const n = def.name.toLowerCase(); let best = null;
-  if (MYTH_LOOKS[def.planet]) { // myth worlds: last matching word in the name wins, otherwise a myth picked by name
-    let pool = MYTH_DEFAULT[def.planet], end = -1;
-    for (const [rx, p] of MYTH_LOOKS[def.planet]) { const g = new RegExp(rx.source, 'g'); let m; while ((m = g.exec(n))) if (m.index + m[0].length > end) { end = m.index + m[0].length; pool = p; } }
-    pool = pool.filter(k => SPECIES[k]); return pool.length ? pool[hashStr(def.id + '|myth') % pool.length] : null;
-  }
   for (const [rx, pools] of NAME_LOOKS) { const g = new RegExp(rx.source, 'g'); let m;
     while ((m = g.exec(n))) { const end = m.index + m[0].length; if (!best || end > best.end || (end === best.end && m[0].length > best.len)) best = { end, len: m[0].length, pools }; } }
   if (!best) return null;
@@ -1409,8 +1475,7 @@ function planetTint(planet, h, s, l) { // keep the real animal's colouring, shif
       const flier = has('wingsF') || has('wingsM') || has('insectWings') || has('butterfly') || (['eagle', 'owl'].includes(S.tpl) && S.arch === 'raptor' && !has('flightless'));
       L.wings = flier ? 1 : 0; L.wingF = has('wingsF') || (['eagle', 'owl'].includes(S.tpl) && !has('wingsM'));
       L.beakCol = /Raven|Penguin|Cassowary|Harpy/.test(S.name) ? '#2a2a2e' : /Ostrich/.test(S.name) ? '#e6a890' : '#e8b030';
-      [L.hue, L.sat, L.lig] = MYTH_LOOKS[def.planet] ? S.hsl : planetTint(def.planet, S.hsl[0], S.hsl[1], S.hsl[2]); L.hue2 = L.hue;
-      if (MYTH_LOOKS[def.planet]) { L.glow = has('fire'); }
+      [L.hue, L.sat, L.lig] = planetTint(def.planet, S.hsl[0], S.hsl[1], S.hsl[2]); L.hue2 = L.hue;
       if (S.pat < 0) { L.noMark = true; delete L.markCol; } else { L.noMark = false; L.pattern = S.pat; L.markCol = S.mark || 'dark'; L.patN = 7; }
       if (has('panda')) L.legCol = '#141414'; else delete L.legCol;
     }
@@ -1488,6 +1553,19 @@ const BASIC_IDS = ALIENS.filter(a => a.kind === 'basic').map(a => a.id);
 const SAVE_KEY = 'xenoio_save_v1';
 let save = { dna: 0, adna: 0, tokens: {}, owned: BASIC_IDS.slice(), equipped: 'blipling', name: '', story: 0, planetPref: 'random', stats: { kills: 0, matches: 0, wins: 0 } };
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.owned) save = Object.assign(save, s); } catch (e) {}
+// The old generated Hell and Heaven creatures were replaced by real myths: anyone who owned one gets back the DNA it cost
+const REMOVED_CREATURES = {"cinderpup":[145,0],"magmite":[155,0],"brimstonetoad":[155,0],"ashwing":[165,0],"hellhoundx":[685,0],"infernoid":[670,0],"scorchtail":[715,0],"pyreworm":[2450,0],"demonmite":[2470,0],"infernmite":[145,0],"ashmite":[150,0],"magmabrute":[145,0],"brimfiend":[145,0],"sulfurcrawler":[140,0],"emberbrute":[150,0],"gehenpup":[140,0],"gehentoad":[140,0],"obsidmite":[155,0],"ashtoad":[140,0],"gehenmite":[150,0],"gehenimp":[150,0],"blazewing":[145,0],"sulfurimp":[145,0],"sulfurtail":[145,0],"magmamaw":[135,0],"brimmite":[140,0],"scorchbrute":[140,0],"ashcrawler":[140,0],"inferncrawler":[150,0],"pyreimp":[145,0],"pyrebrute":[135,0],"obsidwing":[150,0],"embermite":[145,0],"ashimp":[135,0],"magmacrawler":[140,0],"cinderworm":[160,0],"infernfiend":[155,0],"obsidcrawler":[140,0],"obsidworm":[135,0],"gehenbrute":[150,0],"blazetail":[140,0],"sulfurfiend":[150,0],"obsidmaw":[150,0],"sulfurpup":[145,0],"cinderimp":[150,0],"embermaw":[145,0],"pyremaw":[145,0],"infernmaw":[150,0],"gehenhound":[625,0],"brimpup":[655,0],"pyremite":[625,0],"cinderhound":[655,0],"scorchcrawler":[620,0],"blazecrawler":[640,0],"brimbrute":[640,0],"blazemite":[635,0],"pyrewing":[635,0],"pyrehound":[650,0],"magmawing":[655,0],"embercrawler":[625,0],"infernworm":[630,0],"magmatoad":[630,0],"blazehound":[660,0],"cindertoad":[635,0],"brimworm":[685,0],"sulfurmite":[620,0],"magmamite":[690,0],"gehenworm":[625,0],"pyrepup":[665,0],"obsidhound":[2645,0],"brimmaw":[2520,0],"pyretail":[2535,0],"scorchpup":[2420,0],"emberworm":[2535,0],"pyrefiend":[2555,0],"obsidbrute":[2530,0],"magmaworm":[2510,0],"scorchhound":[2365,0],"obsidfiend":[2425,0],"cindermite":[2480,0],"cinderwing":[2360,0],"obsidimp":[2455,0],"gehencrawler":[8140,10],"magmahound":[8245,9],"ashpup":[7740,8],"brimcrawler":[8145,9],"ashbrute":[7810,8],"emberhound":[8080,9],"blazeimp":[7885,9],"magmapup":[8260,10],"gehenwing":[22975,36],"cinderfiend":[23830,37],"brimimp":[23585,32],"brimtoad":[24545,32],"hallowlion":[100,0],"gloriaglimmer":[100,0],"hallowkeeper":[95,0],"celestkeeper":[105,0],"halowarden":[100,0],"cherubdove":[95,0],"hallowthrone":[100,0],"celestwing":[100,0],"cherubherald":[95,0],"celestherald":[95,0],"sanctherald":[95,0],"halochoir":[90,0],"seraphspirit":[100,0],"dawnkeeper":[100,0],"halograce":[95,0],"hallowchoir":[100,0],"dawnlion":[100,0],"elysianwing":[105,0],"gloriagrace":[100,0],"sanctdove":[95,0],"hallowwing":[100,0],"celestguard":[95,0],"gloriaspirit":[100,0],"lumenspirit":[95,0],"cherubguard":[95,0],"seraphherald":[95,0],"celestglimmer":[95,0],"lumengrace":[100,0],"aureateguard":[100,0],"glorialion":[105,0],"elysianwarden":[90,0],"celestwarden":[105,0],"seraphwarden":[95,0],"lumenlion":[105,0],"dawnguard":[95,0],"celestgrace":[95,0],"haloherald":[100,0],"hallowgrace":[95,0],"dawndove":[90,0],"cherubkeeper":[100,0],"aureatedove":[100,0],"elysianchoir":[100,0],"seraphglimmer":[90,0],"gloriakeeper":[95,0],"seraphwing":[95,0],"gloriathrone":[445,0],"elysianlion":[450,0],"lumenherald":[435,0],"aureatelion":[450,0],"seraphgrace":[425,0],"zionherald":[435,0],"gloriawarden":[430,0],"seraphlion":[435,0],"lumenglimmer":[455,0],"cherubwing":[440,0],"celestthrone":[435,0],"zionchoir":[465,0],"halowing":[450,0],"hallowguard":[420,0],"cherubspirit":[440,0],"elysianspirit":[450,0],"halokeeper":[450,0],"sanctkeeper":[450,0],"elysianguard":[415,0],"gloriaguard":[435,0],"sanctwing":[440,0],"lumenwing":[430,0],"cherubgrace":[440,0],"lumenchoir":[455,0],"zionspirit":[445,0],"seraphguard":[1730,0],"hallowspirit":[1720,0],"zionglimmer":[1840,0],"lumenkeeper":[1620,0],"haloguard":[1675,0],"sanctchoir":[1695,0],"zionthrone":[1670,0],"dawnwing":[1715,0],"sanctgrace":[1675,0],"hallowwarden":[1785,0],"aureatekeeper":[1660,0],"zionguard":[1670,0],"cherublion":[1690,0],"dawngrace":[1700,0],"gloriachoir":[1725,0],"aureatewing":[5440,10],"celestspirit":[5510,10],"sanctglimmer":[5405,8],"zionlion":[5500,8],"elysianthrone":[5250,10],"sanctwarden":[5255,9],"aureatethrone":[5335,9],"sanctthrone":[5315,10],"aureatespirit":[5455,10],"dawnherald":[5230,10],"cherubwarden":[16400,36],"seraphthrone":[16160,37],"lumendove":[16475,33],"cherubthrone":[16755,35],"aureategrace":[16220,37]};
+function refundRemoved() {
+  if (!save || !Array.isArray(save.owned)) return;
+  let dna = 0, adna = 0, n = 0;
+  save.owned = save.owned.filter(id => { const r = REMOVED_CREATURES[id]; if (!r || ALIEN[id]) return true; dna += r[0]; adna += r[1]; n++; return false; });
+  if (REMOVED_CREATURES[save.equipped] && !ALIEN[save.equipped]) save.equipped = 'blipling';
+  for (const k of ['skinSel', 'primordial', 'primoOn', 'skins']) if (save[k] && typeof save[k] === 'object' && !Array.isArray(save[k])) for (const id in save[k]) if (REMOVED_CREATURES[id] && !ALIEN[id]) delete save[k][id];
+  if (!n) return;
+  save.dna = (save.dna || 0) + dna; save.adna = (save.adna || 0) + adna; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} // the cloud copy follows on the next sync
+  setTimeout(() => modal('Hell and Heaven have changed', `The creatures of Hell and Heaven are now the beasts of real myth. You owned ${n} of the old ones, so you get back what they cost: <b>${dna.toLocaleString()} DNA</b>${adna ? ` and <b>${adna} Ancient DNA</b>` : ''}.`, [['OK', null]]), 1500);
+}
+refundRemoved();
 function fillSave() { // fill in every field a fresh or older save may be missing
 if (save.mdna == null) save.mdna = 0; save.shards = save.shards || {}; bag(); save.skins = save.skins || {}; save.skinSel = save.skinSel || {}; save.primordial = save.primordial || {}; save.primoOn = save.primoOn || {}; save.titan = save.titan || {}; save.holPity = save.holPity || {}; save.settings = Object.assign({ sound: true, vol: 0.7, quality: 'auto', names: true }, save.settings || {}); save.daily = save.daily || { last: '', streak: 0 }; save.missions = save.missions || { day: '', prog: {}, claimed: {} }; save.stats.bosses = save.stats.bosses || 0;
 }
@@ -6729,7 +6807,7 @@ function applyProfile(p, fresh) {
     const cloud = Object.assign({ tokens: {}, stats: {}, owned: [] }, p.save);
     save = save.acct === p.acct ? Object.assign({}, save, cloud) : mergeSaves(save, cloud);
   }
-  save.owned = save.owned.filter(id => ALIEN[id]); BASIC_IDS.forEach(id => { if (!save.owned.includes(id)) save.owned.push(id); });
+  refundRemoved(); save.owned = save.owned.filter(id => ALIEN[id]); BASIC_IDS.forEach(id => { if (!save.owned.includes(id)) save.owned.push(id); });
   if (!ALIEN[save.equipped]) save.equipped = 'blipling';
   if (!save.name && p.given) save.name = p.given;
   save.acct = p.acct;

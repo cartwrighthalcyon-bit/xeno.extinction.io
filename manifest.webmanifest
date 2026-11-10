@@ -1,7 +1,7 @@
 {
   "name": "XENO.IO — Alien Survival",
   "short_name": "XENO.IO",
-  "description": "Hatch as a baby alien, eat, grow and evolve through 1,200+ creatures across 11 worlds. Free multiplayer .io game.",
+  "description": "Hatch as a baby alien, eat, grow and evolve through 1,100+ creatures across 11 worlds. Free multiplayer .io game.",
   "id": "/",
   "start_url": "/?source=pwa",
   "scope": "/",
