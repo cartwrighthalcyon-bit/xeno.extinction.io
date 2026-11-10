@@ -244,7 +244,7 @@ input[type=text]{background:#140f22;border:2px solid #5a46a0;color:#fff;border-r
 const $ = id => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
-const d2 = (a, b) => { const dx = a.x - b.x, dy = a.y - b.y; return dx * dx + dy * dy; };
+const d2 = (a, b) => { if ((a.ug || false) !== (b.ug || false)) return 1e12; const dx = a.x - b.x, dy = a.y - b.y; return dx * dx + dy * dy; }; // things on different layers (surface / underground) are out of each other's reach
 const pick = a => a[(Math.random() * a.length) | 0];
 function mulberry32(s) { return function () { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
@@ -1371,6 +1371,51 @@ const CODE_HASHES = {
   if (lev) make(lev.id, { id: 'firstcontact', name: 'First Contact Leviathan', lore: 'The first alien ever to answer a signal from Earth.' }, { hue: 140, sat: 70, lig: 48, hue2: 60, glow: true });
 })();
 // =====================================================================
+//  HAND-DESIGNED CREATURES (preview): your redesigns. Code names stay the same so saves keep them.
+// =====================================================================
+Object.assign(AB, {
+  echoloc:     Object.assign({}, AB.echo, { name: 'Echolocation', as: 'echo', desc: 'Its ears pop out and it clicks: every creature nearby is revealed, even through walls and darkness.' }),
+  vanish:      Object.assign({}, AB.shadow, { name: 'Shadow Vanish', as: 'shadow', desc: 'Melts into the shadows and turns invisible for 4s.' }),
+  poisonspray: Object.assign({}, AB.acid, { name: 'Poison Spray', as: 'acid', desc: 'Sprays a jet of poison that keeps burning whatever it hits.' }),
+  tonguesnatch: Object.assign({}, AB.vinewhip, { name: 'Tongue Snatch', as: 'vinewhip', desc: 'Shoots out a long sticky tongue, like a frog, to grab small prey and pull it in.' }),
+  clawsnap:    Object.assign({}, AB.snap, { name: 'Claw Snap', as: 'snap', desc: 'A crushing pinch of its big claw on the closest creature.' }),
+  shellhide:   Object.assign({}, AB.curl, { name: 'Shell Hide', as: 'curl', desc: 'Pulls itself into its shell: takes almost no damage for 3s and heals a little.' }),
+  wallscurry:  Object.assign({}, AB.scurry, { name: 'Wall Scurry', as: 'scurry' }),
+});
+Object.assign(DIETS, { insectivore: { name: 'Insect-eater', eats: ['meat'] }, herbinsect: { name: 'Herbivore & insect-eater', eats: ['plant', 'meat'] }, bonescav: { name: 'Scavenger (bones & carrion)', eats: ['meat'] } });
+const CUSTOM_CREATURES = {
+  duneskink: { name: 'Dune Gecko', size: 13, ability: 'echoloc', body: ['wallscurry', 'Wall Scurry', 'its sticky toes', 2], diet: 'insectivore', behavior: 'grazer', home: 'Rock walls and dunes (climbs walls)',
+    lore: 'A small dune-adapted gecko that runs up rock walls. Its ears pop out when it echolocates, like all its dune relatives, and rock scales cover it from head to tail.',
+    look: { arch: 'lizard', hue: 34, sat: 30, lig: 58, hue2: 24, frill: true, popEars: true, rockScales: true, geckoToes: true, eyes: 2, eyeStyle: 0, eyeHue: 45, horns: 0, wings: 0, legs: 4, tail: 0, noMark: true } },
+  frostnub: { name: 'Glacier Hare', size: 15, ability: 'leap', body: ['burrow', 'Burrow', 'its digging paws', 1], diet: 'herbivore', behavior: 'grazer', home: 'Snowfields, burrowing into the ice',
+    lore: 'A rabbit of the glaciers that leaps snowdrifts and burrows into the ice. Adults grow an icicle horn; it has red eyes and a round, fluffy tail.',
+    look: { sp: 'europeanrabbit', hue: 205, sat: 12, lig: 93, extraFeats: ['eyesRed', 'icicleHorn', 'cottonTail'] } },
+  gloomlet: { name: 'Shecko', size: 14, ability: 'vanish', body: ['poisonspray', 'Poison Spray', 'its venom glands', 3], diet: 'insectivore', behavior: 'grazer', home: 'Shadows of the fungus forests',
+    lore: 'A shadowy gecko, black from head to tail to blend into the shadow dimension. Its purple glowing eyes mimic glowcap fungus. It turns invisible, and adults spray poison.',
+    look: { arch: 'lizard', hue: 270, sat: 12, lig: 7, hue2: 270, frill: false, geckoToes: true, eyes: 2, eyeStyle: 0, eyeHue: 285, eyeGlow: '#c070ff', horns: 0, wings: 0, legs: 4, tail: 0, noMark: true } },
+  sandskipper: { name: 'Sandskipper', size: 22, ability: 'tonguesnatch', diet: 'herbinsect', behavior: 'grazer', home: 'Open dunes',
+    lore: 'A rocky, one-eyed ostrich of the dunes. Like a frog, it shoots out a long tongue to catch small prey, and it eats plants too.',
+    look: { sp: 'commonostrich', hue: 30, sat: 22, lig: 50, cyclops: true, rocky: true } },
+  dunecrawler: { name: 'Dunecrawler', size: 12, ability: 'clawsnap', body: ['shellhide', 'Shell Hide', 'its shell', 1], diet: 'bonescav', behavior: 'grazer', home: 'Caves and shade (hides from the heat)',
+    lore: 'A small hermit crab of the dunes. It scavenges bones and carrion, and hides from the heat in caves and shadows, or inside its shell.',
+    look: { crab: true, hue: 18, sat: 55, lig: 52, hue2: 38 } },
+};
+const REMOVED_CUSTOM = { scorpex: [95, 0] }; // removed creatures: owners get their DNA back (see REMOVED_CREATURES)
+(function applyCustomCreatures() {
+  for (const id in CUSTOM_CREATURES) { const d = ALIEN[id], m = CUSTOM_CREATURES[id]; if (!d) continue;
+    d.custom = true; d.name = m.name; d.lore = m.lore; d.ability = m.ability; d.diet = m.diet; d.behavior = m.behavior; d.size = m.size; d.home = m.home;
+    if (m.body) d.body2 = { ab: m.body[0], name: m.body[1], from: m.body[2], need: m.body[3], cd: AB[m.body[0]].cd };
+    const L = d.look, k = m.look; delete L.mut; delete L.sig; delete L.an; L.rainbow = false;
+    if (k.sp) { const S = SPECIES[k.sp]; L.sp = k.sp; L.feats = S.feats.concat(k.extraFeats || []); L.spf = Object.assign({}, S.f); L.theme = { k: 'animal', s: S.tpl }; L.humanoid = S.arch === 'humanoid'; L.body = 7; L.wings = 0; L.heads = 1; L.noMark = S.pat < 0; if (S.pat >= 0) { L.pattern = S.pat; L.markCol = S.mark || 'dark'; } }
+    else { delete L.sp; delete L.feats; delete L.spf; L.theme = null; L.humanoid = false; if (k.arch === 'lizard') L.body = 1; }
+    for (const f of ['arch', 'hue', 'sat', 'lig', 'hue2', 'frill', 'popEars', 'rockScales', 'geckoToes', 'eyes', 'eyeStyle', 'eyeHue', 'eyeGlow', 'horns', 'wings', 'legs', 'tail', 'noMark', 'cyclops', 'rocky', 'crab']) if (k[f] !== undefined) L[f] = k[f];
+    if (k.hue2 === undefined) L.hue2 = L.hue; L.trait = null; d._mv = null; }
+  // the Dune Gecko's relatives: every dune lizard has pop-out ears and can echolocate
+  for (const d of ALIENS) if (d.planet === 'dune' && !d.custom && /skink|gecko/i.test(d.name) && ['wild', 'common'].includes(d.kind)) { d.look.popEars = true; d.body2 = { ab: 'echoloc', name: 'Echolocation', from: 'its pop-out ears', need: 2, cd: AB.echo.cd }; }
+  // remove Scorpex
+  for (const id in REMOVED_CUSTOM) { const i = ALIENS.findIndex(a => a.id === id); if (i >= 0) ALIENS.splice(i, 1); delete ALIEN[id]; }
+})();
+// =====================================================================
 //  REALISTIC NAME LOOKS (preview): creatures whose name says what they are (Blizzard Bat, Icicle Eel, Frostfang...)
 //  take the body of that real animal, recoloured for their planet. Turn off in the Workshop to compare.
 // =====================================================================
@@ -1434,7 +1479,7 @@ const NAME_LOOK_SKIP = ['premium', 'boss', 'mutant', 'event', 'exclusive', 'basi
 const CLASSIC_LOOKS_KEY = 'xenoio_classic_looks';
 const NAME_LOOKED = {}; // id -> real animal it now looks like
 function nameLookFor(def) {
-  if (def.planet === 'earth' || def.look.sp || def.look.sig || NAME_LOOK_SKIP.includes(def.kind)) return null;
+  if (def.custom || def.planet === 'earth' || def.look.sp || def.look.sig || NAME_LOOK_SKIP.includes(def.kind)) return null;
   const n = def.name.toLowerCase(); let best = null;
   for (const [rx, pools] of NAME_LOOKS) { const g = new RegExp(rx.source, 'g'); let m;
     while ((m = g.exec(n))) { const end = m.index + m[0].length; if (!best || end > best.end || (end === best.end && m[0].length > best.len)) best = { end, len: m[0].length, pools }; } }
@@ -1555,7 +1600,7 @@ const SAVE_KEY = 'xenoio_save_v1';
 let save = { dna: 0, adna: 0, tokens: {}, owned: BASIC_IDS.slice(), equipped: 'blipling', name: '', story: 0, planetPref: 'random', stats: { kills: 0, matches: 0, wins: 0 } };
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.owned) save = Object.assign(save, s); } catch (e) {}
 // The old generated Hell and Heaven creatures were replaced by real myths: anyone who owned one gets back the DNA it cost
-const REMOVED_CREATURES = {"cinderpup":[145,0],"magmite":[155,0],"brimstonetoad":[155,0],"ashwing":[165,0],"hellhoundx":[685,0],"infernoid":[670,0],"scorchtail":[715,0],"pyreworm":[2450,0],"demonmite":[2470,0],"infernmite":[145,0],"ashmite":[150,0],"magmabrute":[145,0],"brimfiend":[145,0],"sulfurcrawler":[140,0],"emberbrute":[150,0],"gehenpup":[140,0],"gehentoad":[140,0],"obsidmite":[155,0],"ashtoad":[140,0],"gehenmite":[150,0],"gehenimp":[150,0],"blazewing":[145,0],"sulfurimp":[145,0],"sulfurtail":[145,0],"magmamaw":[135,0],"brimmite":[140,0],"scorchbrute":[140,0],"ashcrawler":[140,0],"inferncrawler":[150,0],"pyreimp":[145,0],"pyrebrute":[135,0],"obsidwing":[150,0],"embermite":[145,0],"ashimp":[135,0],"magmacrawler":[140,0],"cinderworm":[160,0],"infernfiend":[155,0],"obsidcrawler":[140,0],"obsidworm":[135,0],"gehenbrute":[150,0],"blazetail":[140,0],"sulfurfiend":[150,0],"obsidmaw":[150,0],"sulfurpup":[145,0],"cinderimp":[150,0],"embermaw":[145,0],"pyremaw":[145,0],"infernmaw":[150,0],"gehenhound":[625,0],"brimpup":[655,0],"pyremite":[625,0],"cinderhound":[655,0],"scorchcrawler":[620,0],"blazecrawler":[640,0],"brimbrute":[640,0],"blazemite":[635,0],"pyrewing":[635,0],"pyrehound":[650,0],"magmawing":[655,0],"embercrawler":[625,0],"infernworm":[630,0],"magmatoad":[630,0],"blazehound":[660,0],"cindertoad":[635,0],"brimworm":[685,0],"sulfurmite":[620,0],"magmamite":[690,0],"gehenworm":[625,0],"pyrepup":[665,0],"obsidhound":[2645,0],"brimmaw":[2520,0],"pyretail":[2535,0],"scorchpup":[2420,0],"emberworm":[2535,0],"pyrefiend":[2555,0],"obsidbrute":[2530,0],"magmaworm":[2510,0],"scorchhound":[2365,0],"obsidfiend":[2425,0],"cindermite":[2480,0],"cinderwing":[2360,0],"obsidimp":[2455,0],"gehencrawler":[8140,10],"magmahound":[8245,9],"ashpup":[7740,8],"brimcrawler":[8145,9],"ashbrute":[7810,8],"emberhound":[8080,9],"blazeimp":[7885,9],"magmapup":[8260,10],"gehenwing":[22975,36],"cinderfiend":[23830,37],"brimimp":[23585,32],"brimtoad":[24545,32],"hallowlion":[100,0],"gloriaglimmer":[100,0],"hallowkeeper":[95,0],"celestkeeper":[105,0],"halowarden":[100,0],"cherubdove":[95,0],"hallowthrone":[100,0],"celestwing":[100,0],"cherubherald":[95,0],"celestherald":[95,0],"sanctherald":[95,0],"halochoir":[90,0],"seraphspirit":[100,0],"dawnkeeper":[100,0],"halograce":[95,0],"hallowchoir":[100,0],"dawnlion":[100,0],"elysianwing":[105,0],"gloriagrace":[100,0],"sanctdove":[95,0],"hallowwing":[100,0],"celestguard":[95,0],"gloriaspirit":[100,0],"lumenspirit":[95,0],"cherubguard":[95,0],"seraphherald":[95,0],"celestglimmer":[95,0],"lumengrace":[100,0],"aureateguard":[100,0],"glorialion":[105,0],"elysianwarden":[90,0],"celestwarden":[105,0],"seraphwarden":[95,0],"lumenlion":[105,0],"dawnguard":[95,0],"celestgrace":[95,0],"haloherald":[100,0],"hallowgrace":[95,0],"dawndove":[90,0],"cherubkeeper":[100,0],"aureatedove":[100,0],"elysianchoir":[100,0],"seraphglimmer":[90,0],"gloriakeeper":[95,0],"seraphwing":[95,0],"gloriathrone":[445,0],"elysianlion":[450,0],"lumenherald":[435,0],"aureatelion":[450,0],"seraphgrace":[425,0],"zionherald":[435,0],"gloriawarden":[430,0],"seraphlion":[435,0],"lumenglimmer":[455,0],"cherubwing":[440,0],"celestthrone":[435,0],"zionchoir":[465,0],"halowing":[450,0],"hallowguard":[420,0],"cherubspirit":[440,0],"elysianspirit":[450,0],"halokeeper":[450,0],"sanctkeeper":[450,0],"elysianguard":[415,0],"gloriaguard":[435,0],"sanctwing":[440,0],"lumenwing":[430,0],"cherubgrace":[440,0],"lumenchoir":[455,0],"zionspirit":[445,0],"seraphguard":[1730,0],"hallowspirit":[1720,0],"zionglimmer":[1840,0],"lumenkeeper":[1620,0],"haloguard":[1675,0],"sanctchoir":[1695,0],"zionthrone":[1670,0],"dawnwing":[1715,0],"sanctgrace":[1675,0],"hallowwarden":[1785,0],"aureatekeeper":[1660,0],"zionguard":[1670,0],"cherublion":[1690,0],"dawngrace":[1700,0],"gloriachoir":[1725,0],"aureatewing":[5440,10],"celestspirit":[5510,10],"sanctglimmer":[5405,8],"zionlion":[5500,8],"elysianthrone":[5250,10],"sanctwarden":[5255,9],"aureatethrone":[5335,9],"sanctthrone":[5315,10],"aureatespirit":[5455,10],"dawnherald":[5230,10],"cherubwarden":[16400,36],"seraphthrone":[16160,37],"lumendove":[16475,33],"cherubthrone":[16755,35],"aureategrace":[16220,37]};
+const REMOVED_CREATURES = Object.assign(REMOVED_CUSTOM, {"cinderpup":[145,0],"magmite":[155,0],"brimstonetoad":[155,0],"ashwing":[165,0],"hellhoundx":[685,0],"infernoid":[670,0],"scorchtail":[715,0],"pyreworm":[2450,0],"demonmite":[2470,0],"infernmite":[145,0],"ashmite":[150,0],"magmabrute":[145,0],"brimfiend":[145,0],"sulfurcrawler":[140,0],"emberbrute":[150,0],"gehenpup":[140,0],"gehentoad":[140,0],"obsidmite":[155,0],"ashtoad":[140,0],"gehenmite":[150,0],"gehenimp":[150,0],"blazewing":[145,0],"sulfurimp":[145,0],"sulfurtail":[145,0],"magmamaw":[135,0],"brimmite":[140,0],"scorchbrute":[140,0],"ashcrawler":[140,0],"inferncrawler":[150,0],"pyreimp":[145,0],"pyrebrute":[135,0],"obsidwing":[150,0],"embermite":[145,0],"ashimp":[135,0],"magmacrawler":[140,0],"cinderworm":[160,0],"infernfiend":[155,0],"obsidcrawler":[140,0],"obsidworm":[135,0],"gehenbrute":[150,0],"blazetail":[140,0],"sulfurfiend":[150,0],"obsidmaw":[150,0],"sulfurpup":[145,0],"cinderimp":[150,0],"embermaw":[145,0],"pyremaw":[145,0],"infernmaw":[150,0],"gehenhound":[625,0],"brimpup":[655,0],"pyremite":[625,0],"cinderhound":[655,0],"scorchcrawler":[620,0],"blazecrawler":[640,0],"brimbrute":[640,0],"blazemite":[635,0],"pyrewing":[635,0],"pyrehound":[650,0],"magmawing":[655,0],"embercrawler":[625,0],"infernworm":[630,0],"magmatoad":[630,0],"blazehound":[660,0],"cindertoad":[635,0],"brimworm":[685,0],"sulfurmite":[620,0],"magmamite":[690,0],"gehenworm":[625,0],"pyrepup":[665,0],"obsidhound":[2645,0],"brimmaw":[2520,0],"pyretail":[2535,0],"scorchpup":[2420,0],"emberworm":[2535,0],"pyrefiend":[2555,0],"obsidbrute":[2530,0],"magmaworm":[2510,0],"scorchhound":[2365,0],"obsidfiend":[2425,0],"cindermite":[2480,0],"cinderwing":[2360,0],"obsidimp":[2455,0],"gehencrawler":[8140,10],"magmahound":[8245,9],"ashpup":[7740,8],"brimcrawler":[8145,9],"ashbrute":[7810,8],"emberhound":[8080,9],"blazeimp":[7885,9],"magmapup":[8260,10],"gehenwing":[22975,36],"cinderfiend":[23830,37],"brimimp":[23585,32],"brimtoad":[24545,32],"hallowlion":[100,0],"gloriaglimmer":[100,0],"hallowkeeper":[95,0],"celestkeeper":[105,0],"halowarden":[100,0],"cherubdove":[95,0],"hallowthrone":[100,0],"celestwing":[100,0],"cherubherald":[95,0],"celestherald":[95,0],"sanctherald":[95,0],"halochoir":[90,0],"seraphspirit":[100,0],"dawnkeeper":[100,0],"halograce":[95,0],"hallowchoir":[100,0],"dawnlion":[100,0],"elysianwing":[105,0],"gloriagrace":[100,0],"sanctdove":[95,0],"hallowwing":[100,0],"celestguard":[95,0],"gloriaspirit":[100,0],"lumenspirit":[95,0],"cherubguard":[95,0],"seraphherald":[95,0],"celestglimmer":[95,0],"lumengrace":[100,0],"aureateguard":[100,0],"glorialion":[105,0],"elysianwarden":[90,0],"celestwarden":[105,0],"seraphwarden":[95,0],"lumenlion":[105,0],"dawnguard":[95,0],"celestgrace":[95,0],"haloherald":[100,0],"hallowgrace":[95,0],"dawndove":[90,0],"cherubkeeper":[100,0],"aureatedove":[100,0],"elysianchoir":[100,0],"seraphglimmer":[90,0],"gloriakeeper":[95,0],"seraphwing":[95,0],"gloriathrone":[445,0],"elysianlion":[450,0],"lumenherald":[435,0],"aureatelion":[450,0],"seraphgrace":[425,0],"zionherald":[435,0],"gloriawarden":[430,0],"seraphlion":[435,0],"lumenglimmer":[455,0],"cherubwing":[440,0],"celestthrone":[435,0],"zionchoir":[465,0],"halowing":[450,0],"hallowguard":[420,0],"cherubspirit":[440,0],"elysianspirit":[450,0],"halokeeper":[450,0],"sanctkeeper":[450,0],"elysianguard":[415,0],"gloriaguard":[435,0],"sanctwing":[440,0],"lumenwing":[430,0],"cherubgrace":[440,0],"lumenchoir":[455,0],"zionspirit":[445,0],"seraphguard":[1730,0],"hallowspirit":[1720,0],"zionglimmer":[1840,0],"lumenkeeper":[1620,0],"haloguard":[1675,0],"sanctchoir":[1695,0],"zionthrone":[1670,0],"dawnwing":[1715,0],"sanctgrace":[1675,0],"hallowwarden":[1785,0],"aureatekeeper":[1660,0],"zionguard":[1670,0],"cherublion":[1690,0],"dawngrace":[1700,0],"gloriachoir":[1725,0],"aureatewing":[5440,10],"celestspirit":[5510,10],"sanctglimmer":[5405,8],"zionlion":[5500,8],"elysianthrone":[5250,10],"sanctwarden":[5255,9],"aureatethrone":[5335,9],"sanctthrone":[5315,10],"aureatespirit":[5455,10],"dawnherald":[5230,10],"cherubwarden":[16400,36],"seraphthrone":[16160,37],"lumendove":[16475,33],"cherubthrone":[16755,35],"aureategrace":[16220,37]});
 function refundRemoved() {
   if (!save || !Array.isArray(save.owned)) return;
   let dna = 0, adna = 0, n = 0;
@@ -1603,6 +1648,9 @@ const CAST_KIND = { mutagen: 'breath', splice: 'glow', regrow: 'glow', bloodboil
 const AB_COL = { mutagen: '#9dff3a', splice: '#9dff3a', regrow: '#9dff3a', bloodboil: '#ff2a3a', aurora: '#9dffd8', cataclysm: '#ff6a1a', timestop: '#ffd86a', worldtree: '#7ce35a', sandtomb: '#e8c48a', fire: '#ff8a1e', frost: '#bff4ff', acid: '#b6ff4a', web: '#eeeeee', icelance: '#bff4ff', tidalwave: '#5fd0ff', laser: '#ff3d5a', magma: '#ff6a1a', vinewhip: '#5fd04a', roar: '#ffd77a', terror: '#a05aff', apexroar: '#ff3030', tremor: '#c48a4a', earthshatter: '#c48a4a', sandveil: '#e8c48a', dash: '#ffffff', charge: '#ffffff', quills: '#f5e6c8', blizzard: '#ffffff', radiation: '#a6ff3d', inferno: '#ff8a1e', absolutezero: '#e8fbff', shadow: '#5a3a8a', burrow: '#8a6a40', blink: '#c58bff', shadowstep: '#5a3a8a', mirage: '#ffffff', eclipse: '#5a2a8a', heal: '#7dffb2', shield: '#9fe3ff', echo: '#9fe3ff', rewind: '#9fe3ff', timewarp: '#c58bff', stasis: '#9fe3ff', supernova: '#fff2a8', hydra: '#7dffb2', swarm: '#c5ff8a', icewall: '#e6f7ff', meteor: '#ff9a2e', gravity: '#8a5cff', voidpull: '#8a5cff', leech: '#ff3d6e', soulrip: '#c43dff', devour: '#ff3d6e', scurry: '#ffffff', dustdevil: '#e8c48a', avalanche: '#e6f7ff', umbralfeast: '#8a3cff', pyroclasm: '#ff6a1a', riptide: '#5fd0ff', overgrowth: '#5fd04a', overload: '#9fe3ff', singularity: '#8a5cff', stormcrown: '#fff6a0', dominate: '#ff6ad8', maelstrom: '#3fa0ff' };
 Object.assign(CAST_KIND, { hide: 'vanish', mothercall: 'roar', zigzag: 'dash', sprint: 'dash', pounce: 'dash', stalk: 'vanish', maul: 'chomp', venombite: 'chomp', constrict: 'spin', deathroll: 'spin', snap: 'chomp', kick: 'slam', talondive: 'dash', swoop: 'vanish', howl: 'roar', sting: 'lash', curl: 'glow', stampede: 'dash', chestbeat: 'roar', trumpet: 'roar', spray: 'breath', ink: 'vanish', shock: 'spin', camo: 'vanish', tailshed: 'vanish', toxin: 'glow', breach: 'dash', leap: 'dash', spit: 'breath', dig: 'vanish' });
 Object.assign(AB_COL, { hide: '#9aae6a', mothercall: '#ffe7a8', zigzag: '#ffffff', sprint: '#fff2c8', pounce: '#ffd27a', stalk: '#5a6a3a', maul: '#ff5a4a', venombite: '#b6ff4a', constrict: '#c8a85a', deathroll: '#5ab0e0', snap: '#ff4a5a', kick: '#e8d6b0', talondive: '#ffe08a', swoop: '#d8d0ff', howl: '#cfd8ff', sting: '#e8ff7a', curl: '#c8b090', stampede: '#d8b07a', chestbeat: '#ffb05a', trumpet: '#ffd77a', spray: '#c8d86a', ink: '#3a2a4a', shock: '#9fe3ff', camo: '#7ab05a', tailshed: '#c8b88a', toxin: '#b6ff4a', breach: '#9fe3ff', leap: '#e8d6b0', spit: '#e8e8c8', dig: '#9a7a5a' });
+// the new creature skills borrow their colour and cast style from the skill they're built on
+Object.assign(AB_COL, { echoloc: AB_COL.echo, vanish: AB_COL.shadow, poisonspray: '#b6ff4a', tonguesnatch: '#ff7a9a', clawsnap: '#ff7a4a', shellhide: '#e8d2a0', wallscurry: AB_COL.scurry || '#fff' });
+Object.assign(CAST_KIND, { echoloc: CAST_KIND.echo, vanish: CAST_KIND.shadow, poisonspray: CAST_KIND.acid, tonguesnatch: CAST_KIND.vinewhip, clawsnap: 'chomp', shellhide: CAST_KIND.curl, wallscurry: CAST_KIND.scurry });
 function hexA(h, a) { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${clamp(a, 0, 1)})`; }
 function drawFormInner(c, form, L, r, t) { // inside body clip
   if (form === 'eclipse') { c.fillStyle = 'rgba(12,0,24,.72)'; c.fillRect(-r * 2.5, -r * 2, r * 5, r * 4); }
@@ -1643,6 +1691,7 @@ function anatomy(def) {
   if (L.humanoid) arch = 'humanoid';
   const SG = (def.kind === 'premium' && PREMIUM_SIG[def.id]) || (def.elderOf && PREMIUM_SIG[def.elderOf]); if (SG) arch = SG.arch;
   const SPX = L.sp && SPECIES[L.sp]; if (SPX) arch = SPX.arch;
+  if (L.arch) arch = L.arch; // a body type chosen by hand
   const COV = { humanoid: 'skin', quad: 'fur', lizard: 'scales', raptor: 'feathers', insect: 'chitin', beetle: 'chitin', serpent: 'scales', squid: 'skin', toad: 'skin', fish: 'scales' };
   let cover = COV[arch];
   if (def.planet === 'robo') cover = 'plates';
@@ -1698,6 +1747,7 @@ function anatomy(def) {
     P.irisCol = IRIS2[ts] || null; P.eyeRing = ts === 'eagle' ? '#f0c030' : ts === 'owl' ? '#2a1a10' : null;
     P.hornStyle = def.planet === 'ice' && arch === 'quad' ? 3 : Math.floor(d() * 4);
     P.frill = (arch === 'lizard' || arch === 'raptor') && !nat && !L.sig && d() < 0.3;
+    if (L.frill !== undefined) P.frill = !!L.frill;
     P.finStyle = Math.floor(d() * 3);
   }
   if (SPX) { // real-world proportions for Earth species, myths and cryptids
@@ -2461,6 +2511,62 @@ function drawAlienBody(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
     drawAlienHead(c, headX, 0, headR, L, P, t, ph, C, opt);
     return;
   }
+  // ------------------------------------------------ lizards: long S-curving spine, wedge head, sprawled bent legs, long tapering tail
+  if (A === 'lizard') {
+    const TL = r * (1.15 + (P.tail || 0.8) * 0.75) * (P.feats && P.feats.includes ? 1 : 1), BL = r * 0.95 * Math.min(1.35, (P.len || 1.6) / 1.6), W = r * 0.2 * Math.min(1.4, (P.wid || 0.6) / 0.6), HR = r * 0.16 * hk * Math.min(1.5, (P.head || 0.4) / 0.4);
+    const hipX = -BL * 0.45, shX = BL * 0.38, neckX = BL * 0.55, headX = neckX + HR * 1.05, tipX = hipX - TL;
+    const und = r * 0.09 * (moving ? 1 : 0.25), wave = x => Math.sin(gt * 0.5 + ph - (x / r) * 2.2) * und * (0.4 + Math.min(1.6, Math.abs(x - shX) / r) * 0.6) - TURN * r * 0.5 * Math.max(0, (hipX - x) / TL) ** 2;
+    if (opt.shadow !== false) rShadow(c, ang, elev, r, (BL + TL) * 0.45, W * 1.8);
+    // spine from tail tip to neck; widths swell at the belly and taper to a fine tail tip
+    const N = 26, sp = [], sw = [];
+    for (let i = 0; i < N; i++) { const u = i / (N - 1), x = tipX + (neckX - tipX) * u; sp.push([x, wave(x)]);
+      let w; if (x < hipX) { const v = (x - tipX) / TL; w = W * (0.06 + 0.72 * Math.pow(v, 1.25)); } else if (x < shX) { const v = (x - hipX) / (shX - hipX); w = W * (0.85 + 0.25 * Math.sin(v * Math.PI)); } else { const v = (x - shX) / (neckX - shX); w = W * (0.9 - 0.32 * v); }
+      sw.push(w * (1 + 0.025 * Math.sin(t * 2 + ph))); }
+    // legs (drawn under the body): elbows and knees bent out to the side, front feet reach forward, hind feet trail back
+    const step = (k, s) => Math.sin(gt + (k ? (s > 0 ? 0 : Math.PI) : (s > 0 ? Math.PI : 0))) * mv;
+    for (const [ax, k] of [[shX * 0.92, 0], [hipX * 0.95, 1]]) for (const s of [-1, 1]) {
+      if (L.myth && P.pairs === 1 && k) continue;
+      const g = step(k, s), lift = Math.max(0, Math.cos(gt + (k ? (s > 0 ? 0 : Math.PI) : (s > 0 ? Math.PI : 0)))) * mv, y0 = wave(ax), Lg = r * 0.3 * legL;
+      const sx = ax, sy = y0 + s * W * 0.75, ex = ax + (k ? -0.15 : 0.12) * Lg + g * Lg * 0.35, ey = y0 + s * (W + Lg * 0.85), fx = ax + (k ? -0.55 : 0.5) * Lg + g * Lg * 0.9, fy = y0 + s * (W + Lg * 0.55 - lift * Lg * 0.1);
+      limb(c, [[sx, sy], [ex, ey], [fx, fy]], Math.min(r * 0.075 * legT, W * 0.42), Math.min(r * 0.045 * legT, W * 0.28), body, Math.max(0.6, r * 0.012));
+      const fa = k ? Math.PI - s * 0.35 : -s * 0.55; c.strokeStyle = body; c.lineCap = 'round';
+      for (let q = -2; q <= 2; q++) { const ta = fa + q * 0.38 * s, tl = r * (k ? 0.11 : 0.085) * (q === 1 || q === 0 ? 1.15 : 0.85) * legT; c.lineWidth = Math.max(0.8, r * 0.022);
+        c.beginPath(); c.moveTo(fx, fy); c.lineTo(fx + Math.cos(ta) * tl, fy + Math.sin(ta) * tl); c.stroke();
+        if (LOD_HI) { c.fillStyle = L.geckoToes || (L.feats || []).includes('gecko') ? hsl(L.hue, L.sat, Math.min(85, L.lig + 22)) : claw; c.beginPath(); c.arc(fx + Math.cos(ta) * tl, fy + Math.sin(ta) * tl, Math.max(0.6, r * 0.014), 0, 7); c.fill(); } } }
+    if (fly) membraneWings(c, shX * 0.4, r * 1.05, t, ph, moving, light, C);
+    tube(c, sp, sw, bodyFill(hipX * 0.5, 0, (BL + TL) * 0.5), 'rgba(0,0,0,.32)');
+    alienSkin(c, () => tube(c, sp, sw), L, r, C, tipX, neckX, W, seed);
+    if (LOD_HI) { // a pale ridge down the back, shaded flanks and rows of scales
+      tube(c, sp.map(q => [q[0], q[1]]), sw.map(w => w * 0.22), 'rgba(255,255,255,.10)');
+      c.fillStyle = 'rgba(0,0,0,.16)'; for (let i = 2; i < N - 1; i++) { const [x, y] = sp[i], w = sw[i]; if (w < r * 0.03) continue;
+        for (const o of [-0.55, 0, 0.55]) { c.beginPath(); c.ellipse(x, y + o * w, w * 0.16, w * 0.13, 0, 0, 7); c.fill(); } }
+      c.strokeStyle = 'rgba(0,0,0,.12)'; c.lineWidth = Math.max(0.6, r * 0.01); for (let i = 3; i < N - 1; i += 2) { const [x, y] = sp[i]; if (x > hipX) continue; c.beginPath(); c.moveTo(x, y - sw[i] * 0.9); c.lineTo(x, y + sw[i] * 0.9); c.stroke(); } }
+    if (L.rockScales) { // rock plates from the tail to the neck
+      const rr = mulberry32(seed + 77); for (let i = 1; i < N; i++) { const [x, y] = sp[i], w = sw[i]; if (w < r * 0.025) continue;
+        for (const o of (w > r * 0.1 ? [-0.5, 0.05, 0.55] : [0])) { const px = x + (rr() - 0.5) * w * 0.2, py = y + o * w, pr = w * (0.28 + rr() * 0.12), n = 5 + (rr() * 2 | 0);
+          c.fillStyle = hsl(L.hue + (rr() - 0.5) * 16, Math.max(5, L.sat - 12), clamp(L.lig - 8 + rr() * 22, 10, 85)); c.strokeStyle = 'rgba(40,28,18,.45)'; c.lineWidth = Math.max(0.5, r * 0.008);
+          c.beginPath(); for (let k = 0; k < n; k++) { const a = k / n * 6.283 + rr() * 0.4, q = pr * (0.75 + rr() * 0.35); k ? c.lineTo(px + Math.cos(a) * q, py + Math.sin(a) * q * 0.85) : c.moveTo(px + Math.cos(a) * q, py + Math.sin(a) * q * 0.85); } c.closePath(); c.fill(); c.stroke(); } } }
+    traitAlong(c, trait, sp.slice(8, N), sw.slice(8, N), r, t, ph, C, L);
+    if (RST >= 3 && L.tail === 3) { const [ex, ey] = sp[1]; c.fillStyle = hsl(L.hue2, 70, 60, 0.85); c.beginPath(); c.ellipse(ex, ey, r * 0.14, r * 0.05, 0, 0, 7); c.fill(); }
+    // neck into a flat, wedge-shaped head
+    const hy = wave(headX), nk = sp[N - 1]; tube(c, [nk, [headX - HR * 0.6, hy]], [sw[N - 1], HR * 0.8], body);
+    if (P.frill) { c.fillStyle = hsl(L.hue2, 60, 50, 0.85); c.beginPath(); c.ellipse(headX - HR * 0.75, hy, HR * 0.55, HR * 1.7, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.3)'; c.lineWidth = 1; for (let k = -3; k <= 3; k++) { c.beginPath(); c.moveTo(headX - HR * 0.65, hy); c.lineTo(headX - HR * 1.0, hy + k * HR * 0.45); c.stroke(); } }
+    const sn = HR * (1.0 + Math.min(1, P.snout || 0.3) * 0.8);
+    c.fillStyle = rGrad(c, headX, hy, HR * 1.4, body, dark, light); c.beginPath(); c.moveTo(headX - HR * 0.75, hy - HR * 0.7);
+    c.quadraticCurveTo(headX + HR * 0.2, hy - HR * 0.9, headX + sn * 0.75, hy - HR * 0.42); c.quadraticCurveTo(headX + sn * 1.05, hy, headX + sn * 0.75, hy + HR * 0.42);
+    c.quadraticCurveTo(headX + HR * 0.2, hy + HR * 0.9, headX - HR * 0.75, hy + HR * 0.7); c.closePath(); c.fill(); c.strokeStyle = 'rgba(0,0,0,.32)'; c.lineWidth = Math.max(0.7, HR * 0.05); c.stroke();
+    if (LOD_HI) { c.fillStyle = 'rgba(0,0,0,.4)'; for (const s of [-1, 1]) { c.beginPath(); c.arc(headX + sn * 0.85, hy + s * HR * 0.16, Math.max(0.5, HR * 0.05), 0, 7); c.fill(); } c.fillStyle = 'rgba(0,0,0,.14)'; for (let k = 0; k < 5; k++) { c.beginPath(); c.ellipse(headX - HR * 0.3 + k * HR * 0.22, hy, HR * 0.1, HR * 0.08, 0, 0, 7); c.fill(); } }
+    if (opt.cast || Math.sin(t * 2.5 + ph) > 0.85) { c.strokeStyle = '#d04a5a'; c.lineWidth = Math.max(1, r * 0.016); c.beginPath(); c.moveTo(headX + sn, hy); c.lineTo(headX + sn + HR * 0.4, hy); c.lineTo(headX + sn + HR * 0.55, hy - HR * 0.12); c.moveTo(headX + sn + HR * 0.4, hy); c.lineTo(headX + sn + HR * 0.55, hy + HR * 0.12); c.stroke(); } // flicking tongue
+    if (L.popEars) { // ears that pop out while it echolocates
+      const fx = opt.fx || {}, k = clamp(Math.max(fx.echo > 0 ? Math.min(1, fx.echo * 2, (6 - fx.echo) * 4) : 0, opt.cast && G && G.t - opt.cast < 0.8 ? 1 : 0), 0, 1), out = 0.18 + 0.82 * k;
+      for (const s of [-1, 1]) { c.save(); c.translate(headX - HR * 0.45, hy + s * HR * 0.62); c.rotate(s * (0.9 + 0.5 * k) + Math.PI); c.fillStyle = hsl(L.hue, L.sat, Math.min(80, L.lig + 8)); c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = Math.max(0.6, r * 0.01);
+        c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(HR * 0.9 * out, -HR * 1.0 * out, HR * 2.1 * out, 0); c.quadraticCurveTo(HR * 0.9 * out, HR * 1.0 * out, 0, 0); c.fill(); c.stroke();
+        if (k > 0.2) { c.fillStyle = 'rgba(255,170,150,.6)'; c.beginPath(); c.ellipse(HR * 0.95 * out, 0, HR * 0.7 * out, HR * 0.38 * out, 0, 0, 7); c.fill(); } c.restore(); }
+      if (k > 0.3 && LOD_HI) { c.strokeStyle = `rgba(160,230,255,${0.5 * k})`; c.lineWidth = Math.max(1, r * 0.015); for (let q = 1; q <= 3; q++) { const rr2 = HR * (1.2 + q * 0.6 + (t * 3 % 0.6)); c.beginPath(); c.arc(headX + HR * 0.4, hy, rr2, -0.7, 0.7); c.stroke(); } } }
+    alienEyes(c, headX + HR * 0.05, hy, HR * 1.05, L, P, t, ph); alienHorns(c, headX - HR * 0.1, hy, HR * 0.8, L, P, C);
+    if (L.eyeGlow) { c.save(); c.fillStyle = L.eyeGlow; if (LOD_HI) { c.shadowColor = L.eyeGlow; c.shadowBlur = HR * 0.9; } c.globalAlpha = 0.75 + 0.25 * Math.sin(t * 2.4 + ph); for (const s2 of [-1, 1]) { c.beginPath(); c.ellipse(headX + HR * 0.15, hy + s2 * HR * 0.5, HR * 0.24, HR * 0.17, 0, 0, 7); c.fill(); } c.restore(); }
+    return;
+  }
   // ------------------------------------------------ four-legged (quad) and lizards
   const lizard = A === 'lizard', hipX = -len * 0.55, shX = len * 0.42, headX = len * 0.62 + neck + headR * 1.1;
   if (opt.shadow !== false) rShadow(c, ang, elev, r, (len + tailL) * 0.65, wid * 1.5);
@@ -2500,6 +2606,7 @@ function drawAlienHead(c, hx, hy, hr, L, P, t, ph, C, opt, flat) {
 }
 const ALIEN_ARCH = new Set(['quad', 'lizard', 'toad', 'raptor', 'humanoid', 'serpent', 'fish', 'squid']);
 function realKind(def, P, L) {
+  if (L.crab) return 'crab';
   if (L.myth) { const S0 = L.sp && SPECIES[L.sp]; return S0 && S0.tpl === 'eagle' && S0.arch === 'raptor' ? 'bird' : null; } // myth birds keep a true bird body; other myths have their own design
   const S = L.sp && SPECIES[L.sp];
   if (S && (S.tpl === 'eagle' || S.tpl === 'owl') && !REAL_SKIP.test(S.name)) return 'bird';
@@ -2548,6 +2655,7 @@ function drawReal(c, kind, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   RST = st; RCOV = P.cover || 'skin'; RANG = ang || 0;
   if (!(r > 0.5) || !isFinite(r)) return;
   if (kind === 'bird') drawBird(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C);
+  else if (kind === 'crab') drawCrab(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C);
   else if (kind === 'bug') drawBug(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C);
   else if (kind === 'alien') drawAlienBody(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C);
   else drawMammal(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C);
@@ -2654,6 +2762,9 @@ function drawBird(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   c.fillStyle = rGrad(c, bodyL * 0.1, 0, bodyL * 1.1, B.snowy ? '#f6f6f2' : body, dark, B.snowy ? '#fff' : light); c.fill(); c.clip();
   if (B.penguin) { c.fillStyle = '#1a1c22'; c.fillRect(-bodyL, -bodyW * 1.2, bodyL * 2.2, bodyW * 2.4); c.fillStyle = 'rgba(255,255,255,.95)'; for (const s of [-1, 1]) { c.beginPath(); c.ellipse(0, s * bodyW * 1.05, bodyL * 0.8, bodyW * 0.28, 0, 0, 7); c.fill(); } }
   if (B.halcyon) { c.fillStyle = hsl(24, 92, 56); for (const s of [-1, 1]) { c.beginPath(); c.ellipse(bodyL * 0.1, s * bodyW * 1.02, bodyL * 0.75, bodyW * 0.22, 0, 0, 7); c.fill(); } const g = c.createLinearGradient(0, -bodyW * 0.3, 0, bodyW * 0.3); g.addColorStop(0, 'rgba(90,240,255,0)'); g.addColorStop(0.5, 'rgba(120,250,255,.95)'); g.addColorStop(1, 'rgba(90,240,255,0)'); c.fillStyle = g; c.fillRect(-bodyL, -bodyW * 0.3, bodyL * 2, bodyW * 0.6); }
+  if (L.rocky) { const rnd = mulberry32(hashStr(def.id) + 9); for (let i = 0; i < 26; i++) { const px = (rnd() - 0.5) * bodyL * 1.8, py = (rnd() - 0.5) * bodyW * 2, pr = r * (0.05 + rnd() * 0.05), n = 5 + (rnd() * 2 | 0); // rocky plates instead of plumage
+      c.fillStyle = hsl(L.hue + (rnd() - 0.5) * 14, Math.max(4, L.sat - 10), clamp(L.lig - 12 + rnd() * 24, 12, 80)); c.strokeStyle = 'rgba(40,28,18,.4)'; c.lineWidth = Math.max(0.5, r * 0.008); c.beginPath();
+      for (let k = 0; k < n; k++) { const a = k / n * 6.283 + rnd() * 0.4, q = pr * (0.75 + rnd() * 0.35); k ? c.lineTo(px + Math.cos(a) * q, py + Math.sin(a) * q) : c.moveTo(px + Math.cos(a) * q, py + Math.sin(a) * q); } c.closePath(); c.fill(); c.stroke(); } }
   if (B.snowy || B.barn) { c.fillStyle = B.snowy ? 'rgba(40,40,50,.55)' : 'rgba(120,90,50,.4)'; const rnd = mulberry32(hashStr(def.id)); for (let i = 0; i < 18; i++) { c.beginPath(); c.arc((rnd() - 0.5) * bodyL * 1.6, (rnd() - 0.5) * bodyW * 1.6, r * 0.022, 0, 7); c.fill(); } }
   if (B.ostrich) { c.fillStyle = 'rgba(0,0,0,.25)'; for (let i = 0; i < 26; i++) { const rnd = mulberry32(i * 77 + 3); c.beginPath(); c.ellipse((rnd() - 0.5) * bodyL * 1.7, (rnd() - 0.5) * bodyW * 1.7, r * 0.07, r * 0.03, rnd() * 3, 0, 7); c.fill(); } }
   // feather scallops down the back
@@ -2675,13 +2786,45 @@ function drawBird(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   c.fillStyle = beakCol; c.beginPath(); c.moveTo(bx - bl * 0.1, -bw); c.quadraticCurveTo(bx + bl * 0.6, -bw * 0.5, bx + bl, 0); c.quadraticCurveTo(bx + bl * 0.6, bw * 0.5, bx - bl * 0.1, bw); c.closePath(); c.fill();
   if (B.flamingo) { c.fillStyle = '#111'; c.beginPath(); c.moveTo(bx + bl * 0.55, -bw * 0.4); c.lineTo(bx + bl * 1.05, 0); c.lineTo(bx + bl * 0.55, bw * 0.4); c.fill(); }
   if (B.eagle || B.harpy || B.falcon) { c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.moveTo(bx + bl * 0.75, -bw * 0.15); c.lineTo(bx + bl * 1.02, 0); c.lineTo(bx + bl * 0.75, bw * 0.15); c.fill(); }
+  if (L.cyclops && opt.cast && G && G.t - opt.cast < 0.5) { const k = Math.sin(Math.min(1, (G.t - opt.cast) / 0.5) * Math.PI), tl = r * 1.6 * k; c.strokeStyle = '#ff7a9a'; c.lineCap = 'round'; c.lineWidth = Math.max(1.5, r * 0.04); c.beginPath(); c.moveTo(bx + bl * 0.8, 0); c.quadraticCurveTo(bx + bl + tl * 0.5, Math.sin(t * 20) * r * 0.05, bx + bl + tl, 0); c.stroke(); c.fillStyle = '#ff5a80'; c.beginPath(); c.arc(bx + bl + tl, 0, Math.max(1.5, r * 0.06), 0, 7); c.fill(); } // frog-like tongue
   // eyes
-  const eyeX = headX + headR * (B.owl ? 0.45 : 0.25), eyeY = headR * (B.owl ? 0.42 : 0.62), eyeR = headR * (B.owl ? 0.28 : 0.16);
-  for (const s of [-1, 1]) { if (B.owl) { c.fillStyle = B.barn ? '#f6ece0' : 'rgba(255,240,220,.35)'; c.beginPath(); c.arc(eyeX - headR * 0.1, s * eyeY, eyeR * 1.7, 0, 7); c.fill(); }
+  const eyeX = headX + headR * (B.owl ? 0.45 : 0.25), eyeY = headR * (B.owl ? 0.42 : 0.62), eyeR = headR * (B.owl ? 0.28 : 0.16) * (L.cyclops ? 1.9 : 1);
+  for (const s of (L.cyclops ? [0] : [-1, 1])) { if (B.owl) { c.fillStyle = B.barn ? '#f6ece0' : 'rgba(255,240,220,.35)'; c.beginPath(); c.arc(eyeX - headR * 0.1, s * eyeY, eyeR * 1.7, 0, 7); c.fill(); }
     c.fillStyle = B.owl && !B.barn ? '#ffb000' : B.halcyon || B.raven || B.penguin ? '#111' : '#e8c040'; c.beginPath(); c.arc(eyeX, s * eyeY, eyeR, 0, 7); c.fill(); c.fillStyle = '#000'; c.beginPath(); c.arc(eyeX + eyeR * 0.15, s * eyeY, eyeR * 0.55, 0, 7); c.fill(); c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.arc(eyeX - eyeR * 0.2, s * eyeY - eyeR * 0.3, eyeR * 0.28, 0, 7); c.fill(); }
   if (B.halcyon && LOD_HI) { const p = 0.5 + 0.5 * Math.sin(t * 3 + ph); c.strokeStyle = `rgba(150,240,255,${0.25 + p * 0.3})`; c.lineWidth = r * 0.03; c.beginPath(); c.arc(0, 0, r * (1.25 + p * 0.1), 0, 7); c.stroke(); }
 }
 
+// ------------------------------------------------------------------ HERMIT CRABS (facing +x): spiral shell behind, small crab body in front
+function drawCrab(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
+  const fx = opt.fx || {}, hide = fx.curl > 0 || fx.shield > 0, gt = t * 10 + ph, mv = moving ? 1 : 0, hk = [1.2, 1.1, 1.03, 1, 1][st - 1];
+  const shellR = r * 0.52, shX = -r * 0.22, bodyX = r * 0.3, bw = r * 0.28 * hk, shellCol = hsl(L.hue2, 38, 62), shellDk = hsl(L.hue2, 35, 40);
+  if (opt.shadow !== false) rShadow(c, ang, elev, r, r * 0.8, r * 0.55);
+  if (!hide) { // eight walking legs, splayed sideways, stepping in waves
+    for (let k = 0; k < 3; k++) for (const s of [-1, 1]) { const ax = bodyX - r * 0.05 - k * r * 0.14, sw = Math.sin(gt + k * 1.4 + (s > 0 ? Math.PI : 0)) * r * 0.08 * mv;
+      const kx = ax - r * 0.02 + sw * 0.5, ky = s * (bw + r * 0.22), fx2 = ax - r * 0.1 + sw, fy = s * (bw + r * 0.42);
+      c.strokeStyle = C.dark; c.lineCap = 'round'; c.lineWidth = Math.max(1, r * 0.055); c.beginPath(); c.moveTo(ax, s * bw * 0.6); c.lineTo(kx, ky); c.stroke();
+      c.strokeStyle = C.body; c.lineWidth = Math.max(0.8, r * 0.04); c.beginPath(); c.moveTo(kx, ky); c.lineTo(fx2, fy); c.stroke(); }
+    // claws: one big crusher, one small picker; they snap shut when it attacks
+    const snap = opt.cast && G && G.t - opt.cast < 0.35 ? 1 : 0.35 + 0.25 * Math.sin(t * 2 + ph);
+    for (const s of [-1, 1]) { const big = s < 0, cl = r * (big ? 0.3 : 0.2) * hk, ax = bodyX + r * 0.08, ay = s * bw * 0.7, ex = ax + r * 0.18, ey = s * (bw + r * 0.08), hx = ex + cl * 0.6, hy = ey - s * r * 0.02;
+      c.strokeStyle = C.body; c.lineWidth = Math.max(1.2, r * (big ? 0.08 : 0.06)); c.beginPath(); c.moveTo(ax, ay); c.lineTo(ex, ey); c.lineTo(hx, hy); c.stroke();
+      c.fillStyle = rGrad(c, hx, hy, cl, C.body, C.dark, C.light); c.beginPath(); c.ellipse(hx + cl * 0.2, hy, cl * 0.6, cl * 0.42, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = Math.max(0.6, r * 0.01); c.stroke();
+      const op = (1 - snap) * 0.5; c.fillStyle = C.body; for (const j of [-1, 1]) { c.save(); c.translate(hx + cl * 0.65, hy + j * cl * 0.12); c.rotate(j * op); c.beginPath(); c.moveTo(0, -cl * 0.13); c.quadraticCurveTo(cl * 0.55, -cl * 0.1, cl * 0.62, j * cl * 0.05); c.quadraticCurveTo(cl * 0.4, cl * 0.12, 0, cl * 0.13); c.closePath(); c.fill(); c.stroke(); c.restore(); }
+      if (LOD_HI) { c.fillStyle = 'rgba(255,255,255,.25)'; c.beginPath(); c.ellipse(hx + cl * 0.05, hy - cl * 0.12, cl * 0.25, cl * 0.1, 0, 0, 7); c.fill(); } }
+    // carapace and eye stalks
+    c.fillStyle = rGrad(c, bodyX, 0, bw * 1.2, C.body, C.dark, C.light); c.beginPath(); c.ellipse(bodyX, 0, r * 0.2, bw, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = Math.max(0.6, r * 0.012); c.stroke();
+    if (LOD_HI) { c.strokeStyle = 'rgba(0,0,0,.2)'; c.beginPath(); c.arc(bodyX - r * 0.05, 0, bw * 0.6, -1, 1); c.stroke(); }
+    for (const s of [-1, 1]) { const ex = bodyX + r * 0.24, ey = s * r * 0.08 + Math.sin(t * 3 + ph + s) * r * 0.01; c.strokeStyle = C.body; c.lineWidth = Math.max(1, r * 0.03); c.beginPath(); c.moveTo(bodyX + r * 0.12, s * r * 0.05); c.lineTo(ex, ey); c.stroke();
+      c.fillStyle = '#111'; c.beginPath(); c.arc(ex, ey, Math.max(1, r * 0.04), 0, 7); c.fill(); c.fillStyle = 'rgba(255,255,255,.8)'; c.beginPath(); c.arc(ex - r * 0.01, ey - r * 0.012, Math.max(0.4, r * 0.012), 0, 7); c.fill(); }
+  }
+  // the borrowed spiral shell
+  const sx = hide ? -r * 0.05 : shX, wob = hide ? Math.sin(t * 20) * r * 0.01 : 0;
+  c.fillStyle = rGrad(c, sx - shellR * 0.2, -shellR * 0.2, shellR * 1.2, shellCol, shellDk, hsl(L.hue2, 40, 80)); c.beginPath(); c.ellipse(sx + wob, 0, shellR, shellR * 0.82, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(40,25,10,.45)'; c.lineWidth = Math.max(0.8, r * 0.015); c.stroke();
+  c.strokeStyle = shellDk; c.lineWidth = Math.max(1, r * 0.03); c.beginPath(); for (let k = 0; k <= 60; k++) { const a = k / 60 * 6.283 * 2.3, rr = shellR * (0.85 - k / 60 * 0.78), x = sx + wob - shellR * 0.08 + Math.cos(a) * rr, y = Math.sin(a) * rr * 0.82; k ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke();
+  if (LOD_HI) { c.strokeStyle = 'rgba(255,255,255,.22)'; c.lineWidth = Math.max(0.6, r * 0.012); for (let k = 0; k < 7; k++) { const a = k * 0.9; c.beginPath(); c.moveTo(sx + Math.cos(a) * shellR * 0.3, Math.sin(a) * shellR * 0.25); c.lineTo(sx + Math.cos(a) * shellR * 0.95, Math.sin(a) * shellR * 0.78); c.stroke(); } }
+  if (!hide) { c.fillStyle = 'rgba(30,18,8,.55)'; c.beginPath(); c.ellipse(sx + shellR * 0.82, 0, shellR * 0.18, shellR * 0.42, 0, 0, 7); c.fill(); } // shell opening
+  else if (LOD_HI) { c.fillStyle = C.body; c.beginPath(); c.ellipse(sx + shellR * 0.88, -r * 0.04, r * 0.06, r * 0.08, 0, 0, 7); c.fill(); } // one claw plugs the opening
+}
 // ------------------------------------------------------------------ BUGS
 function bugStyle(def, L, P) {
   const S = L.sp && SPECIES[L.sp], n = (S ? S.name : def.name).toLowerCase(), tpl = S ? S.tpl : '';
@@ -2845,7 +2988,7 @@ function drawMammal(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
       c.strokeStyle = deep; tube(c, ch.pts.slice(0, 4), [r * 0.06, r * 0.055, r * 0.05, r * 0.045], deep);
       for (let h = -6; h <= 6; h++) { c.lineWidth = Math.max(0.7, r * (0.022 - Math.abs(h) * 0.0012)); c.globalAlpha = 0.85 - Math.abs(h) * 0.04; c.beginPath(); for (let k = 0; k <= 12; k++) { const u = k / 12, [x, y] = ch.pts[k], a = ch.ang[k], sp = h * r * 0.013 * (0.4 + u * 1.6); const xx = x - Math.sin(a) * sp, yy = y + Math.cos(a) * sp; k ? c.lineTo(xx, yy) : c.moveTo(xx, yy); } c.stroke(); }
       c.globalAlpha = 1; continue; }
-    if (tailL < r * 0.15) { c.fillStyle = body; c.beginPath(); c.arc(rump - r * 0.02, 0, r * (M.rabbit ? 0.09 : 0.06), 0, 7); c.fill(); if (M.rabbit) { c.fillStyle = '#fff'; c.beginPath(); c.arc(rump - r * 0.04, 0, r * 0.07, 0, 7); c.fill(); } continue; }
+    if (tailL < r * 0.15) { const cot = feats.includes('cottonTail'), tr = r * (cot ? 0.15 : M.rabbit ? 0.09 : 0.06); c.fillStyle = body; c.beginPath(); c.arc(rump - r * 0.02 - (cot ? r * 0.06 : 0), 0, tr, 0, 7); c.fill(); if (M.rabbit || cot) { c.fillStyle = '#fff'; c.beginPath(); c.arc(rump - r * 0.04 - (cot ? r * 0.06 : 0), 0, tr * 0.8, 0, 7); c.fill(); if (cot) { c.strokeStyle = 'rgba(150,170,190,.6)'; c.lineWidth = Math.max(0.6, r * 0.01); for (let k = 0; k < 10; k++) { const a = k / 10 * 6.283; c.beginPath(); c.arc(rump - r * 0.1 + Math.cos(a) * tr * 0.85, Math.sin(a) * tr * 0.85, tr * 0.3, 0, 7); c.fill(); c.stroke(); } c.beginPath(); c.arc(rump - r * 0.1, 0, tr * 0.75, 0, 7); c.fill(); } } continue; }
     { const x0 = rump + r * 0.05, segs = 12; c.fillStyle = M.beaver ? '#4a3a30' : body; c.beginPath(); const P0 = [], P1 = [];
       for (let k = 0; k <= segs; k++) { const u = k / segs, kk = Math.round(u * 12), qx = ch.pts[kk][0], qy = ch.pts[kk][1], dx = Math.cos(ch.ang[kk]), dy = Math.sin(ch.ang[kk]), dl = 1, w = tw * (bushy ? 0.55 + Math.sin(u * Math.PI * 0.85) * 0.75 : (1 - u * 0.62) * (u < 0.12 ? 1.1 : 1));
         P0.push([qx - dy / dl * w, qy + dx / dl * w]); P1.push([qx + dy / dl * w, qy - dx / dl * w]); }
@@ -2920,6 +3063,10 @@ function drawMammal(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   if ((S.tpl === 'rhino' || feats.includes('horn1') || M.unicorn) && RST === 1) NUB(c, hl * 0.25, 0, hw * 0.1, M.unicorn ? '#f8eecb' : '#b8ad98');
   if ((S.tpl === 'rhino' || feats.includes('horn1') || M.unicorn) && RST >= 2) { const big = S.tpl === 'rhino'; c.fillStyle = M.unicorn ? '#f8eecb' : '#b8ad98'; c.beginPath(); c.moveTo(hl * (big ? 0.28 : 0.1), -hw * 0.16); c.lineTo(hl * (big ? 0.75 : 0.85), 0); c.lineTo(hl * (big ? 0.28 : 0.1), hw * 0.16); c.fill(); if (big) { c.beginPath(); c.moveTo(hl * 0.05, -hw * 0.12); c.lineTo(hl * 0.3, 0); c.lineTo(hl * 0.05, hw * 0.12); c.fill(); } if (M.unicorn) { c.strokeStyle = 'rgba(200,170,90,.7)'; c.lineWidth = 1; for (let k = 1; k < 5; k++) { c.beginPath(); c.moveTo(hl * (0.1 + k * 0.15), -hw * 0.13 * (1 - k / 5)); c.lineTo(hl * (0.17 + k * 0.15), hw * 0.13 * (1 - k / 5)); c.stroke(); } } }
   if (M.deer && RST === 2) for (const s of [-1, 1]) NUB(c, -hl * 0.15, s * hw * 0.32, hw * 0.1, '#d8c8a8');
+  if (feats.includes('icicleHorn') && RST >= 3) { // an icicle horn grows from the forehead in adulthood
+    const g = c.createLinearGradient(hl * 0.05, 0, hl * 1.15, 0); g.addColorStop(0, 'rgba(200,235,255,.95)'); g.addColorStop(1, 'rgba(240,252,255,.75)'); c.fillStyle = g; c.strokeStyle = 'rgba(120,180,220,.8)'; c.lineWidth = Math.max(0.6, hw * 0.03);
+    c.beginPath(); c.moveTo(hl * 0.02, -hw * 0.16); c.lineTo(hl * 1.15, 0); c.lineTo(hl * 0.02, hw * 0.16); c.closePath(); c.fill(); c.stroke();
+    c.strokeStyle = 'rgba(255,255,255,.8)'; c.beginPath(); c.moveTo(hl * 0.1, -hw * 0.05); c.lineTo(hl * 0.9, -hw * 0.01); c.stroke(); for (let k = 1; k < 4; k++) { c.strokeStyle = 'rgba(120,180,220,.5)'; c.beginPath(); c.moveTo(hl * (0.02 + k * 0.25), -hw * 0.16 * (1 - k * 0.25)); c.lineTo(hl * (0.02 + k * 0.25), hw * 0.16 * (1 - k * 0.25)); c.stroke(); } }
   if (M.deer && RST >= 3 && !/female|doe/.test(S.name.toLowerCase())) for (const s of [-1, 1]) { c.strokeStyle = '#d8c8a8'; c.lineCap = 'round'; c.lineWidth = Math.max(1.5, r * 0.035);
     if (M.moose) { c.fillStyle = '#d8c8a8'; c.beginPath(); c.moveTo(-hl * 0.2, s * hw * 0.3); c.quadraticCurveTo(-hl * 0.4, s * hw * 1.6, -hl * 0.05, s * hw * 2.1); c.lineTo(hl * 0.25, s * hw * 1.6); c.lineTo(-hl * 0.05, s * hw * 0.4); c.fill(); for (let k = 0; k < 5; k++) { c.beginPath(); c.moveTo(-hl * 0.15 + k * hl * 0.08, s * hw * (1.6 + k * 0.08)); c.lineTo(-hl * 0.1 + k * hl * 0.1, s * hw * (2.1 + k * 0.05)); c.stroke(); } }
     else { const sp = M.reindeer ? 1.4 : 1.1; c.beginPath(); c.moveTo(-hl * 0.15, s * hw * 0.3); c.quadraticCurveTo(-hl * 0.6, s * hw * 1.4 * sp, -hl * 0.2, s * hw * 2.0 * sp); c.stroke(); for (let k = 1; k <= 4; k++) { const u = k / 5, x = -hl * (0.15 + 0.3 * Math.sin(u * 3)) , y = s * hw * (0.3 + 1.6 * sp * u); c.beginPath(); c.moveTo(x, y); c.lineTo(x + hl * 0.25, y + s * hw * 0.15); c.stroke(); } } }
@@ -2932,7 +3079,7 @@ function drawMammal(c, def, L, P, r, t, ph, moving, st, opt, ang, elev, C) {
   if (S.tpl === 'cat' && LOD_HI) { c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = Math.max(0.5, r * 0.008); for (const s of [-1, 1]) for (let k = -1; k <= 1; k++) { c.beginPath(); c.moveTo(noseX - r * 0.05, s * hw * 0.15); c.lineTo(noseX + r * 0.08, s * (hw * 0.55 + k * r * 0.05)); c.stroke(); } }
   // eyes on the sides of the head (predators' further forward)
   const fwd = S.tpl === 'cat' || S.tpl === 'wolf' || S.tpl === 'bear', exx = fwd ? hl * 0.15 : 0, eyy = hw * (fwd ? 0.34 : 0.47), er = r * 0.03 * hk * (fwd ? 1.1 : 1);
-  for (const s of [-1, 1]) { c.fillStyle = S.tpl === 'cat' ? '#d9a63a' : feats.includes('eyesGold') ? '#e8c040' : '#2a1a0c'; c.beginPath(); c.ellipse(exx, s * eyy, er * 1.2, er, 0, 0, 7); c.fill(); c.fillStyle = '#050505'; c.beginPath(); c.ellipse(exx + er * 0.15, s * eyy, S.tpl === 'cat' ? er * 0.35 : er * 0.6, er * 0.7, 0, 0, 7); c.fill(); c.fillStyle = 'rgba(255,255,255,.8)'; c.beginPath(); c.arc(exx - er * 0.2, s * eyy - er * 0.3, er * 0.3, 0, 7); c.fill(); if (feats.includes('tears')) { c.strokeStyle = '#111'; c.lineWidth = Math.max(0.8, r * 0.015); c.beginPath(); c.moveTo(exx + er, s * eyy); c.lineTo(noseX - r * 0.03, s * hw * 0.15); c.stroke(); } }
+  for (const s of [-1, 1]) { c.fillStyle = feats.includes('eyesRed') ? '#e0202a' : S.tpl === 'cat' ? '#d9a63a' : feats.includes('eyesGold') ? '#e8c040' : '#2a1a0c'; c.beginPath(); c.ellipse(exx, s * eyy, er * 1.2, er, 0, 0, 7); c.fill(); c.fillStyle = '#050505'; c.beginPath(); c.ellipse(exx + er * 0.15, s * eyy, S.tpl === 'cat' ? er * 0.35 : er * 0.6, er * 0.7, 0, 0, 7); c.fill(); c.fillStyle = 'rgba(255,255,255,.8)'; c.beginPath(); c.arc(exx - er * 0.2, s * eyy - er * 0.3, er * 0.3, 0, 7); c.fill(); if (feats.includes('tears')) { c.strokeStyle = '#111'; c.lineWidth = Math.max(0.8, r * 0.015); c.beginPath(); c.moveTo(exx + er, s * eyy); c.lineTo(noseX - r * 0.03, s * hw * 0.15); c.stroke(); } }
   if (M.cerberus) for (const s of [-1, 1]) { c.save(); c.translate(-hl * 0.15, s * hw * 1.0); c.rotate(s * 0.45); headPath(); c.fillStyle = body; c.fill(); c.fillStyle = '#ff5020'; c.beginPath(); c.arc(exx, -eyy * 0.6, er, 0, 7); c.arc(exx, eyy * 0.6, er, 0, 7); c.fill(); c.restore(); }
   c.restore();
   // pegasus wings
@@ -3242,7 +3389,7 @@ function addXP(e, n) {
 
 function startMatch(cfg) {
   // cfg: {mode:'offline'|'story'|'online', planet, chapter, net, seed}
-  WORLD = cfg.mode === 'tutorial' ? 3400 : cfg.mode === 'open' ? OW_T * OW_N : 8000; CNT = (WORLD / 3400) ** 2; REG = null;
+  WORLD = cfg.mode === 'tutorial' ? 3400 : cfg.mode === 'open' ? OW_T * OW_N : cfg.mode === 'offline' || cfg.mode === 'story' ? 12000 : 8000; CNT = (WORLD / 3400) ** 2; REG = null; // offline and story zones are 1.5x wider
   const OPEN = cfg.mode === 'open', homePid = (ALIEN[save.equipped] || ALIEN.blipling).planet;
   let planetId = cfg.planet === 'random' || !cfg.planet ? pick(START_PLANETS) : cfg.planet;
   const seed = cfg.seed || (Math.random() * 1e9) | 0;
@@ -3257,7 +3404,9 @@ function startMatch(cfg) {
   for (let i = 0; i < Math.round(110 * CNT); i++) G.decor.push({ x: wr() * WORLD, y: wr() * WORLD, r: 20 + wr() * 70, k: wr() });
   if (OPEN) { const c0 = CNT; CNT = (OW_T / 3400) ** 2; for (const t of G.tiles) { REG = t; regionExtras(t.pid, wr); buildTerrain(t.pid, wr); } REG = null; CNT = c0; }
   else { regionExtras(planetId, wr); buildTerrain(planetId, wr); }
+  if (!OPEN && (cfg.mode === 'offline' || cfg.mode === 'story')) buildUnder(wr);
   for (let i = 0; i < Math.round(420 * CNT * (OPEN ? 0.45 : 0.8)); i++) spawnFood(wr);
+  if (G.under) for (let i = 0; i < Math.round(32 * CNT); i++) spawnUnderFood(wr);
   for (let i = 0; i < Math.round((cfg.mode === 'tutorial' ? 7 : 4) * CNT); i++) { let fx, fy; do { fx = 200 + wr() * (WORLD - 400); fy = 200 + wr() * (WORLD - 400); } while (inObstacle(fx, fy, 40)); G.fossils.push({ x: fx, y: fy, hp: cfg.mode === 'tutorial' ? 3 : 6, r: 26 }); }
   // Player
   const pdef = playerDef(save.equipped);
@@ -3268,7 +3417,7 @@ function startMatch(cfg) {
   // Wildlife: species native to this planet
   const natives = nativesOf(planetId);
   const TUTM = cfg.mode === 'tutorial';
-  const wildCount = TUTM ? 18 : OPEN ? 275 : cfg.mode === 'offline' ? 165 : 150;
+  const wildCount = Math.round((TUTM ? 18 : OPEN ? 275 : cfg.mode === 'offline' ? 165 : 150) * (TUTM || OPEN || cfg.mode === 'online' ? 1 : (WORLD / 8000) ** 2));
   for (let i = 0; i < wildCount; i++) spawnWild(TUTM ? natives.filter(n => n.behavior === 'grazer') : natives, TUTM ? 1 : 0);
   // Alpha boss
   if (OPEN) { placeLairs(wr); for (const L of G.lairs) spawnWorldBoss(L); }
@@ -3306,6 +3455,7 @@ function startMatch(cfg) {
   if (!running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
 }
 function spawnFood(r = Math.random) {
+  if (G.under && r() < 0.1) return spawnUnderFood(r);
   const ev = G.event && r() < 0.05;
   let x = r() * WORLD, y = r() * WORLD; const fpid = biomeAt(x, y); let type = pickFoodType(r, fpid);
   const rich = G.zones.filter(z => z.k === 'oasis' || z.k === 'grove' || z.k === 'kelp' || z.k === 'scrap');
@@ -3320,7 +3470,9 @@ function spawnWild(natives, fixedLvl = 0) {
   let x, y; do { x = rand(100, WORLD - 100); y = rand(100, WORLD - 100); } while (G.player && d2({ x, y }, G.player) < 700 * 700);
   if (G.open && !fixedLvl) { const nat = nativesOf(biomeAt(x, y)); const w2 = nat.map(n => (n.behavior === 'grazer' ? 3 : n.behavior === 'territorial' ? 1.5 : 1.2) * RARITY[n.rarity || 'common'].w); let t2 = w2.reduce((a, b) => a + b, 0) * Math.random(); def = nat[0]; for (let i = 0; i < nat.length; i++) { t2 -= w2[i]; if (t2 <= 0) { def = nat[i]; break; } } }
   const lvl = fixedLvl || (Math.random() < 0.5 ? 1 : Math.random() < 0.6 ? 2 : Math.random() < 0.7 ? 3 : 4);
-  G.creatures.push(newEntity(def, x, y, lvl));
+  const ent = newEntity(def, x, y, lvl);
+  if (G.under && ugNative(def) && Math.random() < 0.7 && G.creatures.reduce((n, o) => n + (o.ug && o.alive ? 1 : 0), 0) < G.creatures.length * 0.3) { const s = ugRandomSpot(); ent.x = s.x; ent.y = s.y; ent.ug = true; } // cave and burrow natives live underground
+  G.creatures.push(ent);
 }
 
 // =====================================================================
@@ -4234,7 +4386,7 @@ const STAGE_NAME = ['Baby', 'Juvenile', 'Adult', 'Elder', 'Alpha'];
 const BODY_RAR = { common: 1.2, uncommon: 1.1, rare: 1, epic: 0.88, legendary: 0.75 };
 const BODY_CACHE = new Map();
 function bodySkill(def) {
-  if (!def || def.kind === 'elder') return null; if (BODY_CACHE.has(def.id)) return BODY_CACHE.get(def.id);
+  if (!def || def.kind === 'elder') return null; if (def.body2) return def.body2; if (BODY_CACHE.has(def.id)) return BODY_CACHE.get(def.id);
   const L = def.look, P = anatomy(def), S = L.sp && SPECIES[L.sp], n = (S ? S.name : def.name).toLowerCase(), K = realKind(def, P, L), out = [];
   const add = (ab, name, from, need) => { if (AB[ab]) out.push({ ab, name, from, need }); };
   if (K === 'bird') { const B = birdStyle(S ? S.name : def.name, L);
@@ -4327,7 +4479,7 @@ function useAbility(e, ult = false) {
   const P = e === G.player;
   const front = (R, cosMin) => G.creatures.filter(o => !allied(o, e) && o.alive && !o.decoy && d2(o, e) < (R + o.r) ** 2 && ((o.x - e.x) * fx + (o.y - e.y) * fy) / (Math.sqrt(d2(o, e)) || 1) > cosMin).sort((p, q) => d2(p, e) - d2(q, e))[0];
   if (AB[a] && AB[a].run) e.runT = 0.7;
-  switch (a) {
+  switch ((AB[a] && AB[a].as) || a) {
     case 'dash': e.fx.dash = 0.3; e.fx.power = 1.5; burst(e.x, e.y, '#fff', 10); break;
     case 'burrow': e.fx.burrow = 2; burst(e.x, e.y, G.P.dark2, 18); break;
     case 'frost': near(170 + e.r).forEach(o => { hurt(o, e.dmg * 0.8, e); o.fx.slow = 3; }); ring(e.x, e.y, 170 + e.r, '#bff4ff'); break;
@@ -4438,7 +4590,7 @@ function useAbility(e, ult = false) {
   e.cast = { a, t: 0, d: ult ? 0.8 : 0.55 };
   if (P) { updateAbBtn(); if (G.tut && !ult) G.tut.used = true; }
 }
-function shoot(e, dx, dy, spd, dmg, c, extra) { G.proj.push(Object.assign({ x: e.x + dx * e.r, y: e.y + dy * e.r, vx: dx * spd, vy: dy * spd, dmg, owner: e, life: 0.9, c, r: 7 }, extra)); }
+function shoot(e, dx, dy, spd, dmg, c, extra) { G.proj.push(Object.assign({ ug: e.ug || false, x: e.x + dx * e.r, y: e.y + dy * e.r, vx: dx * spd, vy: dy * spd, dmg, owner: e, life: 0.9, c, r: 7 }, extra)); }
 function tryRebirth(t) {
   if (G.tut && t === G.player) { t.hp = t.maxhp * 0.35; banner('That would have been the end! (Tutorial saves you)', '#ffb35a'); return true; }
   if (has(t, 'rebirth') && !t.reborn) { t.reborn = true; t.hp = t.maxhp * 0.4; ring(t.x, t.y, 160, '#ffd23f'); burst(t.x, t.y, '#ffb347', 40); if (t === G.player) banner('REBIRTH!', '#ffd23f'); return true; }
@@ -4480,10 +4632,10 @@ function kill(t, src) {
   if (t.minion) return;
   // DNA drops
   const n = 1 + t.lvl + Math.floor(t.lvl / 2) + (t.boss ? 8 : 0) + (t.isBot ? 4 : 0);
-  for (let i = 0; i < n; i++) G.orbs.push({ x: t.x + rand(-t.r, t.r), y: t.y + rand(-t.r, t.r), v: 1, type: 'dna', ph: Math.random() * 6, life: 30 });
-  if (t.boss || t.lucky || Math.random() < 0.012) G.orbs.push({ x: t.x, y: t.y, v: 1, type: 'adna', ph: 0 });
-  if (t.boss && G.mode !== 'tutorial') for (let k = 0; k < (t.mutantBoss ? 3 : Math.random() < 0.5 ? 1 : 0); k++) G.orbs.push({ x: t.x + rand(-t.r, t.r), y: t.y + rand(-t.r, t.r), v: 1, type: 'mdna', ph: Math.random() * 6, life: 45 });
-  for (let k = 0; k < 2 + Math.floor(t.lvl / 2); k++) G.food.push({ x: t.x + rand(-t.r, t.r), y: t.y + rand(-t.r, t.r), r: 8, type: 'meat', v: k, xp: 6, ph: Math.random() * 6, drop: true, life: 40 });
+  for (let i = 0; i < n; i++) G.orbs.push({ ug: t.ug || false, x: t.x + rand(-t.r, t.r), y: t.y + rand(-t.r, t.r), v: 1, type: 'dna', ph: Math.random() * 6, life: 30 });
+  if (t.boss || t.lucky || Math.random() < 0.012) G.orbs.push({ ug: t.ug || false, x: t.x, y: t.y, v: 1, type: 'adna', ph: 0 });
+  if (t.boss && G.mode !== 'tutorial') for (let k = 0; k < (t.mutantBoss ? 3 : Math.random() < 0.5 ? 1 : 0); k++) G.orbs.push({ ug: t.ug || false, x: t.x + rand(-t.r, t.r), y: t.y + rand(-t.r, t.r), v: 1, type: 'mdna', ph: Math.random() * 6, life: 45 });
+  for (let k = 0; k < 2 + Math.floor(t.lvl / 2); k++) G.food.push({ ug: t.ug || false, x: t.x + rand(-t.r, t.r), y: t.y + rand(-t.r, t.r), r: 8, type: 'meat', v: k, xp: 6, ph: Math.random() * 6, drop: true, life: 40 });
   if (t.boss && !t.worldBoss && !t.mutantBoss && !t.event && !t.holidayBoss && !t.lucky && G.mode !== 'tutorial' && G.alphaNext == null) G.alphaNext = 240 + Math.random() * 120; // slain alphas return after a while
   if (src && src.alive) { addXP(src, 12 * t.lvl + (t.boss ? 120 : 0)); src.kills++; src.score += 25 * t.lvl; }
   if (src === G.player) {
@@ -4646,6 +4798,7 @@ function moveAI(e, dt) {
 //  UPDATE
 // =====================================================================
 function update(dt) {
+  if (G.ugFade > 0) G.ugFade = Math.max(0, G.ugFade - dt * 2.5);
   G.t += dt;
   if (G.foodGone) { G.food = G.food.filter(f => !f.gone); G.foodGone = false; }
   { const FG = new Map(); for (const f of G.food) { const k = (f.x / 256 | 0) + (f.y / 256 | 0) * 4096; let b = FG.get(k); if (!b) FG.set(k, b = []); b.push(f); } G.fgrid = FG; }
@@ -4760,12 +4913,15 @@ function update(dt) {
     const ax = dir.x * sp, ay = dir.y * sp;
     e.vx += (ax - e.vx) * Math.min(1, inert * dt); e.vy += (ay - e.vy) * Math.min(1, inert * dt);
     e.x = clamp(e.x + e.vx * dt, e.r, WORLD - e.r); e.y = clamp(e.y + e.vy * dt, e.r, WORLD - e.r);
+    if (e.ug) confineUnder(e); else {
     for (const o of sgNear(G.obstacles, G.ogrid, e.x, e.y)) {
       const ox = e.x - o.x, oy = e.y - o.y, rr = o.r * 0.92 + e.r * 0.8, dd = ox * ox + oy * oy;
       if (dd < rr * rr) { if (e.fx.burrow > 0 && o.k !== 'volcano') continue; if (!obstacleBlocks(e, o, mv)) continue; const d = Math.sqrt(dd) || 1; e.x = o.x + ox / d * rr; e.y = o.y + oy / d * rr; if (!e.isPlayer) e.wander = Math.atan2(oy, ox) + rand(-1, 1); }
     }
     envCollide(e, mv);
     checkTraps(e, mv);
+    }
+    if (G.under && e.isPlayer) checkShaft(e, dt);
     if (Math.hypot(e.vx, e.vy) > 15) e.ang = Math.atan2(e.vy, e.vx);
     stepPrints(e, bio, mv, dt);
     if (e.isPlayer && usingMouse && mouse && !(e.fx.charge > 0)) { const PS = plScr(); e.ang = Math.atan2(mouse.y - PS.y, mouse.x - PS.x); }
@@ -5143,18 +5299,116 @@ function buildEnv(pid, wr) {
   for (let i = 0; i < Math.round(18 * CNT); i++) { const r = 55 + wr() * 45, s = spot(r); if (!s) continue; G.cover.push({ pid, x: s[0], y: s[1], r, k: COVER_STYLE[pid].k, b: Array.from({ length: 7 }, () => [wr() * 6.283, wr() * r * 0.55, r * (0.35 + wr() * 0.3), wr()]) }); }
 }
 function caveAt(x, y, pad = 0) { for (const c of G.caves || []) if ((x - c.x) ** 2 + (y - c.y) ** 2 < (c.R - 18 - pad) ** 2) return c; return null; }
+// =====================================================================
+//  THE UNDERGROUND (preview, offline and story): a second layer of caverns and tunnels under every zone.
+//  Every surface cave has a shaft down into a cavern below; tunnels join the caverns. Burrowers and cave
+//  creatures live down there. Creatures above and below can't see or touch each other.
+// =====================================================================
+const UG_SHELTER = { ug: true, x: 0, y: 0, R: 0, pid: null };
+const UG_STYLE = {
+  dune: { rock: '#3a2a1c', rock2: '#24180f', floor: '#7a5a3a', floor2: '#5c4228', glow: null },
+  ice: { rock: '#2a3a4c', rock2: '#18222e', floor: '#8aa6bf', floor2: '#5f7d99', glow: '#9fe3ff' },
+  dark: { rock: '#1c1428', rock2: '#0e0a16', floor: '#3a2c52', floor2: '#2a1f3c', glow: '#b07aff' },
+  hell: { rock: '#2a1210', rock2: '#160806', floor: '#5a2a1c', floor2: '#3c1a10', glow: '#ff6a2a' },
+  water: { rock: '#14303a', rock2: '#0a1c24', floor: '#2e5a66', floor2: '#1f444e', glow: '#5fe0ff' },
+  jungle: { rock: '#1e2a16', rock2: '#10180c', floor: '#45583a', floor2: '#33442a', glow: '#9dff6a' },
+  robo: { rock: '#22262c', rock2: '#121418', floor: '#4a525c', floor2: '#363c44', glow: '#5fe0ff' },
+  space: { rock: '#1a1430', rock2: '#0c0a1a', floor: '#3a3060', floor2: '#2a2248', glow: '#c08aff' },
+  heaven: { rock: '#c8c0d8', rock2: '#a8a0bc', floor: '#efeaf6', floor2: '#ddd6ea', glow: '#ffe7a8' },
+  earth: { rock: '#2e2418', rock2: '#1a140c', floor: '#5f4a32', floor2: '#4a3a26', glow: null },
+  mars: { rock: '#3a1a10', rock2: '#200e08', floor: '#7a3a22', floor2: '#5a2a18', glow: null },
+};
+const UG_RX = /worm|grub|larva|mole|cave|burrow|digger|crawler|mite|leech|gloom|echo|umbra|hollow|murk|shade|tunnel|deep|maw|centipede|spider|bat/i;
+const UG_EXTRA = {}; // planets whose names give few cave species get a few small natives that also live below
+function ugNative(def) { if (def._ug == null) def._ug = ugNativeBase(def) || ugExtra(def); return def._ug; }
+function ugExtra(def) {
+  if (!['wild', 'common'].includes(def.kind)) return false;
+  if (!UG_EXTRA[def.planet]) { const nat = ALIENS.filter(a => a.planet === def.planet && ['wild', 'common'].includes(a.kind)), have = nat.filter(ugNativeBase).length;
+    UG_EXTRA[def.planet] = new Set(have >= 6 ? [] : nat.filter(a => !ugNativeBase(a) && !moves(a).fly).sort((x, y) => x.size - y.size || (hashStr(x.id) % 97) - (hashStr(y.id) % 97)).slice(0, 8 - have).map(a => a.id)); }
+  return UG_EXTRA[def.planet].has(def.id);
+}
+function ugNativeBase(def) { // creatures that belong underground
+  if (def.kind === 'boss' || def.kind === 'elder' || def.kind === 'premium' || def.kind === 'exclusive') return false;
+  const S = def.look && def.look.sp && SPECIES[def.look.sp], n = (S ? S.name : '') + ' ' + def.name;
+  return (def.home && /cave|underground|tunnel/i.test(def.home)) || ['burrow', 'dig', 'echo', 'echoloc'].includes(def.ability) || UG_RX.test(n) || (L => L && L.theme && L.theme.s === 'bat')(def.look);
+}
+function buildUnder(wr) {
+  const U = { caverns: [], tunnels: [], shafts: [] };
+  for (const c of G.caves) { const cv = { x: c.x, y: c.y, R: c.R * 1.25 + 40, sh: Array.from({ length: 14 }, () => 1 + (wr() - 0.5) * 0.18) }; U.caverns.push(cv); U.shafts.push({ x: c.x, y: c.y, r: 46, cave: c, cv }); c.shaft = true; }
+  const extra = Math.round(3 * CNT);
+  for (let i = 0; i < extra; i++) { let x, y, R = 170 + wr() * 170, ok = false; for (let k = 0; k < 30 && !ok; k++) { x = 300 + wr() * (WORLD - 600); y = 300 + wr() * (WORLD - 600); ok = !U.caverns.some(c => Math.hypot(c.x - x, c.y - y) < c.R + R + 260); } if (ok) U.caverns.push({ x, y, R, sh: Array.from({ length: 14 }, () => 1 + (wr() - 0.5) * 0.22) }); }
+  // join every cavern into one network (nearest-neighbour tree), plus a few loops
+  const C = U.caverns, inT = [0], E = [];
+  while (inT.length < C.length) { let best = null; for (const i of inT) for (let j = 0; j < C.length; j++) if (!inT.includes(j)) { const d = Math.hypot(C[i].x - C[j].x, C[i].y - C[j].y); if (!best || d < best[2]) best = [i, j, d]; } inT.push(best[1]); E.push(best); }
+  for (let i = 0; i < C.length; i++) { const near = C.map((c, j) => [j, Math.hypot(c.x - C[i].x, c.y - C[i].y)]).filter(([j]) => j !== i).sort((a, b) => a[1] - b[1])[1]; if (near && wr() < 0.35 && near[1] < 2600) E.push([i, near[0], near[1]]); }
+  for (const [i, j] of E) { const a = C[i], b = C[j], n = Math.max(3, Math.round(Math.hypot(b.x - a.x, b.y - a.y) / 420)), w = 64 + wr() * 34, nx = -(b.y - a.y), ny = b.x - a.x, nl = Math.hypot(nx, ny) || 1, pts = [];
+    for (let k = 0; k <= n; k++) { const u = k / n, wob = k && k < n ? (wr() - 0.5) * 300 : 0; pts.push([a.x + (b.x - a.x) * u + nx / nl * wob, a.y + (b.y - a.y) * u + ny / nl * wob]); }
+    for (let k = 0; k < n; k++) U.tunnels.push({ x1: pts[k][0], y1: pts[k][1], x2: pts[k + 1][0], y2: pts[k + 1][1], w }); }
+  // a coarse grid so each creature only checks the passages near it
+  U.grid = new Map(); const cell = 600, add = (k, o) => { let b = U.grid.get(k); if (!b) U.grid.set(k, b = []); if (!b.includes(o)) b.push(o); };
+  for (const c of C) for (let gx = Math.floor((c.x - c.R) / cell); gx <= Math.floor((c.x + c.R) / cell); gx++) for (let gy = Math.floor((c.y - c.R) / cell); gy <= Math.floor((c.y + c.R) / cell); gy++) add(gx + gy * 4096, c);
+  for (const t of U.tunnels) { const x0 = Math.min(t.x1, t.x2) - t.w, x1 = Math.max(t.x1, t.x2) + t.w, y0 = Math.min(t.y1, t.y2) - t.w, y1 = Math.max(t.y1, t.y2) + t.w; for (let gx = Math.floor(x0 / cell); gx <= Math.floor(x1 / cell); gx++) for (let gy = Math.floor(y0 / cell); gy <= Math.floor(y1 / cell); gy++) add(gx + gy * 4096, t); }
+  U.cell = cell; G.under = U;
+}
+function ugNear(x, y) { const U = G.under, k = Math.floor(x / U.cell) + Math.floor(y / U.cell) * 4096; return U.grid.get(k) || []; }
+function ugRandomSpot(pad = 30) { const U = G.under; if (Math.random() < 0.6 || !U.tunnels.length) { const c = pick(U.caverns), a = Math.random() * 6.283, d = Math.sqrt(Math.random()) * (c.R - pad - 20); return { x: c.x + Math.cos(a) * d, y: c.y + Math.sin(a) * d }; } const t = pick(U.tunnels), u = Math.random(); return { x: t.x1 + (t.x2 - t.x1) * u, y: t.y1 + (t.y2 - t.y1) * u }; }
+function confineUnder(e) { // keep an underground creature inside the caverns and tunnels
+  const near = ugNear(e.x, e.y), m = e.r * 0.55; let best = null, bd = Infinity;
+  for (const o of near) { if (o.R) { const dx = e.x - o.x, dy = e.y - o.y, d = Math.hypot(dx, dy), lim = o.R - m; if (d <= lim) return; const over = d - lim; if (over < bd) { bd = over; best = { x: o.x + dx / (d || 1) * lim, y: o.y + dy / (d || 1) * lim }; } }
+    else { const vx = o.x2 - o.x1, vy = o.y2 - o.y1, L2 = vx * vx + vy * vy || 1, u = clamp(((e.x - o.x1) * vx + (e.y - o.y1) * vy) / L2, 0, 1), px = o.x1 + vx * u, py = o.y1 + vy * u, dx = e.x - px, dy = e.y - py, d = Math.hypot(dx, dy), lim = Math.max(8, o.w / 2 - m); if (d <= lim) return; const over = d - lim; if (over < bd) { bd = over; best = { x: px + dx / (d || 1) * lim, y: py + dy / (d || 1) * lim }; } } }
+  if (!best) { const s = G.under.caverns.reduce((a, c) => (Math.hypot(c.x - e.x, c.y - e.y) < Math.hypot(a.x - e.x, a.y - e.y) ? c : a)); best = { x: s.x, y: s.y }; }
+  e.x = best.x; e.y = best.y; if (!e.isPlayer) e.wander = Math.atan2(best.y - e.y, best.x - e.x) + Math.PI + rand(-1.2, 1.2);
+}
+function checkShaft(e, dt) { // standing on a shaft takes the player up or down after a moment
+  const U = G.under; if (!U || e.fx.burrow > 0) return;
+  const s = U.shafts.find(s => (e.x - s.x) ** 2 + (e.y - s.y) ** 2 < s.r * s.r);
+  if (!s) { e.shaftT = 0; e.shaftLock = false; return; }
+  if (e.shaftLock) return;
+  e.shaftT = (e.shaftT || 0) + dt;
+  if (e.shaftT > 0.6) { e.ug = !e.ug; e.shaftLock = true; e.shaftT = 0; e.vx = e.vy = 0; e.target = null; G.ugFade = 1;
+    if (e === G.player) { banner(e.ug ? 'You climbed down into the UNDERGROUND' : 'You climbed back up to the SURFACE', e.ug ? '#c8a07a' : '#9fe3ff'); if (G.mstat) G.mstat.under = (G.mstat.under || 0) + 1; } }
+}
+function drawUnderground(vx0, vy0, vx1, vy1) {
+  const U = G.under, S = UG_STYLE[G.planet] || UG_STYLE.dune;
+  ctx.fillStyle = S.rock2; ctx.fillRect(Math.max(-200, vx0), Math.max(-200, vy0), Math.min(WORLD + 200, vx1) - Math.max(-200, vx0), Math.min(WORLD + 200, vy1) - Math.max(-200, vy0));
+  if (LOD_HI) { const rr = mulberry32(((vx0 / 400) | 0) * 7 + ((vy0 / 400) | 0)); ctx.fillStyle = S.rock; for (let x = Math.floor(vx0 / 160) * 160; x < vx1; x += 160) for (let y = Math.floor(vy0 / 160) * 160; y < vy1; y += 160) { const h = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5) % 1; ctx.globalAlpha = 0.35 + h * 0.4; ctx.beginPath(); ctx.ellipse(x + h * 80, y + (1 - h) * 80, 40 + h * 50, 30 + h * 30, h * 3, 0, 7); ctx.fill(); } ctx.globalAlpha = 1; }
+  const vis = o => o.R ? o.x + o.R > vx0 && o.x - o.R < vx1 && o.y + o.R > vy0 && o.y - o.R < vy1 : Math.max(o.x1, o.x2) + o.w > vx0 && Math.min(o.x1, o.x2) - o.w < vx1 && Math.max(o.y1, o.y2) + o.w > vy0 && Math.min(o.y1, o.y2) - o.w < vy1;
+  const pass = (grow, col) => { ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineCap = 'round';
+    for (const t of U.tunnels) if (vis(t)) { ctx.lineWidth = t.w + grow * 2; ctx.beginPath(); ctx.moveTo(t.x1, t.y1); ctx.lineTo(t.x2, t.y2); ctx.stroke(); }
+    for (const c of U.caverns) if (vis(c)) { const n = c.sh.length; ctx.beginPath(); for (let i = 0; i <= n; i++) { const a = i / n * 6.283, rr = (c.R + grow) * c.sh[i % n]; i ? ctx.lineTo(c.x + Math.cos(a) * rr, c.y + Math.sin(a) * rr) : ctx.moveTo(c.x + Math.cos(a) * rr, c.y + Math.sin(a) * rr); } ctx.fill(); } };
+  pass(26, S.rock); pass(10, 'rgba(0,0,0,.35)'); pass(0, S.floor2); pass(-16, S.floor);
+  if (LOD_HI) for (const c of U.caverns) if (vis(c)) { const rr = mulberry32((c.x * 3 + c.y) | 0); for (let i = 0; i < 9; i++) { const a = rr() * 6.283, d = rr() * c.R * 0.8, x = c.x + Math.cos(a) * d, y = c.y + Math.sin(a) * d;
+      if (S.glow && i % 3 === 0) { ctx.fillStyle = S.glow; ctx.globalAlpha = 0.55 + 0.25 * Math.sin(G.t * 2 + i); ctx.shadowColor = S.glow; ctx.shadowBlur = 14; ctx.beginPath(); ctx.arc(x, y, 5 + rr() * 5, 0, 7); ctx.fill(); ctx.shadowBlur = 0; ctx.globalAlpha = 1; }
+      else { ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(x, y, 10 + rr() * 22, 7 + rr() * 12, rr() * 3, 0, 7); ctx.fill(); } } }
+  for (const s of U.shafts) if (s.x + 200 > vx0 && s.x - 200 < vx1 && s.y + 200 > vy0 && s.y - 200 < vy1) { // light falling down the shaft from the surface
+    const g = ctx.createRadialGradient(s.x, s.y, 4, s.x, s.y, 190); g.addColorStop(0, 'rgba(255,245,210,.55)'); g.addColorStop(1, 'rgba(255,245,210,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.x, s.y, 190, 0, 7); ctx.fill();
+    ctx.strokeStyle = '#c8a87a'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 7); ctx.stroke(); ctx.setLineDash([8, 8]); ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(s.x - 14, s.y - s.r + 8); ctx.lineTo(s.x - 14, s.y + s.r - 8); ctx.moveTo(s.x + 14, s.y - s.r + 8); ctx.lineTo(s.x + 14, s.y + s.r - 8); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#ffe7a8'; ctx.font = 'bold 13px system-ui'; ctx.textAlign = 'center'; ctx.fillText('▲ to surface', s.x, s.y - s.r - 10); }
+}
+function drawShaftHole(c) { // the way down, in the middle of each surface cave
+  if (!c.shaft) return; const r = 46;
+  const g = ctx.createRadialGradient(c.x, c.y, 2, c.x, c.y, r); g.addColorStop(0, '#000'); g.addColorStop(0.75, 'rgba(0,0,0,.9)'); g.addColorStop(1, 'rgba(0,0,0,.2)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(200,160,110,.8)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(c.x, c.y, r - 2, 0, 7); ctx.stroke();
+  ctx.fillStyle = '#e8d2a0'; ctx.font = 'bold 13px system-ui'; ctx.textAlign = 'center'; ctx.fillText('▼ underground', c.x, c.y - r - 10);
+}
+function drawUnderDark(p) { // darkness underground, lifting near the player and the shafts
+  const S = G.scr; if (!S) return; ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const g = ctx.createRadialGradient(S.x, S.y, 80, S.x, S.y, Math.max(VW, VH) * 0.62); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.72)'); ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+  if (G.ugFade > 0) { ctx.fillStyle = `rgba(0,0,0,${G.ugFade})`; ctx.fillRect(0, 0, VW, VH); } ctx.restore();
+}
+function spawnUnderFood(r = Math.random) { const s = ugRandomSpot(25), type = r() < 0.55 ? 'rock' : r() < 0.7 ? 'plant' : 'meat'; G.food.push({ x: s.x, y: s.y, r: 7 + r() * 4, type, v: (r() * 1000) | 0, xp: FOOD_XP[type], ph: r() * 6, pid: G.planet, ug: true }); }
 function envPre(e, dt) {
   const mv = moves(e.def);
   if (e.shiftCd > 0) e.shiftCd -= dt;
   const wasPerch = e.perch;
-  e.inCave = caveAt(e.x, e.y);
-  e.inCover = null; if (!mv.fly) for (const c of G.cover) if ((e.x - c.x) ** 2 + (e.y - c.y) ** 2 < c.r * c.r) { e.inCover = c; break; }
-  e.perch = null; if (mv.climb && !(e.fx.burrow > 0)) for (const o of sgNear(G.obstacles, G.ogrid, e.x, e.y)) if (CLIMBABLE[o.k] && (e.x - o.x) ** 2 + (e.y - o.y) ** 2 < (o.r * 0.95) ** 2) { e.perch = o; break; }
-  e.biome = G.open ? biomeAt(e.x, e.y) : G.planet; e.inWater = e.biome === 'water'; if (!e.inWater) for (const z of G.zones) if ((z.k === 'oasis' || z.k === 'swamp' || z.k === 'kelp' || z.k === 'whirl') && (e.x - z.x) ** 2 + (e.y - z.y) ** 2 < z.r * z.r) { e.inWater = true; e.waterZone = z; break; }
+  e.inCave = e.ug ? UG_SHELTER : caveAt(e.x, e.y); // the underground shelters from disasters like a cave
+  e.inCover = null; if (!mv.fly && !e.ug) for (const c of G.cover) if ((e.x - c.x) ** 2 + (e.y - c.y) ** 2 < c.r * c.r) { e.inCover = c; break; }
+  e.perch = null; if (mv.climb && !(e.fx.burrow > 0) && !e.ug) for (const o of sgNear(G.obstacles, G.ogrid, e.x, e.y)) if (CLIMBABLE[o.k] && (e.x - o.x) ** 2 + (e.y - o.y) ** 2 < (o.r * 0.95) ** 2) { e.perch = o; break; }
+  e.biome = G.open ? biomeAt(e.x, e.y) : G.planet; e.inWater = e.biome === 'water'; if (!e.inWater && !e.ug) for (const z of G.zones) if ((z.k === 'oasis' || z.k === 'swamp' || z.k === 'kelp' || z.k === 'whirl') && (e.x - z.x) ** 2 + (e.y - z.y) ** 2 < z.r * z.r) { e.inWater = true; e.waterZone = z; break; }
   if (e.def.forms && !e.remote) { const cur = e.form || e.def.planet;
     if (cur !== e.biome && e.def.forms.includes(e.biome)) { if (!e.isPlayer) shiftForm(e, e.biome); else if (e.formHint !== e.biome) { e.formHint = e.biome; banner('Press F to shift into your ' + HAB_NAME[e.biome] + ' form', '#9fe3ff'); } } }
   if (e.perch && !wasPerch && !(e.alt > 0.5)) { e.climbT = 0.45; if (G.player && d2(e, G.player) < 900 * 900) burst(e.x, e.y, '#b9a27a', 5); if (e === G.player) floatText(e.x, e.y - e.r, 'CLIMBING UP', '#ffcf8a'); }
-  { let over = null; if (mv.fly) for (const o of sgNear(G.obstacles, G.ogrid, e.x, e.y)) if ((e.x - o.x) ** 2 + (e.y - o.y) ** 2 < (o.r + e.r * 0.3) ** 2) { over = o; break; }
+  { let over = null; if (mv.fly && !e.ug) for (const o of sgNear(G.obstacles, G.ogrid, e.x, e.y)) if ((e.x - o.x) ** 2 + (e.y - o.y) ** 2 < (o.r + e.r * 0.3) ** 2) { over = o; break; }
     if (mv.fly) { // fliers land and tuck their wings when they stop, and take off again as soon as they move
       const mov = Math.hypot(e.vx || 0, e.vy || 0) > 25 || (e.cast && G.t - e.cast < 0.6); e.stillT = mov ? 0 : (e.stillT || 0) + dt;
       const aloft = mov || e.stillT < 0.35 || (over && over.k === 'volcano'); e.air = (e.air == null ? 1 : e.air) + ((aloft ? 1 : 0) - (e.air == null ? 1 : e.air)) * Math.min(1, dt * (aloft ? 7 : 3.5));
@@ -6476,6 +6730,7 @@ function render() {
   ctx.save(); ctx.scale(zoom, zoom); ctx.translate(-camX, -camY);
   const vx0 = camX - 200, vy0 = camY - 200, vx1 = camX + VW / zoom + 200, vy1 = camY + VH / zoom + 200;
   const inView = o => o.x > vx0 && o.x < vx1 && o.y > vy0 && o.y < vy1;
+  if (p.ug) drawUnderground(vx0, vy0, vx1, vy1); else { // underground: caverns and tunnels instead of the surface
   // ground
   if (G.open && G.shift) { ctx.fillStyle = primordialPattern(); ctx.fillRect(Math.max(0, vx0), Math.max(0, vy0), Math.min(WORLD, vx1) - Math.max(0, vx0), Math.min(WORLD, vy1) - Math.max(0, vy0)); }
   if (G.open) { for (const t of G.tiles) { if (t.x1 + 220 < vx0 || t.x0 - 220 > vx1 || t.y1 + 220 < vy0 || t.y0 - 220 > vy1) continue; ctx.fillStyle = groundPattern(t.pid); ctx.fill(t.path); } ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 26; for (const t of G.tiles) if (!(t.x1 + 220 < vx0 || t.x0 - 220 > vx1 || t.y1 + 220 < vy0 || t.y0 - 220 > vy1)) ctx.stroke(t.path); }
@@ -6487,7 +6742,7 @@ function render() {
   for (const lv of G.lava) if (!lv.river && inView(lv)) { const g = ctx.createRadialGradient(lv.x, lv.y, 0, lv.x, lv.y, lv.r); g.addColorStop(0, '#ffdd55'); g.addColorStop(0.5, '#ff7a1e'); g.addColorStop(1, '#a8200a'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(lv.x, lv.y, lv.r * (1 + Math.sin(G.t * 2 + lv.x) * 0.02), 0, 7); ctx.fill(); }
   // decor
   for (const z of G.zones) if (z.x + z.r > vx0 && z.x - z.r < vx1 && z.y + z.r > vy0 && z.y - z.r < vy1) { drawZone(z); drawZone2(z); }
-  for (const c of G.caves) if (c.x + c.R > vx0 && c.x - c.R < vx1 && c.y + c.R > vy0 && c.y - c.R < vy1) drawCaveFloor(c);
+  for (const c of G.caves) if (c.x + c.R > vx0 && c.x - c.R < vx1 && c.y + c.R > vy0 && c.y - c.R < vy1) { drawCaveFloor(c); drawShaftHole(c); }
   if (G.lairs) for (const L of G.lairs) if (L.x + 560 > vx0 && L.x - 560 < vx1 && L.y + 560 > vy0 && L.y - 560 < vy1 && !(L.boss && L.boss.arena)) drawLair(L);
   if (G.arenas) for (const A of G.arenas) if (A.x + A.r + 80 > vx0 && A.x - A.r - 80 < vx1 && A.y + A.r + 80 > vy0 && A.y - A.r - 80 < vy1) { drawArena(A, 'floor'); drawArena(A, 'wall'); }
   if (G.traps) for (const t of G.traps) if (inView(t)) drawTrap(t, p);
@@ -6497,12 +6752,13 @@ function render() {
   // fossils
   for (const f of G.fossils) if (f.hp > 0 && f.egg && inView(f)) drawTimeEgg(f);
   for (const f of G.fossils) if (f.hp > 0 && !f.egg && inView(f)) { ctx.fillStyle = '#d9c79a'; ctx.strokeStyle = '#8a7650'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r, f.r * 0.7, 0.3, 0, 7); ctx.fill(); ctx.stroke(); ctx.beginPath(); for (let i = -2; i <= 2; i++) { ctx.moveTo(f.x + i * 7, f.y - 12); ctx.lineTo(f.x + i * 7, f.y + 12); } ctx.stroke(); ctx.fillStyle = '#ffcf5a'; ctx.font = 'bold 12px system-ui'; ctx.textAlign = 'center'; ctx.fillText('FOSSIL', f.x, f.y - f.r - 6); }
+  }
   // food
-  for (const f of G.food) if (inView(f)) drawFood(f, canEat(p, f));
+  for (const f of G.food) if (inView(f) && !!f.ug === !!p.ug) drawFood(f, canEat(p, f));
   // orbs
-  for (const o of G.orbs) if (inView(o) && !(o.life < 5 && (G.t * 6 | 0) % 2)) { ctx.fillStyle = o.type === 'dna' ? '#7dffb2' : o.type === 'mdna' ? '#e05cff' : o.type === 'tfrag' ? '#9fe3ff' : '#ffcf5a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10; ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.ph); ctx.fillRect(-4, -4, 8, 8); ctx.restore(); ctx.shadowBlur = 0; }
+  for (const o of G.orbs) if (inView(o) && !!o.ug === !!p.ug && !(o.life < 5 && (G.t * 6 | 0) % 2)) { ctx.fillStyle = o.type === 'dna' ? '#7dffb2' : o.type === 'mdna' ? '#e05cff' : o.type === 'tfrag' ? '#9fe3ff' : '#ffcf5a'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10; ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.ph); ctx.fillRect(-4, -4, 8, 8); ctx.restore(); ctx.shadowBlur = 0; }
   // creatures
-  const list = G.creatures.filter(e => (e.alive || e.isPlayer) && inView(e));
+  const list = G.creatures.filter(e => (e.alive || e.isPlayer) && inView(e) && !!e.ug === !!p.ug);
   list.sort((a, b) => ((a.alt || 0) > 0.6) - ((b.alt || 0) > 0.6) || a.r - b.r);
   const CL = lit3dBegin(ctx.getTransform()); if (CL) LIT.used = list.length > 0;
   for (const e of list) {
@@ -6545,12 +6801,14 @@ function render() {
     }
   }
   LOD_HI = zoom > 0.55;
+  if (!p.ug) {
   for (const c of G.cover) if (c.x + c.r > vx0 && c.x - c.r < vx1 && c.y + c.r > vy0 && c.y - c.r < vy1) drawCover(c, p.inCover === c);
   for (const c of G.caves) if (c.x + c.R + 40 > vx0 && c.x - c.R - 40 < vx1 && c.y + c.R + 40 > vy0 && c.y - c.R - 40 < vy1) drawCaveRoof(c, p.inCave === c);
   drawDisasterWorld(vx0, vy0, vx1, vy1);
+  } else drawUnderDark(p);
   if (G.tut) drawTutTarget();
   // projectiles
-  for (const q of G.proj) { const sp = Math.hypot(q.vx, q.vy) || 1, ux = q.vx / sp, uy = q.vy / sp, tl = Math.min(70, sp * 0.07) + q.r * 2;
+  for (const q of G.proj) { if (!!q.ug !== !!p.ug) continue; const sp = Math.hypot(q.vx, q.vy) || 1, ux = q.vx / sp, uy = q.vy / sp, tl = Math.min(70, sp * 0.07) + q.r * 2;
     ctx.globalAlpha = 0.3; ctx.fillStyle = q.c; ctx.beginPath(); ctx.arc(q.x, q.y, q.r * 2.1, 0, 7); ctx.fill();
     const g = ctx.createLinearGradient(q.x, q.y, q.x - ux * tl, q.y - uy * tl); g.addColorStop(0, q.c); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.globalAlpha = 0.75; ctx.fillStyle = g;
     ctx.beginPath(); ctx.moveTo(q.x - uy * q.r, q.y + ux * q.r); ctx.lineTo(q.x - ux * tl, q.y - uy * tl); ctx.lineTo(q.x + uy * q.r, q.y - ux * q.r); ctx.closePath(); ctx.fill();
@@ -6742,6 +7000,7 @@ function drawHUD() {
   ctx.fillStyle = 'rgba(10,6,20,.65)'; ctx.fillRect(mx, my, ms, ms); ctx.strokeStyle = '#5a46a0'; ctx.strokeRect(mx, my, ms, ms);
   const sc = ms / WORLD;
   const ZC = { meadow: '#9be36a', crater: '#5a2010', dustdevil: '#e0a070', fissure: '#2a1a0a', sanctum: '#ffd86a', oasis: '#3fb8e0', quicksand: '#b0844c', lake: '#d6f1ff', mist: G.planet === 'heaven' ? '#ffffff' : '#4a2f7a', grove: '#5fe08a', geyser: '#ffffff', vent: '#ff7a2a' };
+  if (p.ug && G.under) { ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(mx, my, ms, ms); ctx.strokeStyle = '#c8a07a'; ctx.lineCap = 'round'; for (const t of G.under.tunnels) { ctx.lineWidth = Math.max(1.5, t.w * sc); ctx.beginPath(); ctx.moveTo(mx + t.x1 * sc, my + t.y1 * sc); ctx.lineTo(mx + t.x2 * sc, my + t.y2 * sc); ctx.stroke(); } ctx.fillStyle = '#c8a07a'; for (const c of G.under.caverns) { ctx.beginPath(); ctx.arc(mx + c.x * sc, my + c.y * sc, Math.max(2, c.R * sc), 0, 7); ctx.fill(); } ctx.fillStyle = '#ffe7a8'; for (const s2 of G.under.shafts) { ctx.beginPath(); ctx.arc(mx + s2.x * sc, my + s2.y * sc, 2, 0, 7); ctx.fill(); } } else
   for (const z of G.zones) { ctx.fillStyle = ZC[z.k] || '#888'; ctx.globalAlpha = 0.55; ctx.beginPath(); ctx.arc(mx + z.x * sc, my + z.y * sc, Math.max(1.5, z.r * sc), 0, 7); ctx.fill(); }
   if (G.open) for (const t of G.tiles) { ctx.fillStyle = PLANETS[t.pid].bg; ctx.globalAlpha = 0.55; ctx.fillRect(mx + t.x0 * sc, my + t.y0 * sc, OW_T * sc, OW_T * sc); ctx.globalAlpha = 1; }
   if (G.wev && G.wev.mx != null) { ctx.strokeStyle = WEV_INFO[G.wev.id].col; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(mx + G.wev.mx * sc, my + G.wev.my * sc, 4 + 3 * Math.abs(Math.sin(G.t * 4)), 0, 7); ctx.stroke(); }
@@ -6750,7 +7009,7 @@ function drawHUD() {
   for (const o of G.obstacles) { ctx.fillStyle = o.k === 'volcano' ? '#ff5a2a' : 'rgba(0,0,0,.7)'; ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.arc(mx + o.x * sc, my + o.y * sc, Math.max(1.2, o.r * sc), 0, 7); ctx.fill(); }
   ctx.globalAlpha = 1;
   if (G.royale) { ctx.strokeStyle = '#ff5a5a'; ctx.beginPath(); ctx.arc(mx + G.zone.x * sc, my + G.zone.y * sc, G.zone.r * sc, 0, 7); ctx.stroke(); }
-  if (G.reveal > 0) for (const e of G.creatures) if (e.alive && e !== p) { ctx.fillStyle = e.isBot ? '#ffcf5a' : '#ff6b6b'; ctx.fillRect(mx + e.x * sc - 1, my + e.y * sc - 1, 2, 2); }
+  if (G.reveal > 0) for (const e of G.creatures) if (e.alive && e !== p && !!e.ug === !!p.ug) { ctx.fillStyle = e.isBot ? '#ffcf5a' : '#ff6b6b'; ctx.fillRect(mx + e.x * sc - 1, my + e.y * sc - 1, 2, 2); }
   for (const e of G.creatures) if ((e.boss || e.lucky || e.event) && e.alive) { ctx.fillStyle = e.mutantBoss ? '#e05cff' : e.lucky ? '#fff' : e.event ? '#ff8ad8' : '#ff3030'; ctx.fillRect(mx + e.x * sc - 2, my + e.y * sc - 2, 4, 4); }
   for (const f of G.fossils) if (f.hp > 0) { ctx.fillStyle = '#ffcf5a'; ctx.fillRect(mx + f.x * sc - 1.5, my + f.y * sc - 1.5, 3, 3); }
   ctx.fillStyle = '#7dffb2'; ctx.beginPath(); ctx.arc(mx + p.x * sc, my + p.y * sc, 3.5, 0, 7); ctx.fill();
@@ -7440,7 +7699,7 @@ requestAnimationFrame(t => { last = t; running = true; loop(t); });
   document.head.appendChild(css);
   const W = document.createElement('div'); W.id = 'ws';
   W.innerHTML = `<header><b>🧬 XENO.IO Creature Workshop</b><span id="wsMsg"></span><button id="wsReal"></button><button id="wsExp">Export</button><button id="wsImp">Import</button><button id="wsClose">Close</button></header>
-<div id="wsL"><div class="f"><input id="wsQ" placeholder="Search ${ALIENS.length} creatures…"><select id="wsP"><option value="">All planets</option>${PLANET_IDS.map(p => `<option value="${p}">${esc(PLANETS[p].name)}</option>`).join('')}</select><label style="display:flex;gap:6px;align-items:center;color:#9fb0c2"><input type="checkbox" id="wsOnly" style="width:auto"> Edited only</label></div><div id="wsList"></div></div>
+<div id="wsL"><div class="f"><input id="wsQ" placeholder="Search ${ALIENS.length} creatures…"><select id="wsP"><option value="">All planets</option>${PLANET_IDS.map(p => `<option value="${p}">${esc(PLANETS[p].name)}</option>`).join('')}</select><select id="wsU"><option value="">Surface & underground</option><option value="s">Lives on the surface</option><option value="u">Lives underground</option></select><label style="display:flex;gap:6px;align-items:center;color:#9fb0c2"><input type="checkbox" id="wsOnly" style="width:auto"> Edited only</label></div><div id="wsList"></div></div>
 <div id="wsC"><canvas id="wsCv" width="560" height="560"></canvas><div class="bar"><span style="color:#9fb0c2">Stage</span>${[1, 2, 3, 4, 5].map(n => `<button data-st="${n}">${['Baby', 'Juvenile', 'Adult', 'Elder', 'Alpha'][n - 1]}</button>`).join('')}</div><div class="bar"><button id="wsMove" class="on">Walking</button><button id="wsSpin">Turn</button><button class="warn" id="wsReset">Reset this creature</button></div></div>
 <div id="wsR"></div>`;
   document.body.appendChild(W);
@@ -7461,12 +7720,12 @@ requestAnimationFrame(t => { last = t; running = true; loop(t); });
   // ---- list
   let cur = null, stage = 3, moving = true, spin = false;
   function renderList() {
-    const t = q('wsQ').value.trim().toLowerCase(), p = q('wsP').value, only = q('wsOnly').checked;
-    const rows = ALIENS.filter(a => (!p || a.planet === p) && (!only || edited(a.id)) && (!t || a.name.toLowerCase().includes(t) || a.id.includes(t))).slice(0, 400);
+    const t = q('wsQ').value.trim().toLowerCase(), p = q('wsP').value, only = q('wsOnly').checked, uq = q('wsU').value;
+    const rows = ALIENS.filter(a => (!p || a.planet === p) && (!only || edited(a.id)) && (!uq || (uq === 'u') === !!ugNative(a)) && (!t || a.name.toLowerCase().includes(t) || a.id.includes(t))).slice(0, 400);
     q('wsList').innerHTML = rows.map(a => `<div data-id="${a.id}" class="${cur && cur.id === a.id ? 'on' : ''}"><span>${edited(a.id) ? '<i>✎ </i>' : ''}${esc(a.name)}</span><small>${esc(a.rarity || a.kind)}</small></div>`).join('') || '<div><small>No creatures match.</small></div>';
   }
   q('wsList').onclick = e => { const d = e.target.closest('[data-id]'); if (d) select(d.dataset.id); };
-  q('wsQ').oninput = q('wsP').onchange = q('wsOnly').onchange = renderList;
+  q('wsQ').oninput = q('wsP').onchange = q('wsOnly').onchange = q('wsU').onchange = renderList;
 
   // ---- editor
   const ANIMALS = Object.keys(NATURAL).sort(), SPS = Object.keys(SPECIES).filter(k => k !== 'halcyon' || ALIEN.halcyon).sort((a, b) => SPECIES[a].name.localeCompare(SPECIES[b].name));
@@ -7475,6 +7734,39 @@ requestAnimationFrame(t => { last = t; running = true; loop(t); });
   const BODY = ['Toad', 'Lizard', 'Beetle', 'Insect', 'Squid', 'Shell beetle', 'Serpent', 'Four-legged'];
   const opts = (list, val, lab) => list.map(([v, l]) => `<option value="${esc(v)}"${String(v) === String(val) ? ' selected' : ''}>${esc(l)}</option>`).join('');
   function tplOf(L) { return L.sp ? 'sp:' + L.sp : L.theme && L.theme.k === 'animal' ? 'an:' + L.theme.s : L.sig ? 'sig' : 'alien'; }
+  // ---- where each creature lives: a small surface map over a cut-away of the underground, with its home glowing
+  const HAB_WATER = { dune: 'oases', ice: 'frozen lakes', dark: 'fungus pools', hell: 'lava pools', water: 'kelp beds', jungle: 'swamps', robo: 'coolant pools', space: 'gas pools', heaven: 'cloud pools', earth: 'lakes', mars: 'ice pits' };
+  const HAB_ROCK = { dune: 'mesas', ice: 'ice pillars', dark: 'chasm cliffs', hell: 'obsidian crags', water: 'reefs', jungle: 'giant trees', robo: 'scrap towers', space: 'asteroid rocks', heaven: 'cloud spires', earth: 'trees and rocks', mars: 'canyon walls' };
+  function habInfo(d) { const mv = moves(d), ug = typeof ugNative === 'function' && ugNative(d), where = [];
+    if (ug) where.push('underground'); if (mv.swim) where.push('water'); if (mv.fly) where.push('sky'); if (mv.climb && !ug) where.push('rocks'); if (!ug || mv.fly) where.push('ground');
+    const home = d.home || (ug ? 'Caves and tunnels underground' : mv.swim ? (PLANETS[d.planet].name + ' ' + (HAB_WATER[d.planet] || 'water')) : mv.fly ? 'The open sky' : mv.climb ? (HAB_ROCK[d.planet] || 'rocks') + ' and open ground' : 'Open ground');
+    return { ug, mv, where, home, layer: ug ? 'Mostly underground (about 7 in 10 live below)' : 'Surface' }; }
+  function drawHabMap(cv, d) {
+    const c = cv.getContext('2d'), W = cv.width, H = cv.height, P0 = PLANETS[d.planet], S = (typeof UG_STYLE !== 'undefined' && UG_STYLE[d.planet]) || { rock: '#3a2a1c', rock2: '#24180f', floor: '#7a5a3a' }, I = habInfo(d), t = performance.now() / 1000, rr = mulberry32(hashStr(d.planet) + 3);
+    const sh = Math.round(H * 0.56); c.clearRect(0, 0, W, H);
+    c.fillStyle = P0.bg || '#888'; c.fillRect(0, 0, W, sh); // surface, from above
+    const rocks = [], pools = [], caves = [];
+    for (let i = 0; i < 6; i++) rocks.push([20 + rr() * (W - 40), 14 + rr() * (sh - 28), 9 + rr() * 9]);
+    for (let i = 0; i < 2; i++) pools.push([30 + rr() * (W - 60), 18 + rr() * (sh - 36), 16 + rr() * 8]);
+    for (let i = 0; i < 3; i++) caves.push([W * (0.18 + i * 0.32) + (rr() - 0.5) * 30, sh * (0.35 + rr() * 0.4), 13]);
+    c.fillStyle = 'rgba(40,130,200,.75)'; for (const [x, y, r] of pools) { c.beginPath(); c.ellipse(x, y, r * 1.4, r, 0, 0, 7); c.fill(); }
+    c.fillStyle = 'rgba(0,0,0,.45)'; for (const [x, y, r] of rocks) { c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); }
+    for (const [x, y, r] of caves) { c.fillStyle = 'rgba(90,70,50,.95)'; c.beginPath(); c.arc(x, y, r + 4, 0, 7); c.fill(); c.fillStyle = '#000'; c.beginPath(); c.arc(x, y, 5, 0, 7); c.fill(); }
+    // underground cut-away
+    c.fillStyle = S.rock2; c.fillRect(0, sh, W, H - sh); c.fillStyle = S.rock; c.fillRect(0, sh, W, 6);
+    const yU = sh + (H - sh) * 0.58, cav = caves.map(([x], i) => [x + (i - 1) * 6, yU + (i % 2 ? 6 : -6), 17]);
+    c.strokeStyle = S.floor; c.lineCap = 'round'; c.lineWidth = 10; c.beginPath(); cav.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.lineTo(W + 10, yU + 2); c.moveTo(cav[0][0], cav[0][1]); c.lineTo(-10, yU - 4); c.stroke();
+    c.fillStyle = S.floor; for (const [x, y, r] of cav) { c.beginPath(); c.ellipse(x, y, r * 1.5, r, 0, 0, 7); c.fill(); }
+    c.strokeStyle = 'rgba(255,235,190,.55)'; c.lineWidth = 3; c.setLineDash([3, 3]); for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(caves[i][0], caves[i][1]); c.lineTo(cav[i][0], cav[i][1] - cav[i][2]); c.stroke(); } c.setLineDash([]);
+    // where it lives: glowing dots
+    const dots = [], add = (x, y) => dots.push([x, y]);
+    if (I.ug) for (const [x, y, r] of cav) for (let k = 0; k < 4; k++) add(x + (rr() - 0.5) * r * 2.2, y + (rr() - 0.5) * r * 1.2);
+    if (I.mv.swim) for (const [x, y, r] of pools) for (let k = 0; k < 3; k++) add(x + (rr() - 0.5) * r * 2, y + (rr() - 0.5) * r);
+    if (I.mv.climb && !I.ug) for (const [x, y, r] of rocks) add(x + (rr() - 0.5) * r, y + (rr() - 0.5) * r);
+    if (!I.ug || I.mv.fly) for (let k = 0; k < (I.ug ? 4 : 10); k++) add(14 + rr() * (W - 28), 10 + rr() * (sh - 20));
+    for (const [x, y] of dots) { const pz = 0.6 + 0.4 * Math.sin(t * 3 + x); c.fillStyle = `rgba(125,255,178,${0.25 * pz})`; c.beginPath(); c.arc(x, y, 9, 0, 7); c.fill(); c.fillStyle = '#7dffb2'; c.beginPath(); c.arc(x, y, 3.2, 0, 7); c.fill(); }
+    c.font = 'bold 11px system-ui'; c.fillStyle = 'rgba(0,0,0,.6)'; c.fillRect(4, 4, 62, 16); c.fillRect(4, sh + 8, 86, 16); c.fillStyle = '#fff'; c.fillText('SURFACE', 9, 16); c.fillText('UNDERGROUND', 9, sh + 20);
+  }
   function select(id) {
     cur = ALIEN[id]; if (!cur) return; snap(cur); renderList();
     const d = cur, L = d.look, hsl = (h, s, l) => `hsl(${h},${s}%,${l}%)`;
@@ -7486,9 +7778,17 @@ requestAnimationFrame(t => { last = t; running = true; loop(t); });
 <h4>Identity</h4>
 <label class="w"><span>Name</span><input data-d="name" value="${esc(d.name)}" maxlength="40"></label>
 <label class="w"><span>Story</span><textarea data-d="lore" rows="3">${esc(d.lore || '')}</textarea></label>
+${(() => { const I = habInfo(d), other = (d.res || []).filter(x => x !== d.planet && PLANETS[x]).map(x => PLANETS[x].name);
+  return `<h4>Where it lives</h4><canvas id="wsHab" width="300" height="190" style="position:static;display:block;width:100%;height:auto;aspect-ratio:300/190;border-radius:8px;border:1px solid #2c3a49"></canvas>
+<div style="display:grid;grid-template-columns:95px 1fr;gap:3px 6px;margin-top:6px;font-size:12.5px"><span style="color:#9fb0c2">Planet</span><span>${esc(PLANETS[d.planet].full || PLANETS[d.planet].name)}</span>
+<span style="color:#9fb0c2">Layer</span><span>${esc(I.layer)}</span><span style="color:#9fb0c2">Home</span><span>${esc(I.home)}</span>
+<span style="color:#9fb0c2">Moves</span><span>${I.mv.list.length ? I.mv.list.map(k => MOVE_INFO[k].icon + ' ' + MOVE_INFO[k].name).join(', ') : '🚶 Walks'}</span>
+<span style="color:#9fb0c2">Diet</span><span>${esc((DIETS[d.diet] || {}).name || d.diet || '?')}</span><span style="color:#9fb0c2">Behaviour</span><span>${esc({ grazer: 'Peaceful', territorial: 'Territorial', predator: 'Predator' }[d.behavior] || d.behavior || '?')}</span>
+${other.length ? `<span style="color:#9fb0c2">Also survives</span><span>${esc(other.join(', '))}</span>` : ''}</div>`; })()}
 <small style="color:#7f8b99">${esc(PLANETS[d.planet].name)} · ${esc(d.rarity || d.kind)} · id: ${d.id}${NAME_LOOKED[d.id] ? ' · looks like: ' + esc(NAME_LOOKED[d.id].startsWith('an:') ? NAME_LOOKED[d.id].slice(3) : SPECIES[NAME_LOOKED[d.id]].name) : ''}</small>
 <h4>Body</h4>
 <label class="w"><span>Based on</span><select data-l="tpl">${tpl === 'sig' ? '<option value="sig" selected>Signature (premium) body</option>' : ''}<option value="alien"${tpl === 'alien' ? ' selected' : ''}>Pure alien body</option><optgroup label="Animal-inspired">${opts(ANIMALS.map(a => ['an:' + a, a[0].toUpperCase() + a.slice(1)]), tpl)}</optgroup><optgroup label="Earth species & myths">${opts(SPS.map(k => ['sp:' + k, SPECIES[k].name]), tpl)}</optgroup></select></label>
+${L.crab ? '<small style="color:#7f8b99">This hermit crab has a hand-drawn body: the colour sliders change its claws, legs and shell, but the shape sliders don\'t apply.</small>' : ''}
 ${L.sp ? '<small style="color:#7f8b99">Earth-species bodies use the real animal\'s shape, so some body sliders below have little effect. Switch to an alien or animal-inspired body for full control.</small>' : ''}
 ${sel('body', 'Body shape', BODY.map((b, i) => [i, b]))}
 ${chk('humanoid', 'Walks upright')}
@@ -7539,6 +7839,7 @@ ${sel('ult', 'Ultimate', [['', '(none)']].concat(ULTL.map(k => [k, AB[k].name]))
   const cv = q('wsCv'), cx = cv.getContext('2d');
   function frame(ms) {
     if (!document.body.contains(W)) return;
+    { const hc = document.getElementById('wsHab'); if (hc && cur && (frame.n = (frame.n || 0) + 1) % 3 === 0) drawHabMap(hc, cur); }
     const t = ms / 1000; cx.clearRect(0, 0, cv.width, cv.height);
     cx.strokeStyle = 'rgba(255,255,255,.05)'; for (let i = 0; i < cv.width; i += 40) { cx.beginPath(); cx.moveTo(i, 0); cx.lineTo(i, cv.height); cx.moveTo(0, i); cx.lineTo(cv.width, i); cx.stroke(); }
     if (cur) {
