@@ -944,6 +944,7 @@ for (const [list, kind] of [[EARTH_ANIMALS, 'wild'], [EARTH_MYTHS, 'myth'], [EAR
   const f = {}, feats = []; for (const tok of r[14].split(/\s+/).filter(Boolean)) { const m = tok.split('='); if (m.length === 2) f[m[0]] = isNaN(+m[1]) ? m[1] : +m[1]; else feats.push(tok); }
   SPECIES[slug(r[0])] = { name: r[0], rarity: r[1], tpl: r[2], arch: r[3], cover: r[4], hsl: [r[5], r[6], r[7]], mark: r[8], pat: r[9], size: r[10], ab: r[11], diet: r[12], beh: r[13], f, feats, lore: r[15], kind };
 }
+for (const pid in MYTH_WORLDS) for (const r of MYTH_WORLDS[pid]) SPECIES[slug(r[0])].world = pid;
 // Earth's mythical beasts use the prehistoric (Ancient DNA) slot; its cryptids join the mutant roster
 RAW.push(...EARTH_MYTHS.map(r => [r[0], 'earth', 'prehistoric', r[11], r[16] || [], r[15]]));
 RAW_MUTANT.push(...EARTH_CRYPTIDS.map(r => [r[0], 'earth', r[11], r[2], r[2], r[16], r[17], r[18]]));
@@ -1262,7 +1263,7 @@ const SHIFTERS = { kitsune: ['earth', 'dark', 'heaven'], phoenix: ['earth', 'hel
     const L = def.look, S = SPECIES[def.id];
     if (S) {
       const has = k => S.feats.includes(k);
-      L.sp = def.id; L.feats = S.feats.slice(); L.spf = Object.assign({}, S.f);
+      L.sp = def.id; L.feats = S.feats.slice(); L.spf = Object.assign({}, S.f); L.myth = S.world || null;
       L.theme = { k: 'animal', s: S.tpl };
       [L.hue, L.sat, L.lig] = S.hsl; L.hue2 = S.hsl[0];
       if (S.pat < 0) { L.noMark = true; delete L.markCol; } else { L.noMark = false; L.pattern = S.pat; L.markCol = S.mark || 'dark'; L.patN = 7; }
@@ -1704,6 +1705,8 @@ function anatomy(def) {
     for (const k of ['neck', 'snout', 'tail', 'head']) if (f[k] != null) P[k] = f[k];
     for (const k of ['len', 'wid', 'legL', 'legT']) if (f[k] != null) P[k] *= f[k];
     if (f.pairs) P.pairs = f.pairs;
+    if (L.myth === 'hell') { P.wid *= 1.14; if (P.tail > 0) P.tail *= 1.3; P.legT *= 1.12; if (P.head) P.head *= 1.08; }
+    if (L.myth === 'heaven') { P.wid *= 0.86; P.len *= 1.08; P.legL *= 1.14; if (P.neck > 0) P.neck *= 1.25; if (P.tail > 0) P.tail *= 1.2; }
     if (ft.includes('hood')) P.hood = true; if (ft.includes('stinger')) P.stinger = true; if (ft.includes('bushy')) P.bushy = true;
     if (ft.some(x => ['bigEars', 'elephantEars', 'smallEars', 'longEars', 'tufts'].includes(x))) P.ear = false;
     if (ft.includes('noFur') || SPX.cover !== 'fur') P.coat = null;
@@ -1921,6 +1924,77 @@ function drawMarkings(c, P, B, r, t, st, L, acc) { // species pattern
   c.restore();
 }
 // ---- Real-animal and mythic features (Earth species): ears, trunks, tusks, antlers, horns, manes, quills, markings...
+// ---- Myth worlds: Hell and Heaven beasts have their own design language, so they never look like Earth's animals
+function drawMythWorld(c, layer, def, P, L, B, r, st, t, ph, C) {
+  const W = L.myth; if (!W || st < 1) return;
+  const N = B.N, hw = B.hw, hy = B.hy, hb = B.headBack, hm = B.headMid, hl = B.hl, F = Math.max(0.4, STG.feat[st]), rnd = mulberry32(L.seed2 + 4242);
+  const ft = L.feats || [], horned = ft.some(k => /^horn|antler/.test(k)), body0 = N[Math.min(2, N.length - 1)].x, bodyX = [B.hipX, B.neckX];
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  if (W === 'hell') {
+    const pulse = 0.65 + 0.35 * Math.sin(t * 3 + ph);
+    if (layer === 'back' && B.tl > 0) { // spade-tipped devil tail
+      const tp = B.tailTip, n1 = N[Math.min(1, N.length - 1)], a = Math.atan2(tp.y - n1.y, tp.x - n1.x), s = r * 0.2 * F;
+      c.save(); c.translate(tp.x, tp.y); c.rotate(a); c.fillStyle = C.deep; c.strokeStyle = '#1a0604'; c.lineWidth = r * 0.02;
+      c.beginPath(); c.moveTo(s * 1.3, 0); c.quadraticCurveTo(s * 0.2, -s * 0.95, -s * 0.15, -s * 0.55); c.lineTo(0, 0); c.lineTo(-s * 0.15, s * 0.55); c.quadraticCurveTo(s * 0.2, s * 0.95, s * 1.3, 0); c.fill(); c.stroke(); c.restore();
+    }
+    if (layer === 'inner') { // glowing lava cracks in charred hide
+      c.strokeStyle = `rgba(255,${90 + 50 * pulse | 0},20,${0.55 + 0.35 * pulse})`; c.lineWidth = Math.max(1, r * 0.028);
+      if (LOD_HI) { c.shadowColor = '#ff5a10'; c.shadowBlur = r * 0.25; }
+      const n = LOD_HI ? 9 : 5;
+      for (let i = 0; i < n; i++) { let x = bodyX[0] + rnd() * (bodyX[1] - bodyX[0]); const s0 = spineAt(N, x); let y = s0.y + (rnd() - 0.5) * s0.w * 1.4;
+        c.beginPath(); c.moveTo(x, y); for (let k = 0; k < 3; k++) { x += (rnd() - 0.5) * r * 0.3; y += (rnd() - 0.5) * r * 0.22; const s1 = spineAt(N, x); y = clamp(y, s1.y - s1.w * 0.85, s1.y + s1.w * 0.85); c.lineTo(x, y); } c.stroke(); }
+      c.shadowBlur = 0;
+    }
+    if (layer === 'top') {
+      // bone spikes down the spine
+      const x0 = Math.max(body0, B.hipX - r * 0.35), x1 = B.neckX, n = 7;
+      for (let i = 0; i < n; i++) { const x = x0 + (x1 - x0) * (i / (n - 1)), s0 = spineAt(N, x), h = r * (0.1 + 0.12 * Math.sin(Math.PI * (i + 0.5) / n)) * F, b = r * 0.06;
+        c.fillStyle = '#e9dcc0'; c.strokeStyle = '#3a2418'; c.lineWidth = r * 0.014;
+        c.beginPath(); c.moveTo(x - b, s0.y - b * 0.5); c.lineTo(x - h * 0.9, s0.y); c.lineTo(x - b, s0.y + b * 0.5); c.lineTo(x + b, s0.y); c.closePath(); c.fill(); c.stroke(); }
+      if (LOD_FULL && B.tl > 0) { const tp = B.tailTip; for (let i = 0; i < 5; i++) { const k = ((t * 0.7 + i / 5 + ph) % 1); c.fillStyle = `rgba(255,${120 + 80 * (1 - k) | 0},30,${(1 - k) * 0.85})`; c.beginPath(); c.arc(tp.x - k * r * 0.9, tp.y + Math.sin(i * 2.3 + t * 3) * r * 0.25 * k, r * 0.035 * (1 - k * 0.5), 0, 7); c.fill(); } }
+    }
+    if (layer === 'head') {
+      if (!horned && st >= 2) for (const sd of [-1, 1]) { // swept-back black horns
+        const bx = hm - hl * 0.05, by = hy + sd * hw * 0.55, L1 = r * 0.42 * F;
+        c.fillStyle = '#1c1210'; c.strokeStyle = '#000'; c.lineWidth = r * 0.012;
+        c.beginPath(); c.moveTo(bx + r * 0.05, by - sd * r * 0.05); c.quadraticCurveTo(bx - L1 * 0.4, by + sd * L1 * 0.55, bx - L1, by + sd * L1 * 0.35); c.quadraticCurveTo(bx - L1 * 0.35, by + sd * L1 * 0.2, bx - r * 0.05, by - sd * r * 0.02); c.closePath(); c.fill(); c.stroke();
+        c.strokeStyle = 'rgba(255,255,255,.12)'; c.beginPath(); c.moveTo(bx - L1 * 0.2, by + sd * L1 * 0.15); c.quadraticCurveTo(bx - L1 * 0.5, by + sd * L1 * 0.4, bx - L1 * 0.85, by + sd * L1 * 0.34); c.stroke(); }
+      const ex = hm + hl * 0.2; c.fillStyle = `rgba(255,${150 + 60 * pulse | 0},40,${0.7 + 0.3 * pulse})`; if (LOD_HI) { c.shadowColor = '#ff6a10'; c.shadowBlur = r * 0.2; }
+      for (const sd of [-1, 1]) { c.beginPath(); c.ellipse(ex, hy + sd * hw * 0.42, r * 0.05, r * 0.03, 0, 0, 7); c.fill(); } c.shadowBlur = 0;
+    }
+  } else if (W === 'heaven') {
+    const glow = 0.7 + 0.3 * Math.sin(t * 2 + ph);
+    if (layer === 'back') { // flowing ribbons of light streaming from the tail
+      const base = N[Math.min(N.length - 1, B.tl > 0 ? 3 : 1)], n = 3;
+      for (let i = 0; i < n; i++) { const off = (i - 1) * r * 0.16, len = r * (1.3 + 0.25 * i) * F;
+        const g = c.createLinearGradient(base.x, 0, base.x - len, 0); g.addColorStop(0, `rgba(255,236,170,${0.65 * glow})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+        c.strokeStyle = g; c.lineWidth = r * (0.09 - i * 0.02); c.beginPath(); c.moveTo(base.x, base.y + off * 0.4);
+        for (let k = 1; k <= 8; k++) { const u = k / 8; c.lineTo(base.x - len * u, base.y + off + Math.sin(t * 3 + ph + u * 5 + i * 1.7) * r * 0.16 * u); } c.stroke(); }
+    }
+    if (layer === 'inner') { // gold filigree inlaid along the body
+      c.strokeStyle = `rgba(232,190,80,${0.7 + 0.2 * glow})`; c.lineWidth = Math.max(1, r * 0.018);
+      for (const sd of [-1, 1]) { c.beginPath(); for (let k = 0; k <= 10; k++) { const x = bodyX[0] + (bodyX[1] - bodyX[0]) * k / 10, s0 = spineAt(N, x), y = s0.y + sd * s0.w * (0.55 + 0.12 * Math.sin(k * 1.9)); k ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke();
+        for (let k = 1; k < 4; k++) { const x = bodyX[0] + (bodyX[1] - bodyX[0]) * k / 4, s0 = spineAt(N, x), y = s0.y + sd * s0.w * 0.6; c.beginPath(); c.arc(x, y - sd * r * 0.05, r * 0.05, sd > 0 ? Math.PI : 0, sd > 0 ? Math.PI * 2 : Math.PI); c.stroke(); } }
+      const x = (bodyX[0] + bodyX[1]) / 2, s0 = spineAt(N, x), g = c.createRadialGradient(x, s0.y, 1, x, s0.y, s0.w * 1.2); g.addColorStop(0, `rgba(255,252,235,${0.35 * glow})`); g.addColorStop(1, 'rgba(255,252,235,0)'); c.fillStyle = g; c.beginPath(); c.ellipse(x, s0.y, (bodyX[1] - bodyX[0]) * 0.6, s0.w * 1.1, 0, 0, 7); c.fill();
+    }
+    if (layer === 'top') {
+      if (!L.wings && st >= 2) for (const sd of [-1, 1]) { const x = B.shX, s0 = spineAt(N, x); // feather tufts at the shoulders
+        for (let i = 0; i < 4; i++) { const a = sd * (1.25 + i * 0.22) + Math.sin(t * 3 + ph + i) * 0.05, len = r * (0.42 - i * 0.05) * F;
+          c.save(); c.translate(x - i * r * 0.05, s0.y + sd * s0.w * 0.7); c.rotate(Math.PI - a + (sd > 0 ? 0 : 0)); c.fillStyle = i % 2 ? '#fffaf0' : '#f3e6c4'; c.strokeStyle = 'rgba(180,150,80,.6)'; c.lineWidth = r * 0.01;
+          c.beginPath(); c.ellipse(len * 0.5, 0, len * 0.5, r * 0.06, 0, 0, 7); c.fill(); c.stroke(); c.restore(); } }
+      if (LOD_FULL) for (let i = 0; i < 5; i++) { const a = t * 0.8 + i * 1.256 + ph, R0 = r * (1.05 + 0.1 * Math.sin(t * 2 + i)), x = (bodyX[0] + bodyX[1]) / 2 + Math.cos(a) * R0, y = Math.sin(a) * R0 * 0.75, s = r * 0.035 * (0.6 + 0.4 * Math.sin(t * 4 + i));
+        c.fillStyle = 'rgba(255,245,200,.85)'; c.beginPath(); c.moveTo(x, y - s * 2); c.lineTo(x + s * 0.5, y); c.lineTo(x, y + s * 2); c.lineTo(x - s * 0.5, y); c.closePath(); c.fill(); c.beginPath(); c.moveTo(x - s * 2, y); c.lineTo(x, y + s * 0.5); c.lineTo(x + s * 2, y); c.lineTo(x, y - s * 0.5); c.closePath(); c.fill(); }
+    }
+    if (layer === 'head') {
+      if (st >= 2) { c.strokeStyle = `rgba(255,214,110,${0.8 + 0.2 * glow})`; c.lineWidth = Math.max(1.5, r * 0.045); if (LOD_HI) { c.shadowColor = '#ffd84a'; c.shadowBlur = r * 0.3; }
+        c.beginPath(); c.ellipse(hm - hl * 0.05, hy, hw * 0.62, hw * 1.25, 0, 0, 7); c.stroke(); c.shadowBlur = 0; }
+      c.fillStyle = '#f2c94c'; const dx = hm + hl * 0.05; c.beginPath(); c.moveTo(dx + r * 0.07, hy); c.lineTo(dx, hy - r * 0.035); c.lineTo(dx - r * 0.05, hy); c.lineTo(dx, hy + r * 0.035); c.closePath(); c.fill(); // forehead jewel
+      const ex = hm + hl * 0.2; c.fillStyle = `rgba(200,235,255,${0.6 + 0.3 * glow})`; if (LOD_HI) { c.shadowColor = '#bfe8ff'; c.shadowBlur = r * 0.15; }
+      for (const sd of [-1, 1]) { c.beginPath(); c.ellipse(ex, hy + sd * hw * 0.42, r * 0.04, r * 0.025, 0, 0, 7); c.fill(); } c.shadowBlur = 0;
+    }
+  }
+  c.restore();
+}
 function drawSpecies(c, layer, def, P, L, B, r, st, t, ph, C, moving) {
   const ft = L.feats; if (!ft || !ft.length) return;
   const has = k => ft.includes(k), N = B.N, hb = B.headBack, hm = B.headMid, hw = B.hw, hl = B.hl, hy = B.hy, sn = B.snoutX, F = Math.max(0.35, STG.feat[st]);
@@ -2409,6 +2483,7 @@ function drawAlienHead(c, hx, hy, hr, L, P, t, ph, C, opt, flat) {
 }
 const ALIEN_ARCH = new Set(['quad', 'lizard', 'toad', 'raptor', 'humanoid', 'serpent', 'fish', 'squid']);
 function realKind(def, P, L) {
+  if (L.myth) return null; // Hell and Heaven myths have their own design, not Earth's real-animal look
   const S = L.sp && SPECIES[L.sp];
   if (S && (S.tpl === 'eagle' || S.tpl === 'owl') && !REAL_SKIP.test(S.name)) return 'bird';
   if (P.arch === 'insect' || P.arch === 'beetle') return 'bug';
@@ -2899,7 +2974,7 @@ function drawAlien(ctx, def, x, y, r, ang, t, opt = {}) {
   if (P.arch === 'squid') { ctx.strokeStyle = dark; ctx.lineCap = 'round'; const nt = st === 1 ? 4 : P.tent; for (let i = 0; i < nt; i++) { const oy = (i - (nt - 1) / 2) * r * 0.14, tl = r * (st === 1 ? 0.9 : 1.5) * (i % 3 === 0 ? 1.3 : 1); ctx.lineWidth = r * (i % 3 === 0 ? 0.09 : 0.12); ctx.beginPath(); ctx.moveTo(B.hipX + r * 0.1, oy); ctx.bezierCurveTo(B.hipX - tl * 0.35, oy + Math.sin(t * 6 + i) * r * 0.25, B.hipX - tl * 0.7, oy * 1.6 + Math.sin(t * 5 + i * 1.3) * r * 0.3, B.hipX - tl, oy * 2 + Math.sin(t * 4 + i) * r * 0.35); ctx.stroke(); } }
   const TC = { body, dark, deep, light, acc };
   drawTheme(ctx, 'back', def, P, L, B, r, st, t, ph, F, TC, hi, moving);
-  drawSpecies(ctx, 'back', def, P, L, B, r, st, t, ph, TC, moving);
+  drawSpecies(ctx, 'back', def, P, L, B, r, st, t, ph, TC, moving); drawMythWorld(ctx, 'back', def, P, L, B, r, st, t, ph, TC);
   drawTitanPrimo(ctx, 'back', def, P, L, B, r, st, t, ph, TC, opt);
   if (L.sig) drawSig(ctx, 'back', def, P, L, B, r, st, t, ph, F, TC, hi, moving);
   if (L.mut) drawMutant(ctx, 'back', def, P, L, B, r, st, t, ph, F, TC, hi, moving);
@@ -2938,7 +3013,7 @@ function drawAlien(ctx, def, x, y, r, ang, t, opt = {}) {
   drawMarkings(ctx, P, B, r, t, st, L, L.markCol ? (L.markCol === 'dark' ? deep : L.markCol === 'light' ? light : L.markCol) : acc);
   { const c0 = Math.cos(-ang), s0 = Math.sin(-ang); let ux = -0.35 * c0 + 0.45 * s0, uy = -0.35 * s0 - 0.45 * c0; const ln = Math.hypot(ux, uy) || 1; drawVolume(ctx, N, r, ux / ln, uy / ln); }
   drawDetails(ctx, 'inner', def, P, L, B, r, st, t, ph, F, { body, dark, deep, light, acc }, moving);
-  drawAdaptive(ctx, 'inner', def, P, L, B, r, st, t, ph, { body, dark, deep, light, acc }, opt); drawHabitat(ctx, 'inner', def, P, L, B, r, st, t, ph, TC); drawSpecies(ctx, 'inner', def, P, L, B, r, st, t, ph, TC, moving); drawTitanPrimo(ctx, 'inner', def, P, L, B, r, st, t, ph, { body, dark, deep, light, acc }, opt);
+  drawAdaptive(ctx, 'inner', def, P, L, B, r, st, t, ph, { body, dark, deep, light, acc }, opt); drawHabitat(ctx, 'inner', def, P, L, B, r, st, t, ph, TC); drawMythWorld(ctx, 'inner', def, P, L, B, r, st, t, ph, TC); drawSpecies(ctx, 'inner', def, P, L, B, r, st, t, ph, TC, moving); drawTitanPrimo(ctx, 'inner', def, P, L, B, r, st, t, ph, { body, dark, deep, light, acc }, opt);
   drawRarityDetail(ctx, 'inner', def, P, L, B, r, st, t, ph, { body, dark, deep, light, acc });
   if (L.mut) drawMutant(ctx, 'inner', def, P, L, B, r, st, t, ph, F, { body, dark, deep, light, acc }, hi, moving);
   if (L.sig) drawSig(ctx, 'inner', def, P, L, B, r, st, t, ph, F, { body, dark, deep, light, acc }, hi, moving);
@@ -2989,7 +3064,7 @@ function drawAlien(ctx, def, x, y, r, ang, t, opt = {}) {
   // insect wings over the back
   if (L.wings && (P.arch === 'insect' || P.arch === 'beetle')) { const flap = moving && RAIR > 0.5 ? 0.5 + 0.5 * Math.abs(Math.sin(t * 30 + ph)) : 0.15 * (RAIR_SET ? 0.4 + 0.6 * AIRK() : 1), ws = [0, 0.4, 0.75, 1, 1.05, 1.1][st]; ctx.fillStyle = 'rgba(220,240,255,.35)'; ctx.strokeStyle = 'rgba(80,100,120,.5)'; ctx.lineWidth = r * 0.02; for (const s of [-1, 1]) for (let k = 0; k < 2; k++) { ctx.save(); ctx.translate(B.shX * 0.5 - k * r * 0.15, s * r * 0.05); ctx.rotate(Math.PI + s * (0.25 + flap * 0.6 + k * 0.15)); ctx.beginPath(); ctx.ellipse(r * 0.55 * ws, 0, r * 0.6 * ws, r * 0.16 * ws, 0, 0, 7); ctx.fill(); ctx.stroke(); ctx.restore(); } }
   drawTheme(ctx, 'top', def, P, L, B, r, st, t, ph, F, TC, hi, moving);
-  drawSpecies(ctx, 'top', def, P, L, B, r, st, t, ph, TC, moving); drawHabitat(ctx, 'top', def, P, L, B, r, st, t, ph, TC);
+  drawSpecies(ctx, 'top', def, P, L, B, r, st, t, ph, TC, moving); drawMythWorld(ctx, 'top', def, P, L, B, r, st, t, ph, TC); drawHabitat(ctx, 'top', def, P, L, B, r, st, t, ph, TC);
   if (L.sig) drawSig(ctx, 'top', def, P, L, B, r, st, t, ph, F, TC, hi, moving);
   if (L.mut) drawMutant(ctx, 'top', def, P, L, B, r, st, t, ph, F, TC, hi, moving);
   if (L.labBoss && !opt.worldBoss) drawLabImplants(ctx, def, B, r, st, t, ph);
@@ -2997,7 +3072,7 @@ function drawAlien(ctx, def, x, y, r, ang, t, opt = {}) {
   // ---------- head features
   drawHead(ctx, def, P, L, B, r, st, t, ph, F, form, body, dark, deep, light, acc, apex, moving);
   drawTheme(ctx, 'head', def, P, L, B, r, st, t, ph, F, TC, hi, moving);
-  drawSpecies(ctx, 'head', def, P, L, B, r, st, t, ph, TC, moving); drawHabitat(ctx, 'head', def, P, L, B, r, st, t, ph, TC);
+  drawSpecies(ctx, 'head', def, P, L, B, r, st, t, ph, TC, moving); drawMythWorld(ctx, 'head', def, P, L, B, r, st, t, ph, TC); drawHabitat(ctx, 'head', def, P, L, B, r, st, t, ph, TC);
   drawDetails(ctx, 'head', def, P, L, B, r, st, t, ph, F, TC, moving);
   drawTitanPrimo(ctx, 'head', def, P, L, B, r, st, t, ph, TC, opt); drawHoliday(ctx, 'head', L, B, r, st, t, ph); drawHalo(ctx, L, B, r, st, t);
   if (L.sig) drawSig(ctx, 'head', def, P, L, B, r, st, t, ph, F, TC, hi, moving);
