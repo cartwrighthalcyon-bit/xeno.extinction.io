@@ -1279,6 +1279,119 @@ const CODE_HASHES = {
   if (lev) make(lev.id, { id: 'firstcontact', name: 'First Contact Leviathan', lore: 'The first alien ever to answer a signal from Earth.' }, { hue: 140, sat: 70, lig: 48, hue2: 60, glow: true });
 })();
 // =====================================================================
+//  REALISTIC NAME LOOKS (preview): creatures whose name says what they are (Blizzard Bat, Icicle Eel, Frostfang...)
+//  take the body of that real animal, recoloured for their planet. Turn off in the Workshop to compare.
+// =====================================================================
+const NAME_LOOKS = [ // [pattern in the name, real animal per planet ('*' = any planet); 'an:x' = animal-inspired body when there is no real species]
+  [/(?<!mam)moth/, { '*': ['monarchbutterfly'] }],
+  [/mammoth/, { '*': ['africanelephant'] }],
+  [/(?<!com)bat\b|bat$/, { '*': ['an:bat'] }],
+  [/(?<!st)eel/, { '*': ['electriceel'] }],
+  [/serpent|snake|viper|wyrm/, { dune: ['mongoliandeathworm', 'westerndiamondback'], water: ['greenanaconda'], '*': ['kingcobra', 'reticulatedpython', 'blackmamba', 'westerndiamondback'] }],
+  [/worm|leech|grub|larva/, { '*': ['mongoliandeathworm'] }],
+  [/hydra/, { '*': ['lernaeanhydra'] }],
+  [/(?<!g)ray\b|ray$|manta|glider/, { '*': ['mantaray'] }],
+  [/kraken|squid|octo|pulp|jelly|drifter/, { '*': ['giantpacificoctopus'] }],
+  [/snapper/, { '*': ['alligatorsnappingturtle'] }],
+  [/shell/, { water: ['alligatorsnappingturtle'], dune: ['ninebandedarmadillo', 'galapagostortoise'], mars: ['ninebandedarmadillo', 'groundpangolin'], '*': ['galapagostortoise', 'alligatorsnappingturtle'] }],
+  [/fin\b|fin$|gill/, { '*': ['greatwhiteshark', 'orca', 'bottlenosedolphin'] }],
+  [/toad/, { '*': ['americanbullfrog'] }],
+  [/frog/, { '*': ['poisondartfrog'] }],
+  [/hare\b|hare$/, { '*': ['europeanrabbit'] }],
+  [/hopper|leaper|skipper/, { dune: ['redkangaroo', 'europeanrabbit'], jungle: ['poisondartfrog', 'americanbullfrog'], robo: ['redkangaroo'], '*': ['europeanrabbit', 'redkangaroo', 'americanbullfrog'] }],
+  [/skink|lizard|gecko/, { '*': ['tokaygecko', 'gilamonster', 'komododragon'] }],
+  [/crawler|creeper/, { dune: ['gilamonster'], jungle: ['pantherchameleon', 'greeniguana'], hell: ['komododragon', 'gilamonster'], mars: ['giantcentipede', 'emperorscorpion'], space: ['giantpacificoctopus', 'giantcentipede'], '*': ['giantcentipede', 'komododragon'] }],
+  [/scorp/, { '*': ['emperorscorpion'] }],
+  [/scuttler|skitter/, { '*': ['emperorscorpion', 'giantcentipede'] }],
+  [/spider|weaver|spinner|widow|mite\b|mite$/, { '*': ['goliathbirdeater', 'blackwidow'] }],
+  [/mantis/, { '*': ['prayingmantis'] }],
+  [/beetle/, { '*': ['stagbeetle', 'herculesbeetle'] }],
+  [/drone|hornet|wasp/, { '*': ['asiangianthornet'] }],
+  [/fang|jaw/, { water: ['greatwhiteshark'], ice: ['arcticwolf', 'arcticfox'], dune: ['fennecfox', 'spottedhyena', 'africanwilddog'], hell: ['graywolf', 'spottedhyena'], mars: ['coyote', 'dingo'], jungle: ['manedwolf'], '*': ['graywolf', 'coyote', 'dingo'] }],
+  [/wolf|hound/, { ice: ['arcticwolf'], dune: ['spottedhyena', 'africanwilddog'], '*': ['graywolf', 'dingo', 'africanwilddog'] }],
+  [/pup\b|pup$|fox/, { ice: ['arcticfox'], dune: ['fennecfox'], '*': ['redfox', 'fennecfox'] }],
+  [/tail/, { ice: ['arcticfox'], '*': ['redfox', 'fennecfox'] }],
+  [/lion/, { '*': ['africanlion'] }],
+  [/stalker|prowler|skulk/, { water: ['saltwatercrocodile'], ice: ['snowleopard'], dune: ['cheetah', 'serval'], dark: ['blackpanther'], jungle: ['jaguar', 'ocelot'], hell: ['leopard'], space: ['blackpanther'], heaven: ['snowleopard'], '*': ['cougar', 'eurasianlynx'] }],
+  [/lurker/, { dune: ['westerndiamondback', 'gilamonster'], '*': ['saltwatercrocodile', 'americanalligator'] }],
+  [/maw/, { water: ['greatwhiteshark'], space: ['greatwhiteshark'], dune: ['mongoliandeathworm'], mars: ['mongoliandeathworm'], hell: ['saltwatercrocodile', 'hippopotamus'], dark: ['spottedhyena'], ice: ['polarbear'], '*': ['saltwatercrocodile', 'americanalligator'] }],
+  [/claw/, { ice: ['polarbear'], mars: ['emperorscorpion'], dune: ['emperorscorpion'], water: ['alligatorsnappingturtle'], '*': ['grizzlybear', 'wolverine'] }],
+  [/pelt/, { ice: ['polarbear', 'arcticfox', 'snowleopard'], '*': ['grizzlybear', 'wolverine'] }],
+  [/horn/, { ice: ['bighornsheep', 'reindeer'], dune: ['whiterhinoceros', 'capebuffalo'], '*': ['whiterhinoceros', 'blackrhinoceros', 'bighornsheep', 'capebuffalo'] }],
+  [/elk|deer|stag\b/, { '*': ['reindeer', 'whitetaileddeer'] }],
+  [/tusk/, { ice: ['africanelephant'], '*': ['wildboar', 'africanelephant'] }],
+  [/back/, { dune: ['ninebandedarmadillo', 'groundpangolin'], mars: ['ninebandedarmadillo', 'groundpangolin'], ice: ['americanbison'], hell: ['groundpangolin'], '*': ['ninebandedarmadillo', 'americanbison'] }],
+  [/spine/, { '*': ['northamericanporcupine', 'greeniguana', 'europeanhedgehog'] }],
+  [/digger|burrow/, { '*': ['honeybadger', 'ninebandedarmadillo', 'meerkat', 'groundpangolin'] }],
+  [/spitter/, { dune: ['dromedarycamel', 'kingcobra'], '*': ['kingcobra', 'blackmamba'] }],
+  [/strider|walker/, { dune: ['dromedarycamel', 'commonostrich'], ice: ['reindeer'], robo: ['commonostrich'], '*': ['wildhorse', 'plainszebra', 'commonostrich'] }],
+  [/slider/, { ice: ['emperorpenguin'], '*': ['eurasianotter'] }],
+  [/wing/, { heaven: ['baldeagle', 'goldeneagle'], ice: ['snowyowl'], dark: ['an:bat'], hell: ['an:bat', 'commonraven'], '*': ['peregrinefalcon', 'goldeneagle', 'commonraven'] }],
+  [/owl|eye\b|eye$|seer|whisper/, { ice: ['snowyowl'], '*': ['greathornedowl', 'barnowl'] }],
+  [/eagle|hawk|falcon/, { '*': ['goldeneagle', 'baldeagle', 'harpyeagle'] }],
+  [/raven|crow/, { '*': ['commonraven'] }],
+  [/dove/, { '*': ['peregrinefalcon'] }],
+  [/sloth|ape\b|ape$/, { '*': ['borneanorangutan', 'chimpanzee'] }],
+  [/brute|golem|hulk|titan/, { ice: ['yeti'], '*': ['silverbackgorilla'] }],
+  [/tank/, { '*': ['whiterhinoceros', 'groundpangolin'] }],
+  [/imp\b|imp$|fiend|demon/, { '*': ['mandrill', 'olivebaboon'] }],
+  [/crest/, { '*': ['greeniguana', 'harpyeagle'] }],
+  [/yeti/, { '*': ['yeti'] }],
+];
+const NAME_LOOK_SKIP = ['premium', 'boss', 'mutant', 'event', 'exclusive', 'basic', 'lucky', 'elder'];
+const CLASSIC_LOOKS_KEY = 'xenoio_classic_looks';
+const NAME_LOOKED = {}; // id -> real animal it now looks like
+function nameLookFor(def) {
+  if (def.planet === 'earth' || def.look.sp || def.look.sig || NAME_LOOK_SKIP.includes(def.kind)) return null;
+  const n = def.name.toLowerCase(); let best = null;
+  for (const [rx, pools] of NAME_LOOKS) { const g = new RegExp(rx.source, 'g'); let m;
+    while ((m = g.exec(n))) { const end = m.index + m[0].length; if (!best || end > best.end || (end === best.end && m[0].length > best.len)) best = { end, len: m[0].length, pools }; } }
+  if (!best) return null;
+  const pool = (best.pools[def.planet] || best.pools['*']).filter(k => k.startsWith('an:') ? NATURAL[k.slice(3)] : SPECIES[k]);
+  return pool.length ? pool[hashStr(def.id + '|real') % pool.length] : null;
+}
+function planetTint(planet, h, s, l) { // keep the real animal's colouring, shifted towards its world
+  const mix = (a, b, k) => { let d = ((b - a + 540) % 360) - 180; return (a + d * k + 360) % 360; };
+  switch (planet) {
+    case 'ice': return [mix(h, 205, 0.25), Math.min(s, 28), Math.max(l, 74)];
+    case 'hell': return [mix(h, 8, 0.55), Math.max(s, 55), clamp(l * 0.7, 14, 42)];
+    case 'dark': return [mix(h, 268, 0.35), s * 0.7, clamp(l * 0.6, 10, 34)];
+    case 'dune': return [mix(h, 36, 0.5), clamp(s, 32, 58), clamp(l, 46, 66)];
+    case 'mars': return [mix(h, 12, 0.6), clamp(s * 0.6 + 34, 42, 72), clamp(l * 0.8 + 6, 30, 52)];
+    case 'heaven': return [mix(h, 45, 0.2), Math.min(s, 30), Math.max(l, 80)];
+    case 'space': return [mix(h, 250, 0.5), clamp(s + 20, 30, 80), clamp(l * 0.8, 18, 50)];
+    case 'water': return [mix(h, 195, 0.3), s, l];
+    case 'jungle': return [mix(h, 110, 0.2), s, l];
+    case 'robo': return [h, Math.min(s, 14), clamp(l, 44, 66)];
+  }
+  return [h, s, l];
+}
+(function applyNameLooks() {
+  try { if (localStorage.getItem(CLASSIC_LOOKS_KEY) === '1') return; } catch (e) {}
+  const ARCH_IDX = { toad: 0, lizard: 1, beetle: 2, insect: 3, squid: 4, serpent: 6, quad: 7, raptor: 7, humanoid: 7, fish: 4 };
+  for (const def of ALIENS) {
+    const real = nameLookFor(def); if (!real) continue;
+    const L = def.look; delete L.mut; delete L.sig; L.rainbow = false; L.eyes = 2; L.eyeStyle = 0; L.horns = 0; L.legStyle = 0; L.mouth = 0;
+    if (real.startsWith('an:')) { const a = real.slice(3), N = NATURAL[a];
+      delete L.sp; delete L.feats; delete L.spf; L.theme = { k: 'animal', s: a }; L.heads = 1; L.humanoid = false;
+      L.wings = a === 'bat' ? 1 : 0; L.tail = 0;
+      [L.hue, L.sat, L.lig] = planetTint(def.planet, N[0], N[1], N[2]); L.hue2 = L.hue;
+      if (N[3] < 0) L.noMark = true; else { L.noMark = false; L.pattern = N[3]; if (N[4]) L.markCol = N[4]; }
+    } else { const S = SPECIES[real], has = k => S.feats.includes(k);
+      L.sp = real; L.feats = S.feats.slice(); L.spf = Object.assign({}, S.f); L.theme = { k: 'animal', s: S.tpl };
+      L.heads = S.f.heads || 1; L.humanoid = S.arch === 'humanoid';
+      L.body = ARCH_IDX[S.arch] != null ? ARCH_IDX[S.arch] : 7; L.tail = has('stinger') ? 2 : 0;
+      const flier = has('wingsF') || has('wingsM') || has('insectWings') || has('butterfly') || (['eagle', 'owl'].includes(S.tpl) && S.arch === 'raptor' && !has('flightless'));
+      L.wings = flier ? 1 : 0; L.wingF = has('wingsF') || (['eagle', 'owl'].includes(S.tpl) && !has('wingsM'));
+      L.beakCol = /Raven|Penguin|Cassowary|Harpy/.test(S.name) ? '#2a2a2e' : /Ostrich/.test(S.name) ? '#e6a890' : '#e8b030';
+      [L.hue, L.sat, L.lig] = planetTint(def.planet, S.hsl[0], S.hsl[1], S.hsl[2]); L.hue2 = L.hue;
+      if (S.pat < 0) { L.noMark = true; delete L.markCol; } else { L.noMark = false; L.pattern = S.pat; L.markCol = S.mark || 'dark'; L.patN = 7; }
+      if (has('panda')) L.legCol = '#141414'; else delete L.legCol;
+    }
+    delete L.an; NAME_LOOKED[def.id] = real;
+  }
+})();
+// =====================================================================
 //  CREATURE MODS: your hand-made changes to any creature (made in the Creature Workshop: open the game with ?workshop)
 //  Paste the Workshop's "Export" text between the braces below to ship the changes to every player.
 // =====================================================================
@@ -7129,7 +7242,7 @@ requestAnimationFrame(t => { last = t; running = true; loop(t); });
 @media(max-width:900px){#ws{grid-template-columns:1fr;grid-template-rows:48px 180px 300px 1fr}#ws header{grid-column:1}#wsL{border:0}}`;
   document.head.appendChild(css);
   const W = document.createElement('div'); W.id = 'ws';
-  W.innerHTML = `<header><b>🧬 XENO.IO Creature Workshop</b><span id="wsMsg"></span><button id="wsExp">Export</button><button id="wsImp">Import</button><button id="wsClose">Close</button></header>
+  W.innerHTML = `<header><b>🧬 XENO.IO Creature Workshop</b><span id="wsMsg"></span><button id="wsReal"></button><button id="wsExp">Export</button><button id="wsImp">Import</button><button id="wsClose">Close</button></header>
 <div id="wsL"><div class="f"><input id="wsQ" placeholder="Search ${ALIENS.length} creatures…"><select id="wsP"><option value="">All planets</option>${PLANET_IDS.map(p => `<option value="${p}">${esc(PLANETS[p].name)}</option>`).join('')}</select><label style="display:flex;gap:6px;align-items:center;color:#9fb0c2"><input type="checkbox" id="wsOnly" style="width:auto"> Edited only</label></div><div id="wsList"></div></div>
 <div id="wsC"><canvas id="wsCv" width="560" height="560"></canvas><div class="bar"><span style="color:#9fb0c2">Stage</span>${[1, 2, 3, 4, 5].map(n => `<button data-st="${n}">${['Baby', 'Juvenile', 'Adult', 'Elder', 'Alpha'][n - 1]}</button>`).join('')}</div><div class="bar"><button id="wsMove" class="on">Walking</button><button id="wsSpin">Turn</button><button class="warn" id="wsReset">Reset this creature</button></div></div>
 <div id="wsR"></div>`;
@@ -7176,7 +7289,7 @@ requestAnimationFrame(t => { last = t; running = true; loop(t); });
 <h4>Identity</h4>
 <label class="w"><span>Name</span><input data-d="name" value="${esc(d.name)}" maxlength="40"></label>
 <label class="w"><span>Story</span><textarea data-d="lore" rows="3">${esc(d.lore || '')}</textarea></label>
-<small style="color:#7f8b99">${esc(PLANETS[d.planet].name)} · ${esc(d.rarity || d.kind)} · id: ${d.id}</small>
+<small style="color:#7f8b99">${esc(PLANETS[d.planet].name)} · ${esc(d.rarity || d.kind)} · id: ${d.id}${NAME_LOOKED[d.id] ? ' · looks like: ' + esc(NAME_LOOKED[d.id].startsWith('an:') ? NAME_LOOKED[d.id].slice(3) : SPECIES[NAME_LOOKED[d.id]].name) : ''}</small>
 <h4>Body</h4>
 <label class="w"><span>Based on</span><select data-l="tpl">${tpl === 'sig' ? '<option value="sig" selected>Signature (premium) body</option>' : ''}<option value="alien"${tpl === 'alien' ? ' selected' : ''}>Pure alien body</option><optgroup label="Animal-inspired">${opts(ANIMALS.map(a => ['an:' + a, a[0].toUpperCase() + a.slice(1)]), tpl)}</optgroup><optgroup label="Earth species & myths">${opts(SPS.map(k => ['sp:' + k, SPECIES[k].name]), tpl)}</optgroup></select></label>
 ${L.sp ? '<small style="color:#7f8b99">Earth-species bodies use the real animal\'s shape, so some body sliders below have little effect. Switch to an alien or animal-inspired body for full control.</small>' : ''}
@@ -7256,6 +7369,10 @@ ${sel('ult', 'Ultimate', [['', '(none)']].concat(ULTL.map(k => [k, AB[k].name]))
     try { const o = JSON.parse(q('wsXA').value.replace(/^\s*const CREATURE_MODS\s*=\s*/, '').replace(/;\s*$/, '')); let n = 0;
       for (const id in o) if (ALIEN[id]) { local[id] = o[id]; rebuild(ALIEN[id]); n++; } store(); renderList(); if (cur) select(cur.id); flash(n + ' imported'); }
     catch (e) { q('wsXP').textContent = 'That text could not be read: ' + e.message; return false; } }, 'go'], ['Cancel', null]]);
+  { let classic = false; try { classic = localStorage.getItem(CLASSIC_LOOKS_KEY) === '1'; } catch (e) {}
+    q('wsReal').textContent = classic ? 'Realistic looks: OFF' : 'Realistic looks: ON'; if (!classic) q('wsReal').className = 'go';
+    q('wsReal').title = 'Switch between the new realistic looks and the old ones to compare';
+    q('wsReal').onclick = () => { try { if (classic) localStorage.removeItem(CLASSIC_LOOKS_KEY); else localStorage.setItem(CLASSIC_LOOKS_KEY, '1'); } catch (e) {} location.reload(); }; }
   q('wsClose').onclick = () => { W.remove(); X.remove(); history.replaceState(null, '', location.pathname); };
 
   renderList(); select((ALIEN[save.equipped] || ALIENS[0]).id);
