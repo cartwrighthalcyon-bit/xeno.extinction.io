@@ -1558,6 +1558,9 @@ function applyCreatureMod(id, m) {
 //  [id, name, rarity, size, skill, body skill, diet, behaviour, built-in adaptations, home, underground?, look, story]
 // =====================================================================
 const DESERT_ROSTER = [
+  ['hatchling', 'Hatchling', 'common', 10, 'dash', null, 'omnivore', 'grazer', [], 'Anywhere on the dunes', false,
+    { hue: 34, sat: 22, lig: 62, hue2: 30, eyes: 2, eyeStyle: 0, eyeHue: 40, horns: 0, wings: 0, legs: 4, tail: 0.4, noMark: true },
+    'A placeholder baby alien, so the game still runs while the real desert creatures are being designed.'],
   ['dunegecko', 'Dune Gecko', 'common', 11, 'echoloc', ['wallscurry', 'Wall Scurry', 'its sticky toes', 2], 'insectivore', 'grazer', ['ears', 'heat'], 'Rock walls and dunes (climbs walls)', false,
     { arch: 'lizard', hue: 34, sat: 30, lig: 58, hue2: 24, frill: true, popEars: true, rockScales: true, geckoToes: true, eyes: 2, eyeStyle: 0, eyeHue: 45, horns: 0, wings: 0, legs: 4, tail: 0, noMark: true },
     'A small gecko that runs up rock walls. Its ears pop out when it echolocates, and rock scales cover it from head to tail.'],
@@ -1602,7 +1605,8 @@ const DESERT_ROSTER = [
   ['stormdrake', 'Storm Drake', 'legendary', 42, 'dustdevil', null, 'carnivore', 'predator', ['heat', 'night', 'sand'], 'Rides the sandstorms', false,
     { sp: 'westerndragon', hue: 30, sat: 45, lig: 48, wings: 1 }, 'The apex hunter of Kharr. It rides inside sandstorms and drops out of the dust onto its prey.'],
 ];
-const STARTER_IDS = ['dunegecko', 'sandkit', 'dunecrawler'];
+const STARTER_IDS = ['hatchling'];
+const DESERT_ACTIVE = new Set(['hatchling']); // every other desert design is removed: owners get their DNA back
 const DEFAULT_ID = STARTER_IDS[0];
 function applyDesign(d, m) { // give a creature a hand-made look (used by the desert roster)
   const L = d.look, k = m.look; delete L.mut; delete L.sig; delete L.an; L.rainbow = false;
@@ -1615,6 +1619,7 @@ function applyDesign(d, m) { // give a creature a hand-made look (used by the de
   const tmpl = {}; for (const r of ['common', 'uncommon', 'rare', 'epic', 'legendary']) tmpl[r] = ALIENS.find(a => a.kind === 'wild' && a.rarity === r);
   for (let i = ALIENS.length - 1; i >= 0; i--) { const a = ALIENS[i]; REMOVED_CUSTOM[a.id] = [(a.cost && a.cost.dna) || 0, (a.cost && a.cost.adna) || 0]; ALIENS.splice(i, 1); delete ALIEN[a.id]; }
   DESERT_ROSTER.forEach(([id, name, rarity, size, ability, body, diet, behavior, adapts, home, ug, look, lore], i) => {
+    if (!DESERT_ACTIVE.has(id)) { const c = tmpl[rarity].cost || {}; REMOVED_CUSTOM[id] = [rarity === 'common' && i <= 3 ? 0 : c.dna || 0, c.adna || 0]; return; }
     const d = JSON.parse(JSON.stringify(tmpl[rarity])); delete REMOVED_CUSTOM[id];
     Object.assign(d, { id, name, planet: 'dune', kind: STARTER_IDS.includes(id) ? 'basic' : 'wild', rarity, ability: AB[ability] ? ability : 'dash', lore, idx: i, res: ['dune'], forms: null, size, diet, behavior, home, ugHome: ug, adapts: adapts.slice(), custom: true, desert: true, seed: hashStr(id), myth: false, adapt: false });
     if (STARTER_IDS.includes(id)) { d.cost = { dna: 0 }; d.starter = true; }
@@ -1682,7 +1687,7 @@ function refundRemoved() {
   for (const k of ['skinSel', 'primordial', 'primoOn', 'skins']) if (save[k] && typeof save[k] === 'object' && !Array.isArray(save[k])) for (const id in save[k]) if (REMOVED_CREATURES[id] && !ALIEN[id]) delete save[k][id];
   if (!n) return;
   save.dna = (save.dna || 0) + dna; save.adna = (save.adna || 0) + adna; try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} // the cloud copy follows on the next sync
-  setTimeout(() => modal('The aliens are being redesigned', `Every alien creature has been taken out of the game while they are redesigned, and new players now start as Earth animals. You owned ${n} of the removed creatures, so you get back what they cost: <b>${dna.toLocaleString()} DNA</b>${adna ? ` and <b>${adna} Ancient DNA</b>` : ''}.`, [['OK', null]]), 1500);
+  setTimeout(() => modal('The aliens are being redesigned', `Every creature has been taken out of the game while the desert aliens of DUNE.IO are redesigned. For now everyone plays as a placeholder Hatchling. You owned ${n} of the removed creatures, so you get back what they cost: <b>${dna.toLocaleString()} DNA</b>${adna ? ` and <b>${adna} Ancient DNA</b>` : ''}.`, [['OK', null]]), 1500);
 }
 refundRemoved();
 function fillSave() { // fill in every field a fresh or older save may be missing
