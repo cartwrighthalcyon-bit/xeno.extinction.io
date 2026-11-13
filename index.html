@@ -378,7 +378,7 @@ const RAW = [
 ];
 
 const KIND_INFO = {
-  basic: { label: 'FREE', color: '#4fe08f' }, common: { label: 'DNA', color: '#7dffb2' },
+  basic: { label: 'FREE', color: '#4fe08f' }, common: { label: 'DNA', color: '#7dffb2' }, wild: { label: 'DNA', color: '#7dffb2' },
   foreign: { label: 'FOREIGN', color: '#6ad7ff' }, prehistoric: { label: 'PREHISTORIC', color: '#d9a86c' },
   mutated: { label: 'MUTATED', color: '#b6ff4a' }, mutant: { label: 'MUTANT', color: '#e05cff' }, boss: { label: 'LAB BOSS', color: '#ff6a5a' }, premium: { label: 'PREMIUM', color: '#ffd25a' },
   event: { label: 'EVENT', color: '#ff8ad8' }, lucky: { label: 'LUCKY', color: '#fff' }, elder: { label: 'ELDER GOD', color: '#ff4fd8' }, exclusive: { label: 'EXCLUSIVE', color: '#5ae0ff' },
@@ -1538,7 +1538,10 @@ const CREATURE_BASE = {}; // each modded creature as the game first built it, so
 function applyCreatureMod(id, m) {
   const def = ALIEN[id]; if (!def || !m) return;
   if (!CREATURE_BASE[id]) CREATURE_BASE[id] = JSON.parse(JSON.stringify(def, (k, v) => k === 'an' ? undefined : v));
-  for (const k of ['name', 'lore', 'ability', 'ult', 'hp', 'dmg', 'spd', 'size', 'adapts']) if (m[k] !== undefined) def[k] = m[k];
+  for (const k of ['name', 'lore', 'ability', 'ult', 'hp', 'dmg', 'spd', 'size', 'adapts', 'diet', 'behavior', 'home']) if (m[k] !== undefined) def[k] = m[k];
+  if (m.ugHome !== undefined) { def.ugHome = !!m.ugHome; def._ug = null; }
+  if (m.rarity && RARITY_COST[m.rarity]) { def.rarity = m.rarity; if (!def.starter) def.cost = { dna: RARITY_COST[m.rarity] }; }
+  if (m.starter !== undefined) { def.starter = !!m.starter; def.kind = m.starter ? 'basic' : 'wild'; def.cost = { dna: m.starter ? 0 : RARITY_COST[def.rarity] || 150 }; }
   if (m.look) { const L = def.look;
     if (m.look.tpl !== undefined) { const t = m.look.tpl;
       if (t && t.startsWith('sp:') && SPECIES[t.slice(3)]) { const S = SPECIES[t.slice(3)]; L.sp = t.slice(3); L.feats = S.feats.slice(); L.spf = Object.assign({}, S.f); L.theme = { k: 'animal', s: S.tpl }; L.humanoid = S.arch === 'humanoid'; }
@@ -1547,11 +1550,19 @@ function applyCreatureMod(id, m) {
     for (const k in m.look) if (k !== 'tpl') L[k] = m.look[k];
     delete L.an; }
 }
-(function applyCreatureMods() {
+const RARITY_COST = { common: 150, uncommon: 400, rare: 800, epic: 1600, legendary: 3500 };
+function makeCustomDef(id, m) { // a brand-new creature made from scratch in the Workshop
+  if (ALIEN[id] || !ALIEN.hatchling) return ALIEN[id];
+  const d = JSON.parse(JSON.stringify(ALIEN.hatchling, (k, v) => k === 'an' ? undefined : v));
+  Object.assign(d, { id, name: m.name || 'New creature', lore: m.lore || '', kind: 'wild', starter: false, rarity: 'common', cost: { dna: RARITY_COST.common }, idx: ALIENS.length, seed: hashStr(id), fresh: true, adapts: [] });
+  d.look.seed2 = hashStr(id + 'look'); ALIENS.push(d); ALIEN[id] = d; return d;
+}
+function applyCreatureMods() {
   let local = {}; try { local = JSON.parse(localStorage.getItem(WORKSHOP_KEY)) || {}; } catch (e) {}
+  for (const src of [CREATURE_MODS, local]) for (const id in src) if (src[id] && src[id].fresh) makeCustomDef(id, src[id]);
   for (const id in CREATURE_MODS) applyCreatureMod(id, CREATURE_MODS[id]);
   for (const id in local) applyCreatureMod(id, local[id]);
-})();
+}
 // =====================================================================
 //  DUNE.IO: the desert aliens of Kharr. Every old creature is removed (owners get their DNA back) and the
 //  world is home to these species, each built for a corner of the desert and born with its own adaptations.
@@ -1629,6 +1640,7 @@ function applyDesign(d, m) { // give a creature a hand-made look (used by the de
     ALIENS.push(d); ALIEN[id] = d;
   });
 })();
+applyCreatureMods(); // Workshop designs (shipped ones and this device's) go on top of the desert roster
 async function codeHash(code) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('xeno:' + String(code).toUpperCase().replace(/\s+/g, ''))); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
 function redeemDialog() {
   modal('Redeem a code', 'Codes unlock exclusive creatures you cannot get any other way.<br><input id="codeIn" maxlength="24" placeholder="Enter code" style="margin-top:8px;text-transform:uppercase;width:100%">', [['Redeem', () => redeemCode($('codeIn').value)], ['Cancel', null]]);
@@ -8031,8 +8043,8 @@ requestAnimationFrame(t => { last = t; running = true; loop(t); });
 @media(max-width:900px){#ws{grid-template-columns:1fr;grid-template-rows:48px 180px 300px 1fr}#ws header{grid-column:1}#wsL{border:0}}`;
   document.head.appendChild(css);
   const W = document.createElement('div'); W.id = 'ws';
-  W.innerHTML = `<header><b>🧬 DUNE.IO Creature Workshop</b><span id="wsMsg"></span><button id="wsReal"></button><button id="wsExp">Export</button><button id="wsImp">Import</button><button id="wsClose">Close</button></header>
-<div id="wsL"><div class="f"><input id="wsQ" placeholder="Search ${ALIENS.length} creatures…"><select id="wsP"><option value="">All planets</option>${PLANET_IDS.map(p => `<option value="${p}">${esc(PLANETS[p].name)}</option>`).join('')}</select><select id="wsU"><option value="">Surface & underground</option><option value="s">Lives on the surface</option><option value="u">Lives underground</option></select><label style="display:flex;gap:6px;align-items:center;color:#9fb0c2"><input type="checkbox" id="wsOnly" style="width:auto"> Edited only</label></div><div id="wsList"></div></div>
+  W.innerHTML = `<header><b>🧬 DUNE.IO Creature Workshop</b><span id="wsMsg"></span><button id="wsNew" class="go">＋ New creature</button><button id="wsReal"></button><button id="wsExp">Export</button><button id="wsImp">Import</button><button id="wsClose">Close</button></header>
+<div id="wsL"><div class="f"><input id="wsQ" placeholder="Search creatures…"><select id="wsP" style="display:none"><option value="">All planets</option>${PLANET_IDS.map(p => `<option value="${p}">${esc(PLANETS[p].name)}</option>`).join('')}</select><select id="wsU"><option value="">Surface & underground</option><option value="s">Lives on the surface</option><option value="u">Lives underground</option></select><label style="display:flex;gap:6px;align-items:center;color:#9fb0c2"><input type="checkbox" id="wsOnly" style="width:auto"> Edited only</label></div><div id="wsList"></div></div>
 <div id="wsC"><canvas id="wsCv" width="560" height="560"></canvas><div class="bar"><span style="color:#9fb0c2">Stage</span>${[1, 2, 3, 4, 5].map(n => `<button data-st="${n}">${['Baby', 'Juvenile', 'Adult', 'Elder', 'Alpha'][n - 1]}</button>`).join('')}</div><div class="bar"><button id="wsMove" class="on">Walking</button><button id="wsSpin">Turn</button><button class="warn" id="wsReset">Reset this creature</button></div></div>
 <div id="wsR"></div>`;
   document.body.appendChild(W);
@@ -8046,7 +8058,7 @@ requestAnimationFrame(t => { last = t; running = true; loop(t); });
   const merged = id => { const a = CREATURE_MODS[id] || {}, b = local[id] || {}; return Object.assign({}, a, b, { look: Object.assign({}, a.look, b.look) }); };
   const snap = def => { if (!CREATURE_BASE[def.id]) CREATURE_BASE[def.id] = JSON.parse(JSON.stringify(def, (k, v) => k === 'an' ? undefined : v)); };
   function restore(def) { const B = JSON.parse(JSON.stringify(CREATURE_BASE[def.id]));
-    for (const k of ['name', 'lore', 'ability', 'ult', 'hp', 'dmg', 'spd', 'size', 'adapts']) def[k] = B[k];
+    for (const k of ['name', 'lore', 'ability', 'ult', 'hp', 'dmg', 'spd', 'size', 'adapts', 'diet', 'behavior', 'home', 'ugHome', 'rarity', 'starter', 'kind', 'cost']) def[k] = B[k]; def._ug = null;
     for (const k in def.look) delete def.look[k]; Object.assign(def.look, B.look); }
   function rebuild(def) { snap(def); restore(def); applyCreatureMod(def.id, merged(def.id)); }
 
@@ -8102,6 +8114,7 @@ requestAnimationFrame(t => { last = t; running = true; loop(t); });
   }
   function select(id) {
     cur = ALIEN[id]; if (!cur) return; snap(cur); renderList();
+    q('wsReset').textContent = cur.fresh ? 'Delete this creature' : 'Reset this creature';
     const d = cur, L = d.look, hsl = (h, s, l) => `hsl(${h},${s}%,${l}%)`;
     const rng = (k, lab, min, max, step = 1, v = L[k]) => `<label><span>${lab}</span><input type="range" data-l="${k}" min="${min}" max="${max}" step="${step}" value="${+v || 0}"><em>${Math.round((+v || 0) * 10) / 10}</em></label>`;
     const chk = (k, lab) => `<label class="w"><span>${lab}</span><input type="checkbox" data-l="${k}"${L[k] ? ' checked' : ''}></label>`;
@@ -8111,6 +8124,12 @@ requestAnimationFrame(t => { last = t; running = true; loop(t); });
 <h4>Identity</h4>
 <label class="w"><span>Name</span><input data-d="name" value="${esc(d.name)}" maxlength="40"></label>
 <label class="w"><span>Story</span><textarea data-d="lore" rows="3">${esc(d.lore || '')}</textarea></label>
+${d.desert || d.fresh ? `<label class="w"><span>Rarity</span><select data-d="rarity">${Object.keys(RARITY_COST).map(r => `<option ${d.rarity === r ? 'selected' : ''}>${r}</option>`).join('')}</select></label>
+<label class="w"><span>Free starter</span><input type="checkbox" data-d="starter" ${d.starter ? 'checked' : ''} style="width:auto"></label>
+<label class="w"><span>Diet</span><select data-d="diet">${['herbivore', 'carnivore', 'omnivore', 'insectivore', 'scavenger'].map(r => `<option ${d.diet === r ? 'selected' : ''}>${r}</option>`).join('')}</select></label>
+<label class="w"><span>Behaviour</span><select data-d="behavior">${['grazer', 'predator', 'territorial', 'skittish', 'scavenger', 'ambusher', 'pack'].map(r => `<option ${d.behavior === r ? 'selected' : ''}>${r}</option>`).join('')}</select></label>
+<label class="w"><span>Home</span><input data-d="home" value="${esc(d.home || '')}" placeholder="e.g. Rock walls and dunes"></label>
+<label class="w"><span>Lives underground</span><input type="checkbox" data-d="ugHome" ${d.ugHome ? 'checked' : ''} style="width:auto"></label>` : ''}
 ${typeof ADAPTS !== 'undefined' && d.desert ? `<h4>Born adapted to</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;font-size:12.5px">${Object.keys(ADAPTS).map(k => `<label title="${esc(ADAPTS[k].desc)}" style="display:flex;gap:5px;align-items:center;cursor:pointer"><input type="checkbox" data-ad="${k}" ${(d.adapts || []).includes(k) ? 'checked' : ''}>${ADAPTS[k].icon} ${ADAPTS[k].name}</label>`).join('')}</div><div style="color:#9fb0c2;font-size:11.5px;margin:3px 0 6px">Players pick more as they grow (one at each new life stage).</div>` : ''}
 ${(() => { const I = habInfo(d), other = (d.res || []).filter(x => x !== d.planet && PLANETS[x]).map(x => PLANETS[x].name);
   return `<h4>Where it lives</h4><canvas id="wsHab" width="300" height="190" style="position:static;display:block;width:100%;height:auto;aspect-ratio:300/190;border-radius:8px;border:1px solid #2c3a49"></canvas>
@@ -8160,11 +8179,18 @@ ${sel('ult', 'Ultimate', [['', '(none)']].concat(ULTL.map(k => [k, AB[k].name]))
     setMod(el.dataset.l ? 'l' : 'd', k, k === 'body' ? +v : v);
     rebuild(cur);
     if (el.nextElementSibling && el.nextElementSibling.tagName === 'EM') el.nextElementSibling.textContent = Math.round(v * 10) / 10;
-    if (k === 'tpl' || k === 'ability') select(cur.id);
+    if (['tpl', 'ability', 'starter', 'rarity', 'diet', 'behavior', 'ugHome'].includes(k)) { const y = q('wsR').scrollTop; select(cur.id); q('wsR').scrollTop = y; }
     const L = cur.look; if (q('wsSw1')) { q('wsSw1').style.background = `hsl(${L.hue},${L.sat}%,${L.lig}%)`; q('wsSw2').style.background = `hsl(${L.hue2},${L.sat}%,${L.lig}%)`; }
     if (k === 'name') renderList(); flash('Saved on this device');
   });
-  q('wsReset').onclick = () => { if (!cur) return; delete local[cur.id]; store(); rebuild(cur); select(cur.id); flash(CREATURE_MODS[cur.id] ? 'Back to the shipped version' : 'Back to the original'); };
+  q('wsNew').onclick = () => {
+    let n = 1; while (ALIEN['my' + n]) n++; const id = 'my' + n;
+    local[id] = { fresh: true, name: 'New creature ' + n }; store(); const d = makeCustomDef(id, local[id]); snap(d); rebuild(d);
+    q('wsQ').value = ''; renderList(); select(id); flash('New creature made: give it a name and a body');
+  };
+  q('wsReset').onclick = () => { if (!cur) return;
+    if (cur.fresh) { if (!confirm('Delete ' + cur.name + '? This cannot be undone.')) return; const id = cur.id; delete local[id]; store(); const i = ALIENS.indexOf(ALIEN[id]); if (i >= 0) ALIENS.splice(i, 1); delete ALIEN[id]; renderList(); select((ALIENS.find(a => a.fresh) || ALIENS[0]).id); flash('Deleted'); return; }
+    delete local[cur.id]; store(); rebuild(cur); select(cur.id); flash(CREATURE_MODS[cur.id] ? 'Back to the shipped version' : 'Back to the original'); };
 
   // ---- preview
   W.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { stage = +b.dataset.st; W.querySelectorAll('[data-st]').forEach(x => x.classList.toggle('on', x === b)); });
@@ -8200,7 +8226,7 @@ ${sel('ult', 'Ultimate', [['', '(none)']].concat(ULTL.map(k => [k, AB[k].name]))
   };
   q('wsImp').onclick = () => dialog('Import creatures', 'Paste text from Export. It is added on top of your current edits.', '', [['Import', () => {
     try { const o = JSON.parse(q('wsXA').value.replace(/^\s*const CREATURE_MODS\s*=\s*/, '').replace(/;\s*$/, '')); let n = 0;
-      for (const id in o) if (ALIEN[id]) { local[id] = o[id]; rebuild(ALIEN[id]); n++; } store(); renderList(); if (cur) select(cur.id); flash(n + ' imported'); }
+      for (const id in o) { if (o[id] && o[id].fresh) makeCustomDef(id, o[id]); if (ALIEN[id]) { local[id] = o[id]; rebuild(ALIEN[id]); n++; } } store(); renderList(); if (cur) select(cur.id); flash(n + ' imported'); }
     catch (e) { q('wsXP').textContent = 'That text could not be read: ' + e.message; return false; } }, 'go'], ['Cancel', null]]);
   { let classic = false; try { classic = localStorage.getItem(CLASSIC_LOOKS_KEY) === '1'; } catch (e) {}
     q('wsReal').textContent = classic ? 'Realistic looks: OFF' : 'Realistic looks: ON'; if (!classic) q('wsReal').className = 'go';
