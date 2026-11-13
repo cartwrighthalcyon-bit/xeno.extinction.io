@@ -3,23 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>XENO.IO — Free Online Alien Survival .io Game</title>
-<meta name="description" content="XENO.IO is a free multiplayer .io game: hatch as a baby alien, eat, grow and evolve through 1,100+ creatures across 11 worlds. Play free in your browser, no download.">
-<meta name="keywords" content="xeno.io, xeno io, xenoio, io game, alien game, multiplayer io game, browser game, survival game, evolution game">
+<title>DUNE.IO — Free Online Desert Alien Survival .io Game</title>
+<meta name="description" content="DUNE.IO is a free multiplayer .io game: hatch as a baby desert alien, eat, grow and adapt to survive the burning dunes, the caves beneath them and the creatures that hunt there. Play free in your browser, no download.">
+<meta name="keywords" content="dune.io, dune io, duneio, io game, desert game, alien game, multiplayer io game, browser game, survival game, evolution game">
 <meta name="theme-color" content="#07060c">
 <link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
-<meta property="og:type" content="website"><meta property="og:site_name" content="XENO.IO"><meta property="og:title" content="XENO.IO — Free Online Alien Survival .io Game">
-<meta property="og:description" content="Hatch, hunt and evolve through 1,100+ alien creatures. Free multiplayer .io game in your browser.">
+<meta property="og:type" content="website"><meta property="og:site_name" content="DUNE.IO"><meta property="og:title" content="DUNE.IO — Free Online Desert Alien Survival .io Game">
+<meta property="og:description" content="Hatch as a baby desert alien, eat, grow and adapt to survive the dunes. Free multiplayer .io game.">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2307060c'/%3E%3Cellipse cx='32' cy='34' rx='20' ry='16' fill='%237dffb2'/%3E%3Ccircle cx='24' cy='30' r='5' fill='%23111'/%3E%3Ccircle cx='40' cy='30' r='5' fill='%23111'/%3E%3C/svg%3E">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"XENO.IO","alternateName":["Xeno io","XenoIO"],"description":"Free multiplayer alien survival .io game in the browser.","genre":["io game","Survival","Action"],"gamePlatform":"Web browser","applicationCategory":"Game","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"DUNE.IO","alternateName":["Dune io","DuneIO"],"description":"Free multiplayer alien survival .io game in the browser.","genre":["io game","Survival","Action"],"gamePlatform":"Web browser","applicationCategory":"Game","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;background:#07060c;color:#eee;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}
 canvas{display:block;width:100%;height:100%}
 .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;overflow-y:auto;background:radial-gradient(ellipse at 50% 20%,#2a1745 0%,#0b0814 60%,#05040a 100%);padding:18px 14px 40px;z-index:20;touch-action:pan-y}
 .screen.on{display:flex}
-h1{font-size:44px;letter-spacing:4px;font-weight:900;background:linear-gradient(90deg,#7dffb2,#6ad7ff,#c58bff);-webkit-background-clip:text;background-clip:text;color:transparent;text-align:center;margin-top:6px}
+h1{font-size:44px;letter-spacing:4px;font-weight:900;background:linear-gradient(90deg,#ffd27a,#ff9a3c,#e8643a);-webkit-background-clip:text;background-clip:text;color:transparent;text-align:center;margin-top:6px}
 h2{font-size:26px;margin:6px 0 10px;color:#c9b6ff;text-align:center}
 .sub{color:#a99fc4;text-align:center;font-size:14px;margin-bottom:12px;max-width:520px}
 .btn{background:linear-gradient(180deg,#3d2a66,#2a1c48);border:2px solid #7a5bd6;color:#fff;font-weight:800;font-size:17px;border-radius:14px;padding:13px 18px;cursor:pointer;min-width:220px;margin:5px;transition:transform .08s}
@@ -92,8 +92,8 @@ input[type=text]{background:#140f22;border:2px solid #5a46a0;color:#fff;border-r
 
 <!-- MAIN MENU -->
 <div id="menu" class="screen on">
-  <h1>XENO.IO</h1>
-  <div class="sub">Born a baby alien on a hostile world. Eat. Grow. Hunt — or be hunted. Survive the <b style="color:#ff6b6b">Extinction Event</b>.</div>
+  <h1>DUNE.IO</h1>
+  <div class="sub">Born a baby alien on the burning dunes of Kharr. Eat. Grow. <b style="color:#ffd27a">Adapt</b>. Hunt — or be hunted. Survive the <b style="color:#ff6b6b">Extinction Event</b>.</div>
   <div class="wallet" id="wallet"></div>
   <div id="acct"></div>
   <input type="text" id="nameIn" maxlength="14" placeholder="Your name">
@@ -1538,7 +1538,7 @@ const CREATURE_BASE = {}; // each modded creature as the game first built it, so
 function applyCreatureMod(id, m) {
   const def = ALIEN[id]; if (!def || !m) return;
   if (!CREATURE_BASE[id]) CREATURE_BASE[id] = JSON.parse(JSON.stringify(def, (k, v) => k === 'an' ? undefined : v));
-  for (const k of ['name', 'lore', 'ability', 'ult', 'hp', 'dmg', 'spd', 'size']) if (m[k] !== undefined) def[k] = m[k];
+  for (const k of ['name', 'lore', 'ability', 'ult', 'hp', 'dmg', 'spd', 'size', 'adapts']) if (m[k] !== undefined) def[k] = m[k];
   if (m.look) { const L = def.look;
     if (m.look.tpl !== undefined) { const t = m.look.tpl;
       if (t && t.startsWith('sp:') && SPECIES[t.slice(3)]) { const S = SPECIES[t.slice(3)]; L.sp = t.slice(3); L.feats = S.feats.slice(); L.spf = Object.assign({}, S.f); L.theme = { k: 'animal', s: S.tpl }; L.humanoid = S.arch === 'humanoid'; }
@@ -1553,16 +1553,76 @@ function applyCreatureMod(id, m) {
   for (const id in local) applyCreatureMod(id, local[id]);
 })();
 // =====================================================================
-//  CLEAN SLATE (preview): only Earth's creatures remain while the aliens are redesigned one by one.
-//  Every other creature is removed; owners get back the DNA it cost. New players start as small Earth animals.
+//  DUNE.IO: the desert aliens of Kharr. Every old creature is removed (owners get their DNA back) and the
+//  world is home to these species, each built for a corner of the desert and born with its own adaptations.
+//  [id, name, rarity, size, skill, body skill, diet, behaviour, built-in adaptations, home, underground?, look, story]
 // =====================================================================
-const STARTER_IDS = ['europeanrabbit', 'meerkat', 'tokaygecko'].filter(id => ALIEN[id]);
+const DESERT_ROSTER = [
+  ['dunegecko', 'Dune Gecko', 'common', 11, 'echoloc', ['wallscurry', 'Wall Scurry', 'its sticky toes', 2], 'insectivore', 'grazer', ['ears', 'heat'], 'Rock walls and dunes (climbs walls)', false,
+    { arch: 'lizard', hue: 34, sat: 30, lig: 58, hue2: 24, frill: true, popEars: true, rockScales: true, geckoToes: true, eyes: 2, eyeStyle: 0, eyeHue: 45, horns: 0, wings: 0, legs: 4, tail: 0, noMark: true },
+    'A small gecko that runs up rock walls. Its ears pop out when it echolocates, and rock scales cover it from head to tail.'],
+  ['sandkit', 'Sand Kit', 'common', 10, 'burrow', ['dash', 'Dart', 'its quick legs', 2], 'omnivore', 'grazer', ['night', 'ears'], 'Dens in the dune sea (forages at night)', false,
+    { sp: 'fennecfox', hue: 38, sat: 42, lig: 72 }, 'A tiny desert fox-alien with huge ears that shed heat. It sleeps in sand dens by day and forages under the stars.'],
+  ['dunecrawler', 'Dunecrawler', 'common', 10, 'clawsnap', ['shellhide', 'Shell Hide', 'its shell', 1], 'bonescav', 'grazer', ['burrow'], 'Caves and shade (hides from the heat)', true,
+    { crab: true, hue: 18, sat: 55, lig: 52, hue2: 38 }, 'A small hermit crab that scavenges bones and carrion, hiding from the heat in caves, shadows or its shell.'],
+  ['sandskipper', 'Sandskipper', 'common', 20, 'tonguesnatch', null, 'herbinsect', 'grazer', ['sand', 'heat'], 'Open dunes', false,
+    { sp: 'commonostrich', hue: 30, sat: 22, lig: 50, cyclops: true, rocky: true }, 'A rocky, one-eyed ostrich of the dunes. Like a frog, it shoots out a long tongue to catch small prey, and it eats plants too.'],
+  ['glassback', 'Glassback Beetle', 'common', 9, 'shield', null, 'herbivore', 'grazer', ['heat', 'water'], 'Dune crests at dawn (drinks the fog)', false,
+    { sp: 'herculesbeetle', hue: 200, sat: 14, lig: 82 }, 'Its mirror-bright shell reflects the sun. At dawn it climbs the dunes and drinks the fog that beads on its back.'],
+  ['spinetail', 'Spinetail', 'common', 13, 'quills', null, 'herbivore', 'grazer', ['spines', 'heat'], 'Rocks and scrub', false,
+    { arch: 'lizard', hue: 18, sat: 45, lig: 46, hue2: 40, frill: false, rockScales: true, eyes: 2, eyeStyle: 0, eyeHue: 40, horns: 1, wings: 0, legs: 4, tail: 2, noMark: true },
+    'A stocky lizard with a club of spines on its tail. It basks on hot rocks and swings its tail at anything that comes too close.'],
+  ['dustmoth', 'Dustmoth', 'common', 8, 'mirage', null, 'herbivore', 'grazer', ['night'], 'Night skies over the dunes', false,
+    { sp: 'monarchbutterfly', hue: 34, sat: 16, lig: 76 }, 'A pale moth that only flies at night, sipping nectar from desert blooms. Its wings shed dust that confuses hunters.'],
+  ['shecko', 'Shecko', 'common', 11, 'vanish', ['poisonspray', 'Poison Spray', 'its venom glands', 3], 'insectivore', 'grazer', ['night', 'camo'], 'Caves and night shadows', true,
+    { arch: 'lizard', hue: 270, sat: 12, lig: 7, hue2: 270, frill: false, geckoToes: true, eyes: 2, eyeStyle: 0, eyeHue: 285, eyeGlow: '#c070ff', horns: 0, wings: 0, legs: 4, tail: 0, noMark: true },
+    'A jet-black gecko of the caves. Its purple glowing eyes mimic glowcap fungus. It turns invisible, and adults spray poison.'],
+  ['sandshark', 'Sand Shark', 'uncommon', 22, 'burrow', ['charge', 'Lunge', 'its ambush muscles', 2], 'carnivore', 'predator', ['sand', 'burrow'], 'Open dunes (swims through sand)', false,
+    { sp: 'greatwhiteshark', hue: 32, sat: 28, lig: 56, rocky: true }, 'It swims through loose sand with only its fin showing, then bursts up under its prey.'],
+  ['saltback', 'Saltback', 'uncommon', 14, 'curl', null, 'insectivore', 'grazer', ['heat', 'spines'], 'Salt flats', false,
+    { sp: 'ninebandedarmadillo', hue: 30, sat: 10, lig: 82 }, 'A crust of salt crystals armours its back. When threatened it rolls into a spiky ball.'],
+  ['thornhog', 'Thornhog', 'uncommon', 14, 'quills', null, 'herbivore', 'territorial', ['spines', 'water'], 'Cactus groves', false,
+    { sp: 'northamericanporcupine', hue: 95, sat: 28, lig: 44 }, 'Its quills grow like cactus spines, and like a cactus it stores water inside its body.'],
+  ['oasisstrider', 'Oasis Strider', 'uncommon', 18, 'dash', null, 'omnivore', 'grazer', ['water'], 'Oasis shallows', false,
+    { sp: 'greaterflamingo', hue: 15, sat: 55, lig: 62 }, 'A long-legged wader of the oasis shallows that strains shrimp and seeds from the water.'],
+  ['mirageviper', 'Mirage Viper', 'uncommon', 16, 'venombite', null, 'carnivore', 'predator', ['camo', 'heat'], 'Sand and rocks (ambushes from cover)', false,
+    { sp: 'westerndiamondback', hue: 36, sat: 34, lig: 60 }, 'Its scales shimmer like a heat mirage, so it all but vanishes against the sand until it strikes.'],
+  ['sunscorpion', 'Sun Scorpion', 'rare', 18, 'sting', null, 'carnivore', 'predator', ['heat', 'night'], 'Rocks and caves', false,
+    { sp: 'emperorscorpion', hue: 40, sat: 70, lig: 50 }, 'Its sting glows like a coal. It hunts in the cool of the night and shelters under rocks by day.'],
+  ['dunehound', 'Dune Hound', 'rare', 22, 'howl', null, 'carnivore', 'predator', ['sand', 'ears'], 'Open dunes (hunts in packs)', false,
+    { sp: 'africanwilddog', hue: 30, sat: 40, lig: 52 }, 'Lean pack hunters that run their prey down across the dunes, calling to each other with eerie howls.'],
+  ['bonevulture', 'Bone Vulture', 'rare', 20, 'swoop', null, 'bonescav', 'territorial', ['heat'], 'High over the dunes', false,
+    { sp: 'commonraven', hue: 25, sat: 14, lig: 32 }, 'It circles high on the hot air and drops on anything that dies, cracking bones open for the marrow.'],
+  ['burrowwyrm', 'Burrow Wyrm', 'epic', 34, 'tremor', null, 'carnivore', 'predator', ['burrow', 'night'], 'Deep tunnels underground', true,
+    { sp: 'mongoliandeathworm', hue: 15, sat: 40, lig: 45 }, 'A giant worm that tunnels beneath the dunes. The ground shakes before it bursts up to feed.'],
+  ['mesaram', 'Mesa Ram', 'epic', 30, 'charge', null, 'herbivore', 'territorial', ['heat', 'sand'], 'Mesas and cliffs', false,
+    { sp: 'bighornsheep', hue: 28, sat: 30, lig: 55 }, 'Its horns are layered like sandstone. Rams fight for the high ledges by charging head-first.'],
+  ['kharrtitan', 'Kharr Titan', 'legendary', 44, 'stampede', null, 'herbivore', 'territorial', ['water', 'heat', 'sand'], 'The deep desert', false,
+    { sp: 'dromedarycamel', hue: 32, sat: 35, lig: 50, rocky: true }, 'A colossal desert grazer whose humps hold enough water to cross the whole of Kharr.'],
+  ['stormdrake', 'Storm Drake', 'legendary', 42, 'dustdevil', null, 'carnivore', 'predator', ['heat', 'night', 'sand'], 'Rides the sandstorms', false,
+    { sp: 'westerndragon', hue: 30, sat: 45, lig: 48, wings: 1 }, 'The apex hunter of Kharr. It rides inside sandstorms and drops out of the dust onto its prey.'],
+];
+const STARTER_IDS = ['dunegecko', 'sandkit', 'dunecrawler'];
 const DEFAULT_ID = STARTER_IDS[0];
-(function purgeAliens() {
-  for (let i = ALIENS.length - 1; i >= 0; i--) { const a = ALIENS[i]; if (a.planet === 'earth') continue;
-    REMOVED_CUSTOM[a.id] = [(a.cost && a.cost.dna) || 0, (a.cost && a.cost.adna) || 0]; ALIENS.splice(i, 1); delete ALIEN[a.id]; }
-  for (const a of ALIENS) if (a.kind === 'basic') a.kind = 'wild';
-  for (const id of STARTER_IDS) { const a = ALIEN[id]; a.kind = 'basic'; a.starter = true; a.cost = { dna: 0 }; }
+function applyDesign(d, m) { // give a creature a hand-made look (used by the desert roster)
+  const L = d.look, k = m.look; delete L.mut; delete L.sig; delete L.an; L.rainbow = false;
+  if (k.sp) { const S = SPECIES[k.sp]; L.sp = k.sp; L.feats = S.feats.concat(k.extraFeats || []); L.spf = Object.assign({}, S.f); L.theme = { k: 'animal', s: S.tpl }; L.humanoid = S.arch === 'humanoid'; L.body = 7; L.wings = 0; L.heads = S.f.heads || 1; L.noMark = S.pat < 0; if (S.pat >= 0) { L.pattern = S.pat; L.markCol = S.mark || 'dark'; } }
+  else { delete L.sp; delete L.feats; delete L.spf; L.theme = null; L.humanoid = false; if (k.arch === 'lizard') L.body = 1; }
+  for (const f of ['arch', 'hue', 'sat', 'lig', 'hue2', 'frill', 'popEars', 'rockScales', 'geckoToes', 'eyes', 'eyeStyle', 'eyeHue', 'eyeGlow', 'horns', 'wings', 'legs', 'tail', 'noMark', 'cyclops', 'rocky', 'crab']) if (k[f] !== undefined) L[f] = k[f];
+  if (k.hue2 === undefined) L.hue2 = L.hue; L.trait = null; L.myth = null; d._mv = null;
+}
+(function buildDesert() {
+  const tmpl = {}; for (const r of ['common', 'uncommon', 'rare', 'epic', 'legendary']) tmpl[r] = ALIENS.find(a => a.kind === 'wild' && a.rarity === r);
+  for (let i = ALIENS.length - 1; i >= 0; i--) { const a = ALIENS[i]; REMOVED_CUSTOM[a.id] = [(a.cost && a.cost.dna) || 0, (a.cost && a.cost.adna) || 0]; ALIENS.splice(i, 1); delete ALIEN[a.id]; }
+  DESERT_ROSTER.forEach(([id, name, rarity, size, ability, body, diet, behavior, adapts, home, ug, look, lore], i) => {
+    const d = JSON.parse(JSON.stringify(tmpl[rarity])); delete REMOVED_CUSTOM[id];
+    Object.assign(d, { id, name, planet: 'dune', kind: STARTER_IDS.includes(id) ? 'basic' : 'wild', rarity, ability: AB[ability] ? ability : 'dash', lore, idx: i, res: ['dune'], forms: null, size, diet, behavior, home, ugHome: ug, adapts: adapts.slice(), custom: true, desert: true, seed: hashStr(id), myth: false, adapt: false });
+    if (STARTER_IDS.includes(id)) { d.cost = { dna: 0 }; d.starter = true; }
+    d.look.seed2 = hashStr(id + 'look'); d.look.habitat = 'dune'; d.look.habitats = ['dune'];
+    if (body && AB[body[0]]) d.body2 = { ab: body[0], name: body[1], from: body[2], need: body[3], cd: AB[body[0]].cd };
+    applyDesign(d, { look });
+    ALIENS.push(d); ALIEN[id] = d;
+  });
 })();
 async function codeHash(code) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('xeno:' + String(code).toUpperCase().replace(/\s+/g, ''))); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
 function redeemDialog() {
@@ -3377,6 +3437,7 @@ function newEntity(def, x, y, lvl, opts = {}) {
     kills: 0, score: 0, alive: true, phase: Math.random() * 10, lucky: !!opts.lucky, event: !!opts.event, boss: !!opts.boss };
   if (def.kind === 'elder' && def.elderAbs) { e.elder = true; e.cds = [0, 0, 0, 0, 0]; }
   e.body = bodySkill(def.base || def); e.cdBody = 0;
+  e.adapts = (def.adapts || []).slice(); e.chosenAd = [];
   recalc(e); e.hp = e.maxhp; return e;
 }
 function recalc(e) {
@@ -3391,12 +3452,71 @@ function recalc(e) {
   if (has(e, 'heavy')) e.dmg *= 1.1;
   if (e.sizeK) e.r *= e.sizeK;
   if (e.titan) { e.maxhp = Math.round(e.maxhp * 1.5); e.dmg *= 1.4; e.r *= 1.3; e.hp = Math.min(e.hp * 1.5, e.maxhp); }
+  if (hasAd(e, 'water')) { e.maxhp = Math.round(e.maxhp * 1.25); e.hp = Math.min(e.maxhp, e.hp * 1.25); }
+}
+// =====================================================================
+//  ADAPTATIONS (DUNE.IO): every species is born with some; each time you grow you choose one more.
+//  The desert is harsh: the midday sun burns anything on open sand without a Heat Shield, and nights are dark.
+// =====================================================================
+const ADAPTS = {
+  heat:   { name: 'Heat Shield', icon: '☀️', desc: 'Sun-reflecting skin: the midday heat no longer burns you.' },
+  water:  { name: 'Water Store', icon: '💧', desc: 'Stores water in its body: +25% health and slow healing anywhere.' },
+  burrow: { name: 'Burrower', icon: '⛏️', desc: 'Hold still for a moment to dig down into the underground, or back up, anywhere.' },
+  night:  { name: 'Night Eyes', icon: '👁️', desc: 'Big glowing eyes: see much further at night and underground.' },
+  sand:   { name: 'Sand Runner', icon: '🦶', desc: 'Fringed toes: 15% faster on the open sand.' },
+  spines: { name: 'Thorny Hide', icon: '🌵', desc: 'Spines hurt anything that bites you (a quarter of the damage back).' },
+  camo:   { name: 'Sand Camouflage', icon: '🫥', desc: 'Hunters can’t spot you while you hold still.' },
+  ears:   { name: 'Big Ears', icon: '👂', desc: 'Hear creatures nearby: they show on your minimap.' },
+};
+const DAY_LEN = 150, NIGHT_LEN = 90; // seconds of day, then night
+function hasAd(e, k) { return !!(e && e.adapts && e.adapts.includes(k)); }
+function isNight() { return !!(G && G.planet === 'dune' && !G.noHazard && ((G.t + 40) % (DAY_LEN + NIGHT_LEN)) > DAY_LEN); }
+function sunK() { if (!G || isNight()) return 0; const u = ((G.t + 40) % (DAY_LEN + NIGHT_LEN)) / DAY_LEN; return Math.sin(u * Math.PI); } // 0 at dawn/dusk, 1 at noon
+function inShade(e) { return e.ug || e.inCave || e.inCover || e.inWater || e.perch || e.fx.burrow > 0; }
+function desertHeat(e, dt) { // the midday sun on open sand
+  e.sunburn = 0; if (!e.alive || G.planet !== 'dune' || G.noHazard || !(e.isPlayer || e.isBot) || hasAd(e, 'heat') || inShade(e)) return;
+  const k = sunK(); if (k < 0.25) return; e.hp -= e.maxhp * 0.0045 * k * dt; e.sunburn = 1;
+}
+function offerAdaptation(e) { // a new life stage: choose one more adaptation
+  const pool = Object.keys(ADAPTS).filter(k => !hasAd(e, k)); if (!pool.length) { e.adQ = 0; return; }
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const opts = pool.slice(0, 3), take = k => { e.adapts.push(k); (e.chosenAd = e.chosenAd || []).push(k); recalc(e); if (e === G.player) { banner('Adapted: ' + ADAPTS[k].icon + ' ' + ADAPTS[k].name, '#ffd27a'); e.adQ = Math.max(0, (e.adQ || 1) - 1); if (e.adQ > 0) setTimeout(() => G && e.alive && offerAdaptation(e), 500); } };
+  if (e !== G.player) { take(opts[0]); return; }
+  modal('Adapt to the desert', `<div style="color:#c9b6ff;margin-bottom:6px">You have grown. Choose how your body adapts to the desert:</div>` + opts.map(k => `<div style="margin:6px 0"><b>${ADAPTS[k].icon} ${ADAPTS[k].name}</b><br><span style="color:#cfd6e6;font-size:13px">${ADAPTS[k].desc}</span></div>`).join(''), opts.map(k => [ADAPTS[k].icon + ' ' + ADAPTS[k].name, () => take(k)]));
+}
+function checkDig(e, dt) { // Burrowers dig down (or up) anywhere by holding still
+  if (!G.under || !hasAd(e, 'burrow') || e.inCave || e.fx.burrow > 0) { e.digT = 0; return; }
+  if (Math.hypot(e.vx, e.vy) > 20) { e.digT = 0; e.digLock = false; return; } if (e.digLock) return;
+  e.digT = (e.digT || 0) + dt; if (e.digT < 2) return;
+  e.ug = !e.ug; e.digT = 0; e.digLock = true; e.target = null; G.ugFade = 0.8; if (e.ug) confineUnder(e);
+  if (e === G.player) banner(e.ug ? '⛏️ You dug down into the UNDERGROUND' : '⛏️ You dug back up to the SURFACE', '#c8a07a');
+}
+function drawAdapts(e) { // the adaptations an animal has chosen show on its body
+  const ch = e.chosenAd; if (!ch || !ch.length || !LOD_HI) return; const r = e.r, a = e.ang, ca = Math.cos(a), sa = Math.sin(a), at = (f, s) => [e.x + ca * r * f - sa * r * s, e.y + sa * r * f + ca * r * s], t = G.t;
+  ctx.save(); ctx.lineCap = 'round';
+  if (ch.includes('spines')) { ctx.strokeStyle = '#5f7a3a'; ctx.lineWidth = Math.max(1, r * 0.06); for (let i = 0; i < 9; i++) { const f = -0.7 + i * 0.13, [x0, y0] = at(f, 0), [x1, y1] = at(f - 0.12, (i % 2 ? 1 : -1) * 0.55); ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); } }
+  if (ch.includes('water')) { const [x, y] = at(-0.15, 0); ctx.fillStyle = 'rgba(80,170,230,.35)'; ctx.beginPath(); ctx.ellipse(x, y, r * 0.42, r * 0.3, a, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.beginPath(); ctx.arc(x - ca * r * 0.1, y - sa * r * 0.1, r * 0.08, 0, 7); ctx.fill(); }
+  if (ch.includes('heat')) { for (let i = 0; i < 3; i++) { const [x, y] = at(-0.4 + i * 0.3, (i - 1) * 0.2); ctx.fillStyle = `rgba(255,250,220,${0.5 + 0.4 * Math.sin(t * 4 + i * 2)})`; ctx.beginPath(); ctx.arc(x, y, Math.max(1, r * 0.06), 0, 7); ctx.fill(); } }
+  if (ch.includes('ears')) for (const s of [-1, 1]) { const [x, y] = at(0.55, s * 0.45); ctx.fillStyle = '#d8b07a'; ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(x, y, r * 0.18, r * 0.42, a + s * 0.9, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = 'rgba(255,170,150,.6)'; ctx.beginPath(); ctx.ellipse(x, y, r * 0.09, r * 0.28, a + s * 0.9, 0, 7); ctx.fill(); }
+  if (ch.includes('night')) for (const s of [-1, 1]) { const [x, y] = at(0.82, s * 0.2); ctx.fillStyle = '#d8ff6a'; ctx.shadowColor = '#d8ff6a'; ctx.shadowBlur = r * 0.4; ctx.beginPath(); ctx.arc(x, y, Math.max(1.5, r * 0.09), 0, 7); ctx.fill(); ctx.shadowBlur = 0; }
+  if (ch.includes('sand') && Math.hypot(e.vx, e.vy) > 60) for (let i = 0; i < 3; i++) { const k = (t * 2 + i / 3) % 1, [x, y] = at(-0.8 - k * 1.2, (i - 1) * 0.4); ctx.fillStyle = `rgba(210,180,130,${0.5 * (1 - k)})`; ctx.beginPath(); ctx.arc(x, y, r * (0.12 + k * 0.2), 0, 7); ctx.fill(); }
+  if (ch.includes('camo') && Math.hypot(e.vx, e.vy) < 25) { ctx.fillStyle = 'rgba(200,165,110,.35)'; for (let i = 0; i < 6; i++) { const [x, y] = at(-0.5 + (i % 3) * 0.4, (i < 3 ? -0.25 : 0.25)); ctx.beginPath(); ctx.arc(x, y, r * 0.18, 0, 7); ctx.fill(); } }
+  if (ch.includes('burrow') && e.digT > 0) { for (let i = 0; i < 6; i++) { const b = i * 1.05 + t * 6, d = r * (1 + 0.3 * Math.sin(t * 10 + i)); ctx.fillStyle = 'rgba(150,110,60,.7)'; ctx.beginPath(); ctx.arc(e.x + Math.cos(b) * d, e.y + Math.sin(b) * d, r * 0.1, 0, 7); ctx.fill(); } }
+  ctx.restore();
+}
+function drawNight(p) { // night on the dunes: dark, with a circle of sight around you (Night Eyes see much further)
+  const S = G.scr; if (!S) return; const u = ((G.t + 40) % (DAY_LEN + NIGHT_LEN)), dusk = u > DAY_LEN ? Math.min(1, (u - DAY_LEN) / 8, (DAY_LEN + NIGHT_LEN - u) / 8) : 0;
+  if (dusk <= 0) return; ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const R = hasAd(p, 'night') ? Math.max(VW, VH) * 0.55 : Math.max(VW, VH) * 0.32, g = ctx.createRadialGradient(S.x, S.y, R * 0.35, S.x, S.y, R);
+  g.addColorStop(0, 'rgba(8,10,40,0)'); g.addColorStop(1, `rgba(6,8,32,${0.88 * dusk})`); ctx.fillStyle = `rgba(16,20,60,${(hasAd(p, 'night') ? 0.25 : 0.4) * dusk})`; ctx.fillRect(0, 0, VW, VH); ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+  ctx.globalAlpha = dusk * 0.8; ctx.fillStyle = '#fff'; for (let i = 0; i < 40; i++) { const x = (i * 197.3 + 31) % VW, y = (i * 113.7 + 17) % (VH * 0.6); ctx.fillRect(x, y, 1.2, 1.2); } ctx.restore();
 }
 function addXP(e, n) {
   e.xp += n; e.score += n;
   while (e.lvl < LEVELS.length && e.xp >= LEVELS[e.lvl].xp) {
     e.lvl++; recalc(e); e.hp = Math.min(e.maxhp, e.hp + e.maxhp * 0.3);
     if (e === G.player && e.lvl === 5 && G.mode !== 'tutorial') { const S = tstat(); const pl = G.planet || e.def.planet; if (!S.alpha[pl]) { S.alpha[pl] = 1; persist(); setTimeout(trialCheck, 1500); } }
+    if (e.lvl >= 2 && e.lvl <= 5 && G.planet === 'dune' && G.mode !== 'tutorial' && (e === G.player || e.isBot)) { if (e === G.player) { e.adQ = (e.adQ || 0) + 1; if (e.adQ === 1) setTimeout(() => G && e.alive && offerAdaptation(e), 900); } else offerAdaptation(e); }
     if (e === G.player) { banner('Grew into ' + LEVELS[e.lvl - 1].n + '!', '#7dffb2'); sfx(660, 0.15); if (e.lvl === 5 && (save.titan || {})[e.def.id]) setTimeout(() => G && becomeTitan(e, 'Your awakened hidden evolution surges!'), 1200); }
   }
 }
@@ -3405,7 +3525,7 @@ function startMatch(cfg) {
   // cfg: {mode:'offline'|'story'|'online', planet, chapter, net, seed}
   WORLD = cfg.mode === 'tutorial' ? 3400 : cfg.mode === 'open' ? OW_T * OW_N : cfg.mode === 'offline' || cfg.mode === 'story' ? 12000 : 8000; CNT = (WORLD / 3400) ** 2; REG = null; // offline and story zones are 1.5x wider
   const OPEN = cfg.mode === 'open', homePid = (ALIEN[save.equipped] || ALIEN[DEFAULT_ID]).planet;
-  let planetId = cfg.planet === 'random' || !cfg.planet ? pick(START_PLANETS) : cfg.planet;
+  let planetId = 'dune'; // DUNE.IO: every match is on the desert world of Kharr
   const seed = cfg.seed || (Math.random() * 1e9) | 0;
   const wr = mulberry32(seed);
   G = { cfg, mode: cfg.mode, planet: planetId, P: PLANETS[planetId], t: 0, creatures: [], food: [], fossils: [], orbs: [], proj: [], parts: [], texts: [], decor: [], lights: [], lava: [], obstacles: [], zones: [], dis: null, nextDis: 35 + wr() * 20, storm: 0,
@@ -4719,6 +4839,7 @@ function hurt(t, amt, src) {
   if (src && src.def && inForm(src)) amt *= 1.2;
   if (src && src.fx) { if (src.fx.rage > 0) amt *= 1.5; if (has(src, 'frenzy') && src.hp < src.maxhp * 0.4) amt *= 1.4; }
   if (t.fx.shield > 0) amt *= 0.3;
+  if (hasAd(t, 'spines') && src && src.alive && src !== t && !src._thorn && src.def) { src._thorn = true; hurt(src, amt * 0.25, t); src._thorn = false; }
   if (G.wev && G.wev.id === 'bloodmoon' && src && src.ai === 'predator') amt *= 1.3;
   if (t.worldBoss) { const mine = src && (src === G.player || src.owner === G.player);
     if (G.net) { if (mine && amt > 0) { G.net.send({ t: 'bhit', b: t.worldBoss, dmg: +(amt / t.maxhp * BOSS_UNITS).toFixed(1) }); t.hitFlash = 0.15; if (src === G.player) floatText(t.x, t.y - t.r, Math.round(amt), '#fff'); } return; }
@@ -4982,6 +5103,7 @@ function update(dt) {
     if (e.fx.invis > 0) sp *= 1.15;
     if (e.fx.dash > 0) sp *= 3;
     // planet hazards
+    desertHeat(e, dt); if (hasAd(e, 'water') && e.alive && e.hp < e.maxhp) e.hp = Math.min(e.maxhp, e.hp + e.maxhp * 0.002 * dt); if (hasAd(e, 'sand') && !e.ug && !e.inWater) sp *= 1.15;
     let hzK = G.noHazard ? 0 : has(e, 'hardy') ? 0.4 : 1; if (e.inCave) hzK *= 0.3;
     const bio = e.biome || G.planet;
     if (!resists(e, bio)) {
@@ -5035,7 +5157,7 @@ function update(dt) {
     envCollide(e, mv);
     checkTraps(e, mv);
     }
-    if (G.under && e.isPlayer) checkShaft(e, dt);
+    if (G.under && e.isPlayer) { checkShaft(e, dt); checkDig(e, dt); }
     if (Math.hypot(e.vx, e.vy) > 15) e.ang = Math.atan2(e.vy, e.vx);
     stepPrints(e, bio, mv, dt);
     if (e.isPlayer && usingMouse && mouse && !(e.fx.charge > 0)) { const PS = plScr(); e.ang = Math.atan2(mouse.y - PS.y, mouse.x - PS.x); }
@@ -5162,22 +5284,22 @@ const STORY = [
   { title: 'Hatchling', planet: 'dune', text: 'Your egg cracks open on the burning dunes of Kharr. Something big is watching. Grow up — fast.',
     goal: 'Grow to Adult before the Extinction Event, and survive it.', reward: { dna: 120 },
     obj() { return { done: false, text() { return 'Reach Adult (' + LEVELS[Math.min(G.player.lvl, 3) - 1].n + ')'; }, check() { if (G.player.lvl >= 3 && !this.done) { this.done = true; banner('Goal complete! Now survive.', '#7dffb2'); } } }; } },
-  { title: 'The Frozen Alpha', planet: 'ice', text: 'Frozen bones of your ancestors line the glacier. An Alpha guards them. Take back what is yours.',
-    goal: 'Defeat the Alpha of Vrinn, then survive.', reward: { dna: 200, adna: 3 },
+  { title: 'The Dune Alpha', planet: 'dune', text: 'Bones of your ancestors stick out of the sand. An Alpha rules this stretch of desert. Take back what is yours.',
+    goal: 'Defeat the Alpha of the dunes, then survive.', reward: { dna: 200, adna: 3 },
     obj() { return { done: false, text() { return this.done ? 'Alpha defeated' : 'Defeat the Alpha'; }, onKill(t) { if (t.boss) { this.done = true; banner('Goal complete! Now survive.', '#7dffb2'); } } }; } },
-  { title: 'Bones in the Dark', planet: 'dark', text: 'On the Umbral Moon, fossils whisper of prehistoric aliens lost in time. Dig them up before the dark eats you.',
+  { title: 'Bones Under the Sand', planet: 'dune', text: 'The wind uncovers fossils of prehistoric aliens lost in time. Dig them up before the heat or the hunters find you.',
     goal: 'Crack 3 fossils for Ancient DNA, then survive.', reward: { dna: 260, adna: 5 },
     obj() { return { done: false, n: 0, text() { return 'Fossils ' + this.n + '/3'; }, onFossil() { this.n++; if (this.n >= 3 && !this.done) { this.done = true; banner('Goal complete! Now survive.', '#7dffb2'); } } }; } },
-  { title: 'Into Gehenna', planet: 'hell', text: 'The path ends in fire. The thing that caused the first extinction is still alive — and it is hungry.',
-    goal: 'Make 12 kills on the Hell planet, then survive.', reward: { dna: 500, adna: 10 },
+  { title: 'The Burning Flats', planet: 'dune', text: 'The salt flats bake in the noon sun. Only the strongest hunters live out here.',
+    goal: 'Make 12 kills, then survive.', reward: { dna: 500, adna: 10 },
     obj() { return { done: false, text() { return 'Kills ' + G.kills + '/12'; }, check() { if (G.kills >= 12 && !this.done) { this.done = true; banner('Goal complete! Now survive.', '#7dffb2'); } } }; } },
-  { title: 'The Drowned Reef', planet: 'water', text: 'Beneath the waves of Thalassa, a sunken mothership hums. Something enormous guards it.',
-    goal: 'Defeat the Alpha of the reef, then survive.', reward: { dna: 650, adna: 6 },
+  { title: 'The Last Oasis', planet: 'dune', text: 'The only water for miles is guarded by something enormous. Drink — if you can.',
+    goal: 'Defeat the Alpha of the oasis, then survive.', reward: { dna: 650, adna: 6 },
     obj() { return { done: false, text() { return this.done ? 'Alpha defeated' : 'Defeat the Alpha'; }, onKill(t) { if (t.boss) { this.done = true; banner('Goal complete! Now survive.', '#7dffb2'); } } }; } },
-  { title: 'Green Hell', planet: 'jungle', text: 'The jungle of Verdantis grows over everything, even the bones of your ancestors. Grow strong enough to claim it.',
+  { title: 'Old Blood', planet: 'dune', text: 'The oldest creatures of Kharr are said to have seen the first sandstorm. Become one of them.',
     goal: 'Grow into an Elder, then survive.', reward: { dna: 800, adna: 8 },
     obj() { return { done: false, text() { return 'Reach Elder (' + LEVELS[Math.min(G.player.lvl, 4) - 1].n + ')'; }, check() { if (G.player.lvl >= 4 && !this.done) { this.done = true; banner('Goal complete! Now survive.', '#7dffb2'); } } }; } },
-  { title: 'Machine Moon', planet: 'robo', text: 'Ferrox was built by whoever caused the extinctions. Its machines still hunt. End them.',
+  { title: 'Extinction', planet: 'dune', text: 'The great storm is coming again. Hunt, hide, adapt — and be the one still standing when it passes.',
     goal: 'Make 15 kills, then survive the final Extinction Event.', reward: { dna: 1200, adna: 15 },
     obj() { return { done: false, text() { return 'Kills ' + G.kills + '/15'; }, check() { if (G.kills >= 15 && !this.done) { this.done = true; banner('Goal complete! Now survive.', '#7dffb2'); } } }; } },
 ];
@@ -5503,7 +5625,7 @@ const UG_STYLE = {
 };
 const UG_RX = /worm|grub|larva|mole|cave|burrow|digger|crawler|mite|leech|gloom|echo|umbra|hollow|murk|shade|tunnel|deep|maw|centipede|spider|bat/i;
 const UG_EXTRA = {}; // planets whose names give few cave species get a few small natives that also live below
-function ugNative(def) { if (def._ug == null) def._ug = ugNativeBase(def) || ugExtra(def); return def._ug; }
+function ugNative(def) { if (def.ugHome != null) return def.ugHome; if (def._ug == null) def._ug = ugNativeBase(def) || ugExtra(def); return def._ug; }
 function ugExtra(def) {
   if (!['wild', 'common'].includes(def.kind)) return false;
   if (!UG_EXTRA[def.planet]) { const nat = ALIENS.filter(a => a.planet === def.planet && ['wild', 'common'].includes(a.kind)), have = nat.filter(ugNativeBase).length;
@@ -5624,6 +5746,7 @@ function envCollide(e, mv) {
 }
 function obstacleBlocks(e, o, mv) { if (mv.fly && o.k !== 'volcano') return false; if (mv.climb && CLIMBABLE[o.k]) return false; return true; }
 function seesThrough(a, b) { // can a notice b?
+  if (hasAd(b, 'camo') && Math.hypot(b.vx || 0, b.vy || 0) < 25 && !(b.cdBite > -1)) return d2(a, b) < 90 * 90;
   if ((a.inCave || null) !== (b.inCave || null)) return d2(a, b) < 110 * 110;
   if (b.inCover && !(b.cdBite > -0.6)) return d2(a, b) < 120 * 120;
   return true;
@@ -6107,7 +6230,7 @@ function tilePath(t) {
   p.moveTo(x0, y0); for (let x = x0; x <= x1; x += st) p.lineTo(x, top(x)); for (let y = y0; y <= y1; y += st) p.lineTo(right(y), y); for (let x = x1; x >= x0; x -= st) p.lineTo(x, bot(x)); for (let y = y1; y >= y0; y -= st) p.lineTo(left(y), y); p.closePath(); return p;
 }
 function setupOpenWorld(wr, homePid) {
-  const all = ['dune', 'ice', 'dark', 'hell', 'water', 'jungle', 'robo', 'space', 'heaven', 'earth', 'mars'], extra = ['earth', 'jungle', 'water', 'dune', 'mars', 'ice'];
+  const all = Array(OW_N * OW_N - 1).fill('dune'), extra = ['dune']; // DUNE.IO: the whole open world is desert
   for (let i = all.length - 1; i > 0; i--) { const j = Math.floor(wr() * (i + 1)); [all[i], all[j]] = [all[j], all[i]]; }
   while (all.length < OW_N * OW_N) { const k = Math.floor(wr() * extra.length); all.splice(Math.floor(wr() * (all.length + 1)), 0, extra.splice(k, 1)[0]); }
   // sixteen regions: every environment at least once (each world's boss lair is in its first region)
@@ -6970,6 +7093,7 @@ function render() {
     drawAlien(CL || ctx, e.form ? formDef(e.def, e.form) : e.def, e.x, e.y, e.r * shK, e.ang, e.animT || G.t, { run: e.runK || 0, crawl: e.crawlK || 0, turn: e.turnK || 0, mvK: e.mvK || 0, odo: e.odo || 0, trail: e.trail && e.trail.length > 2 ? localTrail(e) : null, air: e.air, lod: e.r * zoom, self: e === p, cast: e.cast, form: inForm(e) ? G.dis.id : null, apex: e.boss, lvl: e.minion ? Math.max(1, e.lvl - 1) : e.lvl, moving: Math.hypot(e.vx, e.vy) > 20, phase: e.phase, alpha, elev: elevOf(e), worldBoss: !!e.worldBoss, titan: !!e.titan, env: e.biome, adapted: e.biome ? resists(e, e.biome) : true, fx: e.fx, ab: e.def.ability, abK: AB[e.def.ability] ? 1 - e.cdAb / AB[e.def.ability].cd : 1, shadow: !CL, aura: e.hitFlash > 0 ? '#ff2a2a' : (e.fx.slow > 0 ? '#9fe3ff' : null) });
   }
   if (CL) lit3dEnd(zoom);
+  for (const e of list) if (e.alive) drawAdapts(e);
   for (const e of list) {
     if (!e.alive) continue;
     let alpha = 1; if (e.fx.burrow > 0) alpha = 0.18; else if (e.fx.invis > 0) alpha = e === p ? 0.4 : 0.08;
@@ -6996,6 +7120,7 @@ function render() {
   for (const c of G.cover) if (c.x + c.r > vx0 && c.x - c.r < vx1 && c.y + c.r > vy0 && c.y - c.r < vy1) drawCover(c, p.inCover === c);
   for (const c of G.caves) if (c.x + c.R + 40 > vx0 && c.x - c.R - 40 < vx1 && c.y + c.R + 40 > vy0 && c.y - c.R - 40 < vy1) drawCaveRoof(c, p.inCave === c);
   drawDisasterWorld(vx0, vy0, vx1, vy1);
+    drawNight(p);
   } else drawUnderDark(p);
   if (G.tut) drawTutTarget();
   // projectiles
@@ -7181,9 +7306,9 @@ function drawHUD() {
   ctx.font = '12px system-ui'; ctx.fillStyle = '#ccc';
   ctx.fillText('DNA ' + G.earned.dna + (G.earned.adna ? ' · Ancient ' + G.earned.adna : '') + ' · Kills ' + G.kills, 18, topY + 63);
   { const st = p.inCave ? 'In cave: sheltered' : p.climbT > 0 ? 'Climbing…' : p.perch ? 'Perched up high' : p.overObst ? 'Flying over obstacles' : p.air != null && p.air < 0.5 ? 'Landed: move to take off' : p.inCover ? 'Hidden in cover' : (moves(p.def).swim && p.inMist) ? 'Diving, hidden' : moves(p.def).fly ? 'Flying' : ''; const tr = moves(p.def).list.map(k => MOVE_INFO[k].icon).join(''); if (st || tr) { ctx.textAlign = 'right'; ctx.fillStyle = '#ffcf8a'; ctx.fillText((st ? st + ' ' : '') + tr, 10 + pw - 8, topY + 63); ctx.textAlign = 'left'; } }
-  const ok = resists(p, G.planet);
+  const ok = resists(p, G.planet) && !(G.planet === 'dune' && p.sunburn);
   ctx.fillStyle = '#c9b6ff'; ctx.fillText('Diet: ' + DIETS[p.def.diet].name + ' (' + DIETS[p.def.diet].eats.map(x => FOODS[x].name.toLowerCase()).join(', ') + ')' + (G.dis ? (inForm(p) ? ' · ' + DISASTERS[G.planet].form + '!' : '') : ''), 18, topY + 91);
-  ctx.fillStyle = ok ? '#7dffb2' : '#ffb35a'; ctx.fillText(ok ? 'Adapted to ' + G.P.name : { dune: 'Heat is draining you', ice: 'Cold slows and chills you', dark: 'Darkness limits your sight', hell: 'Fire is burning you', water: 'You are short of breath', heaven: 'Holy radiance sears you', earth: 'Heavy gravity tires you', mars: 'Thin frozen air chokes you', space: 'The vacuum is suffocating you', jungle: 'Toxic spores poison you', robo: 'Static radiation burns you' }[G.planet] + ' (not adapted)', 18, topY + 77);
+  ctx.fillStyle = ok ? '#7dffb2' : '#ffb35a'; ctx.fillText(G.planet === 'dune' && !G.noHazard ? (isNight() ? '🌙 Night on the dunes' : p.sunburn ? '☀️ The midday sun is burning you: find shade, a cave or water' : (p.ug ? '⛰️ Underground: cool and dark' : '☀️ Day') + (p.ug ? '' : hasAd(p, 'heat') ? ' · Heat Shield' : inShade(p) ? ' · In shade' : '')) + (p.adapts && p.adapts.length ? '  ·  ' + p.adapts.map(k => ADAPTS[k].icon).join('') : '') : ok ? 'Adapted to ' + G.P.name : { dune: 'Heat is draining you', ice: 'Cold slows and chills you', dark: 'Darkness limits your sight', hell: 'Fire is burning you', water: 'You are short of breath', heaven: 'Holy radiance sears you', earth: 'Heavy gravity tires you', mars: 'Thin frozen air chokes you', space: 'The vacuum is suffocating you', jungle: 'Toxic spores poison you', robo: 'Static radiation burns you' }[G.planet] + ' (not adapted)', 18, topY + 77);
   // timer / mode line
   ctx.textAlign = 'center';
   const cx = narrow ? (VW - 70) / 2 : VW / 2;
@@ -7212,7 +7337,7 @@ function drawHUD() {
   for (const o of G.obstacles) { ctx.fillStyle = o.k === 'volcano' ? '#ff5a2a' : 'rgba(0,0,0,.7)'; ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.arc(mx + o.x * sc, my + o.y * sc, Math.max(1.2, o.r * sc), 0, 7); ctx.fill(); }
   ctx.globalAlpha = 1;
   if (G.royale) { ctx.strokeStyle = '#ff5a5a'; ctx.beginPath(); ctx.arc(mx + G.zone.x * sc, my + G.zone.y * sc, G.zone.r * sc, 0, 7); ctx.stroke(); }
-  if (G.reveal > 0) for (const e of G.creatures) if (e.alive && e !== p && !!e.ug === !!p.ug) { ctx.fillStyle = e.isBot ? '#ffcf5a' : '#ff6b6b'; ctx.fillRect(mx + e.x * sc - 1, my + e.y * sc - 1, 2, 2); }
+  if (G.reveal > 0 || hasAd(p, 'ears')) for (const e of G.creatures) if (e.alive && e !== p && !!e.ug === !!p.ug && (G.reveal > 0 || d2(e, p) < 1400 * 1400)) { ctx.fillStyle = e.isBot ? '#ffcf5a' : '#ff6b6b'; ctx.fillRect(mx + e.x * sc - 1, my + e.y * sc - 1, 2, 2); }
   for (const e of G.creatures) if ((e.boss || e.lucky || e.event) && e.alive) { ctx.fillStyle = e.mutantBoss ? '#e05cff' : e.lucky ? '#fff' : e.event ? '#ff8ad8' : '#ff3030'; ctx.fillRect(mx + e.x * sc - 2, my + e.y * sc - 2, 4, 4); }
   for (const f of G.fossils) if (f.hp > 0) { ctx.fillStyle = '#ffcf5a'; ctx.fillRect(mx + f.x * sc - 1.5, my + f.y * sc - 1.5, 3, 3); }
   ctx.fillStyle = '#7dffb2'; ctx.beginPath(); ctx.arc(mx + p.x * sc, my + p.y * sc, 3.5, 0, 7); ctx.fill();
@@ -7575,7 +7700,7 @@ const CHANGELOG = [
 function changelogHTML(n) {
   return CHANGELOG.slice(0, n || CHANGELOG.length).map(c => `<div style="text-align:left;margin:8px 0"><div style="font-weight:800;color:#ffd25a">v${c.v} · ${esc(c.title)} <small style="color:#999;font-weight:400">${c.date}</small></div><ul style="margin:4px 0 0 18px;padding:0;font-size:13px;line-height:1.45">${c.items.map(i => '<li>' + esc(i) + '</li>').join('')}</ul></div>`).join('');
 }
-function showChangelog() { modal("What's new in XENO.IO", `<div style="max-height:56vh;overflow:auto">${changelogHTML()}</div>`, [['Play', null]]); save.seenVer = CHANGELOG[0].v; persist(); renderNews(); }
+function showChangelog() { modal("What's new in DUNE.IO", `<div style="max-height:56vh;overflow:auto">${changelogHTML()}</div>`, [['Play', null]]); save.seenVer = CHANGELOG[0].v; persist(); renderNews(); }
 // =====================================================================
 //  ADS AFTER DEATH: Google AdSense "ads for games" (adBreak). Configure ADSENSE_CLIENT on the server.
 //  Without it, the death screen shows a small house promo instead. Ads never interrupt a match.
@@ -7657,7 +7782,7 @@ function refreshMenu() {
   pv.appendChild(info);
   info.appendChild(stageStrip(d, 40));
   // planet pick
-  const pp = $('planetPick'); pp.innerHTML = '';
+  const pp = $('planetPick'); pp.innerHTML = ''; pp.style.display = 'none'; // one world only
   const opts = [['random', 'Random world (10 planets)'], ['hell', hellUnlocked() ? 'Hell' : 'Hell (locked)']];
   for (const [id, label] of opts) {
     const b = document.createElement('button'); b.className = 'tab' + (save.planetPref === id ? ' on' : ''); b.textContent = label;
@@ -7901,7 +8026,7 @@ requestAnimationFrame(t => { last = t; running = true; loop(t); });
 @media(max-width:900px){#ws{grid-template-columns:1fr;grid-template-rows:48px 180px 300px 1fr}#ws header{grid-column:1}#wsL{border:0}}`;
   document.head.appendChild(css);
   const W = document.createElement('div'); W.id = 'ws';
-  W.innerHTML = `<header><b>🧬 XENO.IO Creature Workshop</b><span id="wsMsg"></span><button id="wsReal"></button><button id="wsExp">Export</button><button id="wsImp">Import</button><button id="wsClose">Close</button></header>
+  W.innerHTML = `<header><b>🧬 DUNE.IO Creature Workshop</b><span id="wsMsg"></span><button id="wsReal"></button><button id="wsExp">Export</button><button id="wsImp">Import</button><button id="wsClose">Close</button></header>
 <div id="wsL"><div class="f"><input id="wsQ" placeholder="Search ${ALIENS.length} creatures…"><select id="wsP"><option value="">All planets</option>${PLANET_IDS.map(p => `<option value="${p}">${esc(PLANETS[p].name)}</option>`).join('')}</select><select id="wsU"><option value="">Surface & underground</option><option value="s">Lives on the surface</option><option value="u">Lives underground</option></select><label style="display:flex;gap:6px;align-items:center;color:#9fb0c2"><input type="checkbox" id="wsOnly" style="width:auto"> Edited only</label></div><div id="wsList"></div></div>
 <div id="wsC"><canvas id="wsCv" width="560" height="560"></canvas><div class="bar"><span style="color:#9fb0c2">Stage</span>${[1, 2, 3, 4, 5].map(n => `<button data-st="${n}">${['Baby', 'Juvenile', 'Adult', 'Elder', 'Alpha'][n - 1]}</button>`).join('')}</div><div class="bar"><button id="wsMove" class="on">Walking</button><button id="wsSpin">Turn</button><button class="warn" id="wsReset">Reset this creature</button></div></div>
 <div id="wsR"></div>`;
@@ -7916,7 +8041,7 @@ requestAnimationFrame(t => { last = t; running = true; loop(t); });
   const merged = id => { const a = CREATURE_MODS[id] || {}, b = local[id] || {}; return Object.assign({}, a, b, { look: Object.assign({}, a.look, b.look) }); };
   const snap = def => { if (!CREATURE_BASE[def.id]) CREATURE_BASE[def.id] = JSON.parse(JSON.stringify(def, (k, v) => k === 'an' ? undefined : v)); };
   function restore(def) { const B = JSON.parse(JSON.stringify(CREATURE_BASE[def.id]));
-    for (const k of ['name', 'lore', 'ability', 'ult', 'hp', 'dmg', 'spd', 'size']) def[k] = B[k];
+    for (const k of ['name', 'lore', 'ability', 'ult', 'hp', 'dmg', 'spd', 'size', 'adapts']) def[k] = B[k];
     for (const k in def.look) delete def.look[k]; Object.assign(def.look, B.look); }
   function rebuild(def) { snap(def); restore(def); applyCreatureMod(def.id, merged(def.id)); }
 
@@ -7981,6 +8106,7 @@ requestAnimationFrame(t => { last = t; running = true; loop(t); });
 <h4>Identity</h4>
 <label class="w"><span>Name</span><input data-d="name" value="${esc(d.name)}" maxlength="40"></label>
 <label class="w"><span>Story</span><textarea data-d="lore" rows="3">${esc(d.lore || '')}</textarea></label>
+${typeof ADAPTS !== 'undefined' && d.desert ? `<h4>Born adapted to</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;font-size:12.5px">${Object.keys(ADAPTS).map(k => `<label title="${esc(ADAPTS[k].desc)}" style="display:flex;gap:5px;align-items:center;cursor:pointer"><input type="checkbox" data-ad="${k}" ${(d.adapts || []).includes(k) ? 'checked' : ''}>${ADAPTS[k].icon} ${ADAPTS[k].name}</label>`).join('')}</div><div style="color:#9fb0c2;font-size:11.5px;margin:3px 0 6px">Players pick more as they grow (one at each new life stage).</div>` : ''}
 ${(() => { const I = habInfo(d), other = (d.res || []).filter(x => x !== d.planet && PLANETS[x]).map(x => PLANETS[x].name);
   return `<h4>Where it lives</h4><canvas id="wsHab" width="300" height="190" style="position:static;display:block;width:100%;height:auto;aspect-ratio:300/190;border-radius:8px;border:1px solid #2c3a49"></canvas>
 <div style="display:grid;grid-template-columns:95px 1fr;gap:3px 6px;margin-top:6px;font-size:12.5px"><span style="color:#9fb0c2">Planet</span><span>${esc(PLANETS[d.planet].full || PLANETS[d.planet].name)}</span>
@@ -8022,6 +8148,7 @@ ${sel('ult', 'Ultimate', [['', '(none)']].concat(ULTL.map(k => [k, AB[k].name]))
   function setMod(path, k, v) { const m = local[cur.id] || (local[cur.id] = {}); if (path === 'l') (m.look || (m.look = {}))[k] = v; else m[k] = v; store(); }
   q('wsR').addEventListener('input', e => {
     const el = e.target; if (!cur) return;
+    if (el.dataset.ad) { const arr = [...q('wsR').querySelectorAll('[data-ad]')].filter(x => x.checked).map(x => x.dataset.ad); setMod('d', 'adapts', arr); rebuild(cur); flash('Saved on this device'); return; }
     const k = el.dataset.l || el.dataset.d; if (!k) return;
     let v = el.type === 'checkbox' ? el.checked : el.type === 'range' ? +el.value : el.value;
     if (k === 'ult' && v === '') v = null;

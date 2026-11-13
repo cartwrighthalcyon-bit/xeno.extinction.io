@@ -1,19 +1,40 @@
 {
-  "name": "XENO.IO — Alien Survival",
-  "short_name": "XENO.IO",
-  "description": "Hatch as a baby alien, eat, grow and evolve through 1,100+ creatures across 11 worlds. Free multiplayer .io game.",
+  "name": "DUNE.IO — Desert Alien Survival",
+  "short_name": "DUNE.IO",
+  "description": "Hatch as a baby desert alien, eat, grow and adapt to survive the dunes. Free multiplayer .io game.",
   "id": "/",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "fullscreen",
-  "display_override": ["fullscreen", "standalone"],
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
   "orientation": "any",
-  "background_color": "#07060c",
-  "theme_color": "#07060c",
-  "categories": ["games", "entertainment"],
+  "background_color": "#1a1008",
+  "theme_color": "#1a1008",
+  "categories": [
+    "games",
+    "entertainment"
+  ],
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
