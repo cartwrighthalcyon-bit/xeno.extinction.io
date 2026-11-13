@@ -8189,7 +8189,7 @@ ${sel('ult', 'Ultimate', [['', '(none)']].concat(ULTL.map(k => [k, AB[k].name]))
     q('wsQ').value = ''; renderList(); select(id); flash('New creature made: give it a name and a body');
   };
   q('wsReset').onclick = () => { if (!cur) return;
-    if (cur.fresh) { if (!confirm('Delete ' + cur.name + '? This cannot be undone.')) return; const id = cur.id; delete local[id]; store(); const i = ALIENS.indexOf(ALIEN[id]); if (i >= 0) ALIENS.splice(i, 1); delete ALIEN[id]; renderList(); select((ALIENS.find(a => a.fresh) || ALIENS[0]).id); flash('Deleted'); return; }
+    if (cur.fresh) { const btn = q('wsReset'); if (!btn.dataset.sure) { btn.dataset.sure = 1; btn.textContent = 'Click again to delete'; setTimeout(() => { delete btn.dataset.sure; if (cur && cur.fresh) btn.textContent = 'Delete this creature'; }, 3000); return; } delete btn.dataset.sure; const id = cur.id; delete local[id]; store(); const i = ALIENS.indexOf(ALIEN[id]); if (i >= 0) ALIENS.splice(i, 1); delete ALIEN[id]; renderList(); select((ALIENS.find(a => a.fresh) || ALIENS[0]).id); flash('Deleted'); return; }
     delete local[cur.id]; store(); rebuild(cur); select(cur.id); flash(CREATURE_MODS[cur.id] ? 'Back to the shipped version' : 'Back to the original'); };
 
   // ---- preview
