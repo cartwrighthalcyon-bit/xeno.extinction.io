@@ -98,16 +98,16 @@ input[type=text]{background:#140f22;border:2px solid #5a46a0;color:#fff;border-r
   <div id="acct"></div>
   <input type="text" id="nameIn" maxlength="14" placeholder="Your name">
   <div class="preview" id="eqPrev"></div>
-  <button class="btn big green" id="bOnline">Free-for-All</button>
+  <button class="btn big green" id="bOnline" style="display:none">Free-for-All</button>
   <button class="btn big" id="bStory">Story Mode</button>
   <button class="btn big" id="bOffline">Open World</button>
   <button class="btn big gold" id="bLab">Alien Lab</button>
   <button class="btn big" id="bBoard">Leaderboards</button>
-  <div class="row"><button class="btn gold" id="bStore">Store</button><button class="btn" id="bBag">Bag</button><button class="btn" id="bMissions">Missions &amp; Daily</button><button class="btn" id="bSettings">Settings</button><button class="btn" id="bTrials" style="border-color:#ff4fd8;color:#ffb3f0">Elder Trials</button><button class="btn" id="bCodes" style="border-color:#5ae0ff;color:#bff3ff">Codes</button><button class="btn" id="bReport">Report</button></div>
+  <div class="row"><button class="btn gold" id="bStore">Store</button><button class="btn" id="bBag" style="display:none">Bag</button><button class="btn" id="bMissions">Missions &amp; Daily</button><button class="btn" id="bSettings">Settings</button><button class="btn" id="bTrials" style="border-color:#ff4fd8;color:#ffb3f0">Elder Trials</button><button class="btn" id="bCodes" style="border-color:#5ae0ff;color:#bff3ff">Codes</button><button class="btn" id="bReport">Report</button></div>
   <div id="newsBox" style="max-width:560px;margin:8px auto 0;padding:8px 12px;border:1px solid #5a46a0;border-radius:12px;background:rgba(20,12,40,.75);font-size:13px;text-align:center"></div>
   <div class="row" style="margin-top:6px"><span class="sub" style="margin:0">Planet:</span><span id="planetPick" class="row"></span></div>
   <div class="note" id="eventNote"></div>
-  <div class="note"><b>Free-for-All</b>: everyone against everyone until the Extinction Event ends. <b>Open World</b>: one huge map where all eight worlds meet, no timer, with migrations, meteor showers, blood moons and other world events.</div>
+  <div class="note"><b>Open World</b>: the whole burning planet of Solkar, with no timer: eat, drink, keep cool, grow up and follow your herd. <b>Story Mode</b>: seven chapters on Solkar. Press <b>M</b> to open the map.</div>
   <div class="note">Move: WASD / arrows / mouse, or drag anywhere on touch screens. Skill: Space or the round button. Ultimate (apex aliens): Q or the gold button. Bigger creatures eat smaller ones, so pick your fights.</div>
 </div>
 
@@ -1383,6 +1383,10 @@ Object.assign(AB, {
   shellhide:   Object.assign({}, AB.curl, { name: 'Shell Hide', as: 'curl', desc: 'Pulls itself into its shell: takes almost no damage for 3s and heals a little.' }),
   wallscurry:  Object.assign({}, AB.scurry, { name: 'Wall Scurry', as: 'scurry' }),
   run:         Object.assign({}, AB.sprint, { name: 'Run', as: 'sprint', desc: 'Runs flat out on its legs: almost double speed for 3s.' }),
+  acidspit:    Object.assign({}, AB.spit, { name: 'Acid Spit', as: 'spit', desc: 'Spits acid that blinds prey or predators; too weak to hurt most creatures.' }),
+  quilllaunch: Object.assign({}, AB.quills, { name: 'Quill Launch', as: 'quills', cd: 4, desc: 'Launches its thorns forward: they make prey bleed and slow down. Three volleys, then it is bare until they regrow.' }),
+  websnare:    Object.assign({}, AB.web, { name: 'Web Snare', as: 'web', cd: 8, desc: 'Lays a translucent web trap behind it that catches Medium or smaller prey.' }),
+  grapple:     Object.assign({}, AB.web, { name: 'Grapple', as: 'web', cd: 9, desc: 'Latches onto Medium or smaller prey, biting it and holding it still; if you are bigger you drag it around.' }),
   ramcharge:   Object.assign({}, AB.charge, { name: 'Charge', as: 'charge', desc: 'Lowers its face plate and charges, ramming everything in its way.' }),
   sprintboost: Object.assign({}, AB.sprint, { name: 'Sprint Boost', as: 'sprint', desc: 'Runs even faster, but burns stamina fast.' }),
   sandscreen:  Object.assign({}, AB.sandveil, { name: 'Sand Screen', as: 'sandveil', desc: 'Swipes its fan tail left and right, kicking up sand that blinds predators.' }),
@@ -1582,6 +1586,15 @@ function applyCreatureMods() {
 //  [id, name, rarity, size, skill, body skill, diet, behaviour, built-in adaptations, home, underground?, look, story]
 // =====================================================================
 const DESERT_ROSTER = [
+  ['teraspix', 'Teraspix', 'uncommon', 24, 'acidspit', ['flyup', 'Fly', 'its feathered wings', 1], 'insectivore', 'territorial', [], 'Inside the enormous rebirth trees of the Outskirts', false,
+    { sp: 'harpyeagle', hue: 30, sat: 32, lig: 46, hue2: 22 },
+    'A feathered flier like a pteranodon, with a long tail. It eats bugs and lives inside the enormous rebirth trees. It hates the heat and hates sharing water: a pack that claims an oasis as its rest spot drives every other species away. It can climb and fly, and flies longer than most. Its wings fold in when it walks, but open when it climbs. Its acid spit blinds prey and predators, but is too weak to hurt most creatures.'],
+  ['sailhunter', 'Sail Hunter', 'uncommon', 26, 'quilllaunch', ['sprint', 'Sprint', 'its long legs', 2], 'carnivore', 'predator', ['spines'], 'Wherever the Sail Runners migrate', false,
+    { sp: 'commonostrich', hue: 30, sat: 18, lig: 38, hue2: 26 },
+    'A subspecies of the Sail Runner. An outcast that turned cannibal and evolved to eat its own kind: no feathers, only thorns from head to tail that mimic them. When the Sail Runners realise it is an impostor, it launches spikes that make them bleed and slow down, then eats them. Its spiked body makes it hard to ambush and fight. It knows where the Sail Runners migrate. With no feathers it can no longer see in sandstorms or dust. After three volleys of quills it is grey, bare and vulnerable until they regrow.'],
+  ['nightcrawler', 'Night Crawler', 'rare', 28, 'websnare', ['grapple', 'Grapple', 'its long legs', 2], 'carnivore', 'predator', ['night'], 'Caves; it hunts outside only at night', true,
+    { sp: 'goliathbirdeater', hue: 0, sat: 0, lig: 8, hue2: 0 },
+    'A pitch-black cave spider. Holding still in shadow, in a cave or at night, it becomes invisible. It crawls on any surface, needs little food and water, and its fangs are poisoned. It lays translucent web snares that trap Medium and smaller prey, and can grapple Medium and smaller prey, biting them and holding them still. If it is bigger, it drags them around.'],
   ['sailrunner', 'Sail Runner', 'uncommon', 26, 'sprintboost', ['sandscreen', 'Sand Screen', 'its fan tail', 2], 'insectivore', 'skittish', ['sand'], 'Oases of the Outskirts', false,
     { sp: 'commonostrich', hue: 34, sat: 30, lig: 55, hue2: 20 },
     'A long-legged runner like an ostrich, with a crest on its head, a long scaly pangolin tail and a fan of tail feathers. Its feathers shed wind and sand as it runs, so it can see in sandstorms and dust, but it overheats quickly and migrates between oases. It hunts bugs and small critters, and is easy prey when young or exhausted.'],
@@ -1656,6 +1669,9 @@ const DESERT_EXTRA = {
     stages: { 1: { look: { crab: true, hue: 30, sat: 6, lig: 92, hue2: 30 } }, 2: { look: { crab: true, hue: 30, sat: 36, lig: 40, hue2: 26 } } } },
   sandfly: { env: 'under', tempMax: 38, tempMin: 4, smell: true, hp: 52, growAdapts: { 2: 'night', 3: 'camo' },
     stages: { 1: { look: { sp: 'mongoliandeathworm', hue: 38, sat: 32, lig: 70, hue2: 36 }, mv: { climb: false, swim: false, fly: false } }, 2: { look: { sp: 'asiangianthornet', hue: 26, sat: 35, lig: 26, hue2: 30, rocky: true, dull: true }, mv: { climb: false, swim: false, fly: true } } } },
+  teraspix: { env: 'rebirth', growAdapts: { 2: 'night', 3: 'ears' }, tempMax: 40, tempMin: 4, oasisGuard: true, longFlight: true, openWingsClimb: true, deco: 'teraspix', mv: { climb: true, swim: false, fly: true } },
+  sailhunter: { env: 'oasis', growAdapts: { 2: 'heat', 3: 'armor' }, tempMax: 46, tempMin: 6, runner: true, followWind: true, huntsRunners: true, quillUser: true, deco: 'sailhunter', spdK: 1.1 },
+  nightcrawler: { env: 'under', growAdapts: { 3: 'armor' }, tempMax: 44, tempMin: 2, darkLove: true, slowMeta: true, poisonFangs: true, hpK: 1.2, mv: { climb: true, swim: false, fly: false } },
   sailrunner: { env: 'oasis', growAdapts: { 2: 'ears', 3: 'water', 4: 'heat' }, tempMax: 44, tempMin: 6, runner: true, sandSight: true, oasisMigrant: true, deco: 'sailrunner', heatK: 1.6, spdK: 1.15 },
   gurgleguru: { env: 'forest', growAdapts: { 2: 'water', 3: 'armor', 4: 'ears' }, tempMax: 52, tempMin: 8, mimic: 'rock', qsSwim: true, hopper: true, spdK: 0.8, mv: { climb: false, swim: true, fly: false },
     stages: { 1: { look: { tadpole: true, hue: 0, sat: 0, lig: 52 } }, 2: { look: { sp: 'americanbullfrog', hue: 30, sat: 14, lig: 44, rocky: true } } } },
@@ -1665,7 +1681,7 @@ const DESERT_EXTRA = {
     stages: { 1: { look: { sp: 'greatwhiteshark', hue: 52, sat: 100, lig: 60, hue2: 48 } }, 2: { look: { sp: 'greatwhiteshark', hue: 36, sat: 100, lig: 55, hue2: 28 } } } },
 }; // environment, body temperature limits (°C), traits and life stages // environment, body temperature limits (°C) and traits
 const STARTER_IDS = ['sandskink', 'ceble', 'sandfly', 'spark'];
-const DESERT_ACTIVE = new Set([...STARTER_IDS, 'sailrunner', 'gurgleguru', 'skitter', 'krongero']); // the creatures you have designed so far // every other desert design is removed: owners get their DNA back
+const DESERT_ACTIVE = new Set([...STARTER_IDS, 'sailrunner', 'gurgleguru', 'skitter', 'krongero', 'teraspix', 'sailhunter', 'nightcrawler']); // the creatures you have designed so far // every other desert design is removed: owners get their DNA back
 const DEFAULT_ID = STARTER_IDS[0];
 function applyDesign(d, m) { // give a creature a hand-made look (used by the desert roster)
   const L = d.look, k = m.look; delete L.mut; delete L.sig; delete L.an; L.rainbow = false;
@@ -1788,8 +1804,8 @@ const AB_COL = { mutagen: '#9dff3a', splice: '#9dff3a', regrow: '#9dff3a', blood
 Object.assign(CAST_KIND, { hide: 'vanish', mothercall: 'roar', zigzag: 'dash', sprint: 'dash', pounce: 'dash', stalk: 'vanish', maul: 'chomp', venombite: 'chomp', constrict: 'spin', deathroll: 'spin', snap: 'chomp', kick: 'slam', talondive: 'dash', swoop: 'vanish', howl: 'roar', sting: 'lash', curl: 'glow', stampede: 'dash', chestbeat: 'roar', trumpet: 'roar', spray: 'breath', ink: 'vanish', shock: 'spin', camo: 'vanish', tailshed: 'vanish', toxin: 'glow', breach: 'dash', leap: 'dash', spit: 'breath', dig: 'vanish' });
 Object.assign(AB_COL, { hide: '#9aae6a', mothercall: '#ffe7a8', zigzag: '#ffffff', sprint: '#fff2c8', pounce: '#ffd27a', stalk: '#5a6a3a', maul: '#ff5a4a', venombite: '#b6ff4a', constrict: '#c8a85a', deathroll: '#5ab0e0', snap: '#ff4a5a', kick: '#e8d6b0', talondive: '#ffe08a', swoop: '#d8d0ff', howl: '#cfd8ff', sting: '#e8ff7a', curl: '#c8b090', stampede: '#d8b07a', chestbeat: '#ffb05a', trumpet: '#ffd77a', spray: '#c8d86a', ink: '#3a2a4a', shock: '#9fe3ff', camo: '#7ab05a', tailshed: '#c8b88a', toxin: '#b6ff4a', breach: '#9fe3ff', leap: '#e8d6b0', spit: '#e8e8c8', dig: '#9a7a5a' });
 // the new creature skills borrow their colour and cast style from the skill they're built on
-Object.assign(AB_COL, { ramcharge: AB_COL.charge, sprintboost: AB_COL.sprint, sandscreen: AB_COL.sandveil, tonguegrab: AB_COL.tonguesnatch, manthra: '#d8b070', bastion: AB_COL.shield, flyup: AB_COL.dash, dive: AB_COL.burrow, sparkspit: '#ffb030', run: AB_COL.sprint, echoloc: AB_COL.echo, vanish: AB_COL.shadow, poisonspray: '#b6ff4a', tonguesnatch: '#ff7a9a', clawsnap: '#ff7a4a', shellhide: '#e8d2a0', wallscurry: AB_COL.scurry || '#fff' });
-Object.assign(CAST_KIND, { ramcharge: CAST_KIND.charge, sprintboost: CAST_KIND.sprint, sandscreen: CAST_KIND.sandveil, tonguegrab: CAST_KIND.tonguesnatch, manthra: CAST_KIND.shield, bastion: CAST_KIND.shield, flyup: CAST_KIND.dash, dive: CAST_KIND.burrow, sparkspit: CAST_KIND.acid, run: CAST_KIND.sprint, echoloc: CAST_KIND.echo, vanish: CAST_KIND.shadow, poisonspray: CAST_KIND.acid, tonguesnatch: CAST_KIND.vinewhip, clawsnap: 'chomp', shellhide: CAST_KIND.curl, wallscurry: CAST_KIND.scurry });
+Object.assign(AB_COL, { acidspit: AB_COL.spit, quilllaunch: '#d8c8a0', websnare: '#ddd', grapple: '#aaa', ramcharge: AB_COL.charge, sprintboost: AB_COL.sprint, sandscreen: AB_COL.sandveil, tonguegrab: AB_COL.tonguesnatch, manthra: '#d8b070', bastion: AB_COL.shield, flyup: AB_COL.dash, dive: AB_COL.burrow, sparkspit: '#ffb030', run: AB_COL.sprint, echoloc: AB_COL.echo, vanish: AB_COL.shadow, poisonspray: '#b6ff4a', tonguesnatch: '#ff7a9a', clawsnap: '#ff7a4a', shellhide: '#e8d2a0', wallscurry: AB_COL.scurry || '#fff' });
+Object.assign(CAST_KIND, { acidspit: CAST_KIND.spit, quilllaunch: CAST_KIND.quills, websnare: CAST_KIND.web, grapple: CAST_KIND.web, ramcharge: CAST_KIND.charge, sprintboost: CAST_KIND.sprint, sandscreen: CAST_KIND.sandveil, tonguegrab: CAST_KIND.tonguesnatch, manthra: CAST_KIND.shield, bastion: CAST_KIND.shield, flyup: CAST_KIND.dash, dive: CAST_KIND.burrow, sparkspit: CAST_KIND.acid, run: CAST_KIND.sprint, echoloc: CAST_KIND.echo, vanish: CAST_KIND.shadow, poisonspray: CAST_KIND.acid, tonguesnatch: CAST_KIND.vinewhip, clawsnap: 'chomp', shellhide: CAST_KIND.curl, wallscurry: CAST_KIND.scurry });
 function hexA(h, a) { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${clamp(a, 0, 1)})`; }
 function drawFormInner(c, form, L, r, t) { // inside body clip
   if (form === 'eclipse') { c.fillStyle = 'rgba(12,0,24,.72)'; c.fillRect(-r * 2.5, -r * 2, r * 5, r * 4); }
@@ -3601,7 +3617,7 @@ function drawNight(p) { // night on the dunes: dark, with a circle of sight arou
 //  and each species has a heat limit (and a cold limit) past which it starts dying.
 // =====================================================================
 const GROW_WAIT = [0, 60, 100, 150, 200]; // seconds a creature must live in a stage before it can grow out of it
-const SOL_AIR = { heart: [30, 20], pit: [56, 8], ring: [46, 10], halo: [66, 40], out: [42, 6], forest: [44, 6] }; // [midday, night] °C
+const SOL_AIR = { rebirth: [38, 8], heart: [30, 20], pit: [56, 8], ring: [46, 10], halo: [66, 40], out: [42, 6], forest: [44, 6] }; // [midday, night] °C
 function tempLimits(e) { const d = e.def; let hi = d.tempMax != null ? d.tempMax : 50, lo = d.tempMin != null ? d.tempMin : 8; if (hasAd(e, 'heat')) hi += 12; if (hasAd(e, 'lava')) hi += 40; if (hasAd(e, 'water')) hi += 3; return [hi, lo]; }
 function airTemp(e) {
   if (e.onLava) return 95; if (e.ug || e.inCave) return 24; if (e.fx.burrow > 0) return 27; if (e.inWater || (e.drinking && !e.def.lavaDweller)) return 22;
@@ -3630,7 +3646,7 @@ function updateNeeds(e, dt) {
   if (e.isBot) return; // bots only feel the heat and cold
   // thirst and hunger
   const hot = 1 + Math.max(0, e.temp - 32) / 18;
-  e.water -= (e.def.lavaDweller ? (e.inLava ? 0.2 : 1.6) : 0.42 * hot) * (hasAd(e, 'water') ? 0.5 : 1) * dt; e.food -= 0.28 * dt;
+  const meta = e.def.slowMeta ? 0.5 : 1; e.water -= (e.def.lavaDweller ? (e.inLava ? 0.2 : 1.6) : 0.42 * hot) * (hasAd(e, 'water') ? 0.5 : 1) * meta * dt; e.food -= 0.28 * meta * dt;
   e.drinking = waterHere(e) && e.water < 100; if (e.drinking) { e.water = Math.min(100, e.water + 28 * dt); if (mine && Math.random() < dt * 3) G.parts.push({ x: e.x + rand(-e.r, e.r), y: e.y + rand(-e.r, e.r), vx: 0, vy: -30, life: 0.5, c: '#7fd0ff', s: 3 }); }
   if (e.water <= 0) { e.water = 0; e.hp -= e.maxhp * 0.015 * dt; if (mine && Math.random() < dt * 0.4) floatText(e.x, e.y - e.r, 'dying of thirst', '#7fd0ff'); }
   if (e.food <= 0) { e.food = 0; e.hp -= e.maxhp * 0.012 * dt; if (mine && Math.random() < dt * 0.4) floatText(e.x, e.y - e.r, 'starving', '#ffcf8a'); }
@@ -3968,11 +3984,13 @@ const SOL_REGIONS = {
   ring: { name: 'THE RING', sub: 'spiked volcanic mountains around the crater', col: '#ff9a6a' },
   halo: { name: "THE DEVIL'S HALO", sub: 'rivers of lava from the Ring', col: '#ff5a2a' },
   out: { name: 'THE OUTSKIRTS', sub: 'boulders, valleys and shard meadows beyond the Ring', col: '#e0b080' },
+  rebirth: { name: 'THE REBIRTH TREES', sub: 'enormous trees that die and bloom again with the weather', col: '#9be36a' },
   forest: { name: 'THE SHARD FOREST', sub: 'glass spikes that shred large creatures: find the safe path', col: '#bfe8ff' },
 };
 function solRegion(x, y) {
   const g = G.sol, d = solDist(x, y);
   if (d < g.heart) return 'heart';
+  if (g.groves) for (const v of g.groves) if ((x - v.x) ** 2 + (y - v.y) ** 2 < v.r * v.r) return 'rebirth';
   for (const z of g.forests) if ((x - z.x) ** 2 + (y - z.y) ** 2 < z.r * z.r) return 'forest';
   if (d < g.ringIn) return 'pit';
   if (d < g.ringOut) return 'ring';
@@ -4031,6 +4049,9 @@ function buildSolkar(wr) {
   for (let i = 0; i < Math.round(5 * CNT / 12.46 + 2); i++) { const s = outSpot(150, 200); if (s) Z.push({ x: s[0], y: s[1], r: 110 + wr() * 60, k: 'droppit', ph: wr() * 6 }); }
   for (let i = 0; i < 2; i++) { const s = outSpot(170, 600); if (s) Z.push({ x: s[0], y: s[1], r: 160 + wr() * 30, k: 'oasis', pond: true, palms: Array.from({ length: 5 }, () => wr() * 6.28) }); }
   for (let i = 0; i < Math.round(10 * CNT / 12.46 + 5); i++) { const s = outSpot(200, 160); if (s) Z.push({ x: s[0], y: s[1], r: 160 + wr() * 120, k: 'brush', seed: (wr() * 1e6) | 0 }); }
+  // rebirth trees: groves of enormous trees that die back and rebloom with the weather
+  g.groves = []; for (let i = 0; i < Math.min(14, Math.round(5 * CNT / 12.46 + 3)); i++) { const gr = (520 + wr() * 380) * Math.max(1, S * 0.45), s = outSpot(gr, 250); if (!s) continue; const v = { x: s[0], y: s[1], r: gr, health: 0.6 + wr() * 0.4, trees: [] }; g.groves.push(v); Z.push({ x: s[0], y: s[1], r: gr, k: 'rebirth', grove: v });
+    for (let k = 0; k < 3 + (wr() * 4 | 0); k++) { const a = wr() * 6.283, d = Math.sqrt(wr()) * gr * 0.75, tr = (130 + wr() * 110) * Math.max(1, S * 0.35), x = s[0] + Math.cos(a) * d, y = s[1] + Math.sin(a) * d; if (O.some(o => Math.hypot(o.x - x, o.y - y) < o.r + tr * 0.9)) continue; const t = { x, y, r: tr, k: 'rtree', seed: (wr() * 1e6) | 0, grove: v }; O.push(t); v.trees.push(t); } }
   // rare springs: crystal formations that trap water
   for (let i = 0; i < Math.round(7 * CNT / 12.46 + 3); i++) { const s = outSpot(150, 250); if (!s) continue; Z.push({ x: s[0], y: s[1], r: 55 + wr() * 15, k: 'spring', seed: (wr() * 1e6) | 0 });
     for (let k = 0; k < 3; k++) { const a = wr() * 6.283, d = 95 + wr() * 30; O.push({ x: s[0] + Math.cos(a) * d, y: s[1] + Math.sin(a) * d, r: 20 + wr() * 16, k: 'crystal', rot: wr() * 6.28, sol: true, hue: 190 }); } }
@@ -4049,7 +4070,7 @@ function buildSolkar(wr) {
   for (const c of G.caves) if (wr() < (c.deep ? 1 : 0.45)) c.spring = true; // some caves hold water
   { const inner = []; for (const c of G.caves) { if (c.R < 220) continue; const n = 1 + (wr() < 0.5 ? 1 : 0); for (let i = 0; i < n; i++) { const a = c.ent + Math.PI + (i - (n - 1) / 2) * 1.6 + (wr() - 0.5) * 0.4, R = c.R * (0.28 + wr() * 0.1), d = c.R - R - 40;
       inner.push({ pid: 'dune', x: c.x + Math.cos(a) * d, y: c.y + Math.sin(a) * d, R, ent: a + Math.PI, parent: c, inner: true, sol: true, theme: caveTheme(c), spring: wr() < 0.3, sh: Array.from({ length: 18 }, (_, k) => 1 + 0.1 * Math.sin(k * 0.8 + a) + (wr() - 0.5) * 0.1), bumps: Array.from({ length: 5 }, () => [wr() * 6.283, wr() * 0.6, 0.18 + wr() * 0.2]) }); } }
-    G.caves = inner.concat(G.caves); } // caves inside caves: smaller chambers in the back of the big ones, each with its own way down
+    G.caves = inner.concat(G.caves); g.inner = inner; } // caves inside caves: smaller chambers in the back of the big ones, each with its own way down
   if (G.props) G.props = G.props.filter(p => { const d = solDist(p.x, p.y); return d > g.heart && (d > g.ringIn || p.k === 'bones' || wr() < 0.25); });
   g.wx = null; g.nextWx = 70 + wr() * 40; g.nextErupt = 200 + wr() * 160; g.nextFire = 1800 + wr() * 1200; g.nextMeteor = 900 + wr() * 900; g.nextHurr = 420 + wr() * 300;
 }
@@ -4062,6 +4083,7 @@ const SOL_FOOD = { // [type, kind, weight] by region
   halo: [['rock', 'lavarock', 5], ['rock', 'ore', 2], ['rock', 'crystal', 1], ['meat', 'carrion', 1.5]],
   out: [['plant', 'leaf', 1.5], ['plant', 'seeds', 1.5], ['plant', 'cactus', 1.5], ['plant', 'corpsebloom', 1.2], ['plant', 'sunlight', 1], ['rock', 'rock', 1.5], ['rock', 'glass', 1], ['rock', 'ore', 0.7], ['meat', 'bone', 1.5], ['meat', 'carrion', 1.2], ['meat', 'insect', 1.5], ['meat', 'grub', 0.8], ['meat', 'meat', 0.8]],
   forest: [['rock', 'glass', 5], ['rock', 'crystal', 1], ['meat', 'carrion', 1]],
+  rebirth: [['plant', 'fruit', 3], ['plant', 'leaf', 2], ['meat', 'insect', 3], ['meat', 'grub', 1.5], ['plant', 'seeds', 1]],
   meadow: [['rock', 'glass', 6], ['plant', 'sunlight', 1]],
 };
 function solFood(x, y, r) {
@@ -4099,9 +4121,11 @@ function solWeather(dt) {
   if (Math.random() < 0.55) solStartWx('heatwave', 70); else solStartWx('shardrain', 40);
 }
 function solHeatMul(e) { const g = G.sol; if (!g) return 1; const r = solRegion(e.x, e.y); if (r === 'heart') return 0; let m = r === 'pit' ? 1.7 : r === 'halo' ? 1.5 : 1; if (g.wx && g.wx.id === 'heatwave') m *= 2.2; return m; }
-function solShade(e) { const g = G.sol; if (!g) return false; if (inCastShadow(e.x, e.y)) return true; for (const s of g.shade) if ((e.x - s.x) ** 2 + (e.y - s.y) ** 2 < s.r * s.r * 0.25) return true; for (const s of g.sky) if ((e.x - s.x - 60) ** 2 + (e.y - s.y - 80) ** 2 < s.r * s.r) return true; return false; }
+function solShade(e) { const g = G.sol; if (!g) return false; if (inCastShadow(e.x, e.y)) return true; if (g.groves) for (const v of g.groves) if (v.health > 0.5 && (e.x - v.x) ** 2 + (e.y - v.y) ** 2 < v.r * v.r) for (const t of v.trees) if ((e.x - t.x) ** 2 + (e.y - t.y) ** 2 < t.r * t.r) return true; for (const s of g.shade) if ((e.x - s.x) ** 2 + (e.y - s.y) ** 2 < s.r * s.r * 0.25) return true; for (const s of g.sky) if ((e.x - s.x - 60) ** 2 + (e.y - s.y - 80) ** 2 < s.r * s.r) return true; return false; }
 function solEffects(e, dt) { // what Solkar does to every creature
-  const g = G.sol; if (!g || !e.alive || G.noHazard) return; const p = G.player, mine = e === p; lavaLife(e, dt);
+  const g = G.sol; if (!g || !e.alive || G.noHazard) return; const p = G.player, mine = e === p; lavaLife(e, dt); poisonTick(e, dt); updateGrapple(e, dt);
+  if (e.quillRegrow > 0) { e.quillRegrow -= dt; if (e.quillRegrow <= 0) { e.quills = 3; if (mine) banner('🦔 Your quills have grown back.', '#c8c0b0'); } }
+  if (e.def.size >= 22 && g.inner) for (const c of g.inner) { let dx = e.x - c.x, dy = e.y - c.y, d = Math.hypot(dx, dy); const lim = c.R + e.r * 0.6; if (d < 1) { dx = Math.cos(e.ang); dy = Math.sin(e.ang); d = 1; } if (d < lim) { e.x = c.x + dx / d * lim; e.y = c.y + dy / d * lim; if (mine && Math.random() < dt) floatText(e.x, e.y - e.r, 'too big to fit in there', '#ccc'); } } // inner caves are only for small creatures
   if (e.bleed > 0) { e.bleed -= dt; e.hp -= e.maxhp * 0.012 * dt; if (Math.random() < dt * 6) G.parts.push({ x: e.x + rand(-e.r, e.r) * 0.5, y: e.y + rand(-e.r, e.r) * 0.5, vx: 0, vy: 20, life: 0.6, c: '#c01828', s: 3 }); }
   if (e.ug) return; const reg = solRegion(e.x, e.y), mv = moves(stageDef(e)), sheltered = e.inCave || e.fx.burrow > 0;
   if (mine && reg !== e.solReg) { e.solReg = reg; const R = SOL_REGIONS[reg]; if (G.t > 2) banner(R.name + ': ' + R.sub, R.col); }
@@ -4130,6 +4154,7 @@ function solRng(seed) { let s = seed >>> 0 || 1; return () => (s = (s * 1664525 
 function drawSolObstacle(o) {
   const t = G.t;
   switch (o.k) {
+    case 'rtree': drawRebirthTree(o); return true;
     case 'spire': { if (drawRelief(o)) return true; if (o.r > 150) { drawRockChunk(o.x, o.y, o.r, o.seed, '#9a5a3a', '#3a1a10', true); return true; } // a jagged spiked mountain seen from above: sharp ridges radiating from a high peak
       const poly = (k, dx, dy) => { ctx.beginPath(); o.pts.forEach(([a, rr], i) => { const x = o.x + dx + Math.cos(a) * rr * k, y = o.y + dy + Math.sin(a) * rr * k; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.closePath(); };
       ctx.fillStyle = 'rgba(25,8,4,.4)'; poly(1.05, 26, 32); ctx.fill();
@@ -4182,6 +4207,7 @@ function drawSolZone(z) {
     case 'spring': { const g = ctx.createRadialGradient(z.x, z.y, z.r * 0.2, z.x, z.y, z.r * 1.5); g.addColorStop(0, 'rgba(70,120,60,.0)'); g.addColorStop(0.6, 'rgba(70,120,60,.35)'); g.addColorStop(1, 'rgba(70,120,60,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(z.x, z.y, z.r * 1.5, 0, 7); ctx.fill();
       drawSpringPool(z.x, z.y, z.r); return true; }
     case 'quicksand': if (!z.sleep) return false; drawZone(z); drawZone2(z); drawQuicksandCrust(z); return true;
+    case 'rebirth': { const h = z.grove ? z.grove.health : 1, gr = ctx.createRadialGradient(z.x, z.y, z.r * 0.2, z.x, z.y, z.r); gr.addColorStop(0, h > 0.5 ? 'rgba(70,90,40,.35)' : 'rgba(110,90,60,.3)'); gr.addColorStop(1, 'rgba(70,90,40,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, 7); ctx.fill(); return true; }
     case 'brush': { const R = solRng(z.seed); ctx.lineCap = 'round'; for (let i = 0; i < 14; i++) { const a = R() * 6.283, d = Math.sqrt(R()) * z.r, x = z.x + Math.cos(a) * d, y = z.y + Math.sin(a) * d, s = 10 + R() * 16;
       ctx.fillStyle = 'rgba(60,40,20,.2)'; ctx.beginPath(); ctx.ellipse(x + 4, y + 5, s, s * 0.7, 0, 0, 7); ctx.fill(); ctx.strokeStyle = R() < 0.5 ? '#7a8a3a' : '#9a8a4a'; ctx.lineWidth = 2; for (let k = 0; k < 7; k++) { const b = k * 0.9 + R(); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(b) * s, y + Math.sin(b) * s); ctx.stroke(); } } return true; }
   }
@@ -4237,7 +4263,7 @@ function buildMigration(def) {
   if (def.lavaDweller && G.rivers && G.rivers.length) { const r0 = mulberry32(hashStr(def.id) ^ (G.cfg.seed || 7)), riv = G.rivers.filter(r => r.length > 8), R = riv[(r0() * riv.length) | 0] || G.rivers[0], pts = [];
     for (let k = 0; k < 5; k++) { const q = R[Math.min(R.length - 1, 3 + Math.floor(k / 4 * (R.length - 4)))]; pts.push({ x: q.x, y: q.y, k: k % 2 ? 'food' : 'home', name: k % 2 ? 'a pebble-rich lava pool' : 'a warm stretch of the lava river' }); }
     return { pts, i: 0, t: MIG_STAY * (0.4 + r0() * 0.5) }; }
-  const g = G.sol, envRegion = { heart: 'heart', pit: 'pit', ring: 'ring', halo: 'halo', out: 'out', forest: 'out', oasis: 'out', under: 'out', sky: 'ring', unknown: 'out' }[def.env || 'unknown'] || 'out', r = mulberry32(hashStr(def.id) ^ (G.cfg.seed || 7));
+  const g = G.sol, envRegion = { rebirth: 'rebirth', heart: 'heart', pit: 'pit', ring: 'ring', halo: 'halo', out: 'out', forest: 'out', oasis: 'out', under: 'out', sky: 'ring', unknown: 'out' }[def.env || 'unknown'] || 'out', r = mulberry32(hashStr(def.id) ^ (G.cfg.seed || 7));
   let anchor = null; for (let k = 0; k < 80 && !anchor; k++) { const x = 300 + r() * (WORLD - 600), y = 300 + r() * (WORLD - 600); if (solRegion(x, y) === envRegion && !inObstacle(x, y, 60)) anchor = { x, y }; } anchor = anchor || { x: g.c + g.ringOut + 600, y: g.c };
   const near = (list, n) => list.map(o => [o, Math.hypot(o.x - anchor.x, o.y - anchor.y)]).filter(a => a[1] < 4200 * Math.max(1, G.sol.S)).sort((a, b) => a[1] - b[1]).slice(0, n).map(a => a[0]);
   const waters = near(G.zones.filter(z => def.oasisMigrant ? z.k === 'oasis' : (z.k === 'oasis' || z.k === 'spring')), def.oasisMigrant ? 3 : 2).map(z => ({ x: z.x, y: z.y, k: 'water', name: z.k === 'spring' ? 'a crystal spring' : z.heart ? 'the Heart pool' : 'an oasis' }));
@@ -4350,26 +4376,38 @@ function drawGlow(e) { const g = e.def.glow; if (!g) return; const k = 0.6 + 0.3
 // ---- stamina: running and sprinting burn it; exhausted animals are slow and easy prey
 function staminaStep(e, dt) {
   if (e.sta == null) e.sta = 100; const v = Math.hypot(e.vx || 0, e.vy || 0), burst = e.fx.sprint > 0 || e.fx.dash > 0 || e.fx.charge > 0 || e.fx.haste > 0;
-  const drain = burst ? 24 : v > e.spd * 0.8 ? 3.5 : 0, regen = (e.def.runner ? 2.2 : 1) * (v < 40 ? 16 : 8);
+  const flying = e.air != null && e.air > 0.5 && moves(stageDef(e)).fly, drain = (burst ? 24 : v > e.spd * 0.8 ? 3.5 : 0) + (flying ? (e.def.longFlight ? 1.5 : 4) : 0), regen = (e.def.runner ? 2.2 : 1) * (v < 40 ? 16 : 8);
   e.sta = clamp(e.sta - drain * dt + (drain ? 0 : regen * dt), 0, 100);
   if (e.sta < 6) { if (!e.exhausted && e === G.player) floatText(e.x, e.y - e.r, 'exhausted!', '#ffcf8a'); e.exhausted = true; } else if (e.sta > 35) e.exhausted = false;
   return e.exhausted ? 0.55 : 1;
 }
 // ---- extra body parts drawn around the base body (head faces +x)
 function decoFrame(e) { const r = e.r, a = e.ang, ca = Math.cos(a), sa = Math.sin(a); return { r, a, at: (f, s) => [e.x + ca * r * f - sa * r * s, e.y + sa * r * f + ca * r * s] }; }
+function drawLongTail(e, k) { // one smooth tapering tail that bends in a travelling wave like a lizard's; Sand Screen whips it hard from side to side
+  const { r, a, at } = decoFrame(e), t = G.t, sw = e.swipeT > 0 ? (0.7 - e.swipeT) / 0.7 : -1, run = Math.min(1, Math.hypot(e.vx, e.vy) / (e.spd || 1));
+  const A = sw >= 0 ? Math.sin(sw * Math.PI) * 0.9 : 0.12 * (1 - run * 0.7), ph = sw >= 0 ? sw * Math.PI * 5 : t * 3 + e.id, N = 16, len = k === 'teraspix' ? 1.9 : 1.5, base = k === 'teraspix' ? -0.45 : -0.5;
+  const P = []; for (let i = 0; i <= N; i++) { const u = i / N; P.push([base - u * len, A * Math.sin(ph - u * 4.5) * Math.pow(u, 1.2) * 1.1]); }
+  const W = u => (k === 'teraspix' ? 0.07 : 0.17) * (1 - u * 0.85), L = [], R = [];
+  for (let i = 0; i <= N; i++) { const [x, y] = P[i], [x2, y2] = P[Math.min(N, i + 1)], [x0, y0] = P[Math.max(0, i - 1)], dx = x2 - x0, dy = y2 - y0, dl = Math.hypot(dx, dy) || 1, w = W(i / N); L.push(at(x - dy / dl * w, y + dx / dl * w)); R.push(at(x + dy / dl * w, y - dx / dl * w)); }
+  const body = k === 'sailhunter' ? '#6a6050' : k === 'teraspix' ? '#7a5a3a' : '#7c603e', edge = 'rgba(30,20,10,.55)';
+  ctx.fillStyle = body; ctx.strokeStyle = edge; ctx.lineWidth = Math.max(0.8, r * 0.02); ctx.beginPath(); L.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); for (let i = R.length - 1; i >= 0; i--) ctx.lineTo(R[i][0], R[i][1]); ctx.closePath(); ctx.fill(); ctx.stroke();
+  if (k !== 'teraspix') for (let i = 1; i < N; i += 1) { const [x, y] = P[i], [cx, cy] = at(x, y), w = W(i / N) * r; ctx.strokeStyle = 'rgba(40,28,14,.45)'; ctx.lineWidth = Math.max(0.6, r * 0.018); ctx.beginPath(); ctx.arc(cx, cy, w * 0.9, a + Math.PI - 1.2, a + Math.PI + 1.2); ctx.stroke(); } // overlapping pangolin scales
+  const [tx, ty] = P[N], [px, py] = P[N - 1], ta = a + Math.atan2(ty - py, tx - px), [ex, ey] = at(tx, ty);
+  if (k === 'teraspix') { ctx.fillStyle = '#5a3a24'; ctx.beginPath(); ctx.moveTo(ex + Math.cos(ta) * r * 0.3, ey + Math.sin(ta) * r * 0.3); ctx.lineTo(ex + Math.cos(ta + 1.6) * r * 0.16, ey + Math.sin(ta + 1.6) * r * 0.16); ctx.lineTo(ex - Math.cos(ta) * r * 0.1, ey - Math.sin(ta) * r * 0.1); ctx.lineTo(ex + Math.cos(ta - 1.6) * r * 0.16, ey + Math.sin(ta - 1.6) * r * 0.16); ctx.closePath(); ctx.fill(); return; } // a diamond vane like a long-tailed pterosaur
+  const spread = (0.5 - run * 0.3) + (sw >= 0 ? 0.3 : 0), bare = k === 'sailhunter' && e.quills === 0;
+  if (!bare) for (let i = -3; i <= 3; i++) { const fa = ta + i * spread * 0.32, Ln = r * (0.75 - Math.abs(i) * 0.05);
+    if (k === 'sailhunter') { ctx.fillStyle = i % 2 ? '#b8a888' : '#8a7a60'; ctx.beginPath(); ctx.moveTo(ex + Math.cos(fa + 1.57) * r * 0.035, ey + Math.sin(fa + 1.57) * r * 0.035); ctx.lineTo(ex + Math.cos(fa) * Ln, ey + Math.sin(fa) * Ln); ctx.lineTo(ex + Math.cos(fa - 1.57) * r * 0.035, ey + Math.sin(fa - 1.57) * r * 0.035); ctx.closePath(); ctx.fill(); }
+    else { ctx.strokeStyle = i % 2 ? '#e8dcc0' : '#c8b490'; ctx.lineWidth = Math.max(1, r * 0.09); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex + Math.cos(fa) * Ln, ey + Math.sin(fa) * Ln); ctx.stroke(); } }
+  if (sw >= 0 && k === 'sailrunner') for (let i = 0; i < 3; i++) { const da = ta + (Math.random() - 0.5) * 0.9, sp = 160 + Math.random() * 200; G.parts.push({ x: ex, y: ey, vx: Math.cos(da) * sp + e.vx * 0.3, vy: Math.sin(da) * sp + e.vy * 0.3, life: 0.6 + Math.random() * 0.5, c: Math.random() < 0.5 ? 'rgba(214,180,128,.75)' : 'rgba(180,140,90,.65)', s: r * (0.15 + Math.random() * 0.3) }); }
+}
 function drawDecoUnder(e) {
   const k = e.def.deco; if (!k) return; const { r, a, at } = decoFrame(e), t = G.t;
-  if (k === 'sailrunner') { // a long pangolin tail of overlapping scales ending in a fan of feathers; for Sand Screen it whips side to side like a lizard's tail
-    const sw = e.swipeT > 0 ? (0.7 - e.swipeT) / 0.7 : -1, A = sw >= 0 ? Math.sin(sw * Math.PI) * 1.1 : 0.06, ph = sw >= 0 ? sw * Math.PI * 4 : t * 2 + e.id, run = Math.min(1, Math.hypot(e.vx, e.vy) / (e.spd || 1));
-    let px = -0.55, py = 0, ang = Math.PI; const pts = []; for (let i = 0; i < 10; i++) { ang = Math.PI + A * Math.sin(ph - i * 0.55) * (0.25 + i / 10); px += Math.cos(ang) * 0.13; py += Math.sin(ang) * 0.13; pts.push([px, py, 0.17 * (1 - i / 12), ang]); }
-    for (let i = pts.length - 1; i >= 0; i--) { const [fx, fy, w, sa] = pts[i], [x, y] = at(fx, fy); ctx.fillStyle = i % 2 ? '#6a5236' : '#7c603e'; ctx.strokeStyle = 'rgba(30,20,10,.5)'; ctx.lineWidth = Math.max(0.6, r * 0.015); ctx.beginPath(); ctx.ellipse(x, y, r * w * 1.2, r * w, a + sa, 0, 7); ctx.fill(); ctx.stroke(); }
-    const tip = pts[pts.length - 1], [ex, ey] = at(tip[0], tip[1]), ta = a + tip[3], spread = (0.5 - run * 0.3) + (sw >= 0 ? 0.3 : 0);
-    for (let i = -3; i <= 3; i++) { const fa = ta + i * spread * 0.32, L = r * (0.75 - Math.abs(i) * 0.05); ctx.strokeStyle = i % 2 ? '#e8dcc0' : '#c8b490'; ctx.lineWidth = Math.max(1, r * 0.09); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex + Math.cos(fa) * L, ey + Math.sin(fa) * L); ctx.stroke(); }
-    if (sw >= 0 && Math.random() < 0.9) for (let i = 0; i < 3; i++) { const da = ta + (Math.random() - 0.5) * 0.9, sp = 160 + Math.random() * 200; G.parts.push({ x: ex, y: ey, vx: Math.cos(da) * sp + e.vx * 0.3, vy: Math.sin(da) * sp + e.vy * 0.3, life: 0.6 + Math.random() * 0.5, c: Math.random() < 0.5 ? 'rgba(214,180,128,.75)' : 'rgba(180,140,90,.65)', s: r * (0.15 + Math.random() * 0.3) }); } // the sand cloud blows off the tail tip
-  }
-  if (k === 'krongero') { // a third pair of stubby legs under the middle of the body
-    const step = Math.sin((e.animT || t) * 6) * 0.08 * Math.min(1, Math.hypot(e.vx, e.vy) / 30);
-    for (const s of [-1, 1]) { const [x0, y0] = at(-0.05, s * 0.35), [x1, y1] = at(-0.08 + step * s, s * 0.78); ctx.strokeStyle = '#2a2a2c'; ctx.lineCap = 'round'; ctx.lineWidth = r * 0.2; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.fillStyle = '#1a1a1c'; ctx.beginPath(); ctx.arc(x1, y1, r * 0.12, 0, 7); ctx.fill(); }
+  if (k === 'sailrunner' || k === 'sailhunter' || k === 'teraspix') drawLongTail(e, k);
+  if (k === 'krongero') { // a third pair of legs in the middle of the body, same hide as the rest, stepping out of time with the others
+    const L = stageDef(e).look, col = `hsl(${L.hue},${L.sat}%,${Math.max(10, L.lig * 0.82)}%)`, dk = `hsl(${L.hue},${L.sat}%,${Math.max(6, L.lig * 0.5)}%)`, mv = Math.min(1, Math.hypot(e.vx, e.vy) / 30), ph = (e.animT || t) * 5.5 + Math.PI / 2;
+    for (const s of [-1, 1]) { const sw = Math.sin(ph + (s > 0 ? Math.PI : 0)) * 0.12 * mv, [x0, y0] = at(-0.06, s * 0.3), [x1, y1] = at(-0.04 + sw * 0.6, s * 0.66), [x2, y2] = at(-0.08 + sw, s * 0.92);
+      ctx.lineCap = 'round'; ctx.strokeStyle = col; ctx.lineWidth = r * 0.24; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.lineWidth = r * 0.18; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      ctx.fillStyle = dk; ctx.beginPath(); ctx.ellipse(x2, y2, r * 0.1, r * 0.08, a, 0, 7); ctx.fill(); }
   }
 }
 function drawTongue(e) { // a sticky pink tongue shooting out to the prey and snapping back
@@ -4379,6 +4417,10 @@ function drawTongue(e) { // a sticky pink tongue shooting out to the prey and sn
   ctx.strokeStyle = '#e8708a'; ctx.lineWidth = Math.max(1, e.r * 0.1); ctx.stroke(); ctx.fillStyle = '#d04a6a'; ctx.beginPath(); ctx.arc(ex, ey, Math.max(3, e.r * 0.2), 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(ex - 1, ey - 1, Math.max(1, e.r * 0.06), 0, 7); ctx.fill(); }
 function drawDecoOver(e) {
   const k = e.def.deco; if (!k) return; const { r, a, at } = decoFrame(e);
+  if (k === 'sailhunter') { const bare = e.quills === 0; if (!bare) { for (let i = 0; i < 12; i++) { const u = i / 11, s = i % 2 ? 1 : -1, [x0, y0] = at(0.35 - u * 0.85, s * 0.18), [x1, y1] = at(0.25 - u * 0.85 - 0.18, s * 0.42); ctx.strokeStyle = '#a89878'; ctx.lineWidth = Math.max(1, r * 0.04); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); }
+      const [hx, hy] = at(0.92, 0); for (let i = -2; i <= 2; i++) { const fa = a + Math.PI + i * 0.25, L = r * (0.34 - Math.abs(i) * 0.05); ctx.fillStyle = '#b8a888'; ctx.beginPath(); ctx.moveTo(hx + Math.cos(fa + 1.57) * r * 0.025, hy + Math.sin(fa + 1.57) * r * 0.025); ctx.lineTo(hx + Math.cos(fa) * L, hy + Math.sin(fa) * L); ctx.lineTo(hx + Math.cos(fa - 1.57) * r * 0.025, hy + Math.sin(fa - 1.57) * r * 0.025); ctx.fill(); } }
+    else { ctx.fillStyle = 'rgba(150,150,150,.45)'; ctx.beginPath(); ctx.arc(e.x, e.y, r * 0.55, 0, 7); ctx.fill(); } }
+  if (k === 'teraspix') { const [hx, hy] = at(0.9, 0), [cx, cy] = at(0.45, 0); ctx.fillStyle = '#c86a3a'; ctx.beginPath(); ctx.moveTo(hx, hy); ctx.quadraticCurveTo(cx + Math.cos(a + 1.57) * r * 0.06, cy + Math.sin(a + 1.57) * r * 0.06, cx - Math.cos(a) * r * 0.25, cy - Math.sin(a) * r * 0.25); ctx.quadraticCurveTo(cx - Math.cos(a + 1.57) * r * 0.06, cy - Math.sin(a + 1.57) * r * 0.06, hx, hy); ctx.fill(); } // a swept-back pteranodon crest
   if (k === 'sailrunner') { const [hx, hy] = at(0.92, 0); for (let i = -2; i <= 2; i++) { const fa = a + Math.PI + i * 0.22, L = r * (0.38 - Math.abs(i) * 0.05); ctx.strokeStyle = i % 2 ? '#b8442a' : '#e0703a'; ctx.lineWidth = Math.max(1, r * 0.06); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(hx + Math.cos(fa) * L, hy + Math.sin(fa) * L); ctx.stroke(); } } // the crest
   if (k === 'krongero-frill') { // (retired) a broad rocky face plate
     const [px, py] = at(0.52, 0); ctx.save(); ctx.translate(px, py); ctx.rotate(a); const g = ctx.createRadialGradient(-r * 0.1, -r * 0.2, r * 0.1, 0, 0, r * 0.7); g.addColorStop(0, '#8a8478'); g.addColorStop(1, '#3e3a36'); ctx.fillStyle = g;
@@ -4416,6 +4458,9 @@ const SKILL_SMALL = 22; // Tiny and Small creatures only
 { const base = useAbility; useAbility = function (e, ult = false) {
   const a = ult ? e.def.ult : curAbility(e); if (!a || !G) return base(e, ult);
   if (!ult && (e.cdAb > 0)) return base(e, ult);
+  if (a === 'quilllaunch') { if (quillVolley(e)) e.cdAb = AB.quilllaunch.cd; return; }
+  if (a === 'websnare') { layWeb(e); e.cdAb = AB.websnare.cd; if (e === G.player) floatText(e.x, e.y - e.r, 'web laid', '#ddd'); return; }
+  if (a === 'grapple') { if (startGrapple(e)) e.cdAb = AB.grapple.cd; return; }
   if (a === 'manthra') { e.cdAb = AB.manthra.cd; let n = 0; for (const z of G.zones) if (z.k === 'quicksand' && (z.x - e.x) ** 2 + (z.y - e.y) ** 2 < (z.r + 700) ** 2) { wakeQuicksand(z, 60); n++; }
     ring(e.x, e.y, 700, '#d8b070'); ring(e.x, e.y, 420, '#d8b070'); if (e === G.player) banner(n ? '〰️ Your belly hum softens the sleeping quicksand!' : '〰️ You hum, but there is no quicksand close by.', '#d8b070'); return; }
   if (a === 'tonguegrab') { let best = null, bd = 330 * 330; const fx = Math.cos(e.ang), fy = Math.sin(e.ang); for (const o of G.creatures) { if (o === e || !o.alive || allied(o, e) || !!o.ug !== !!e.ug) continue; const dx = o.x - e.x, dy = o.y - e.y, d = dx * dx + dy * dy; if (d < bd && (dx * fx + dy * fy) > 0) { bd = d; best = o; } }
@@ -4445,6 +4490,76 @@ function drawCaveInterior(c, ug) { // stalagmites, crystals, glowing fungus, bon
     else if (th === 'magma') { ctx.strokeStyle = `rgba(255,${110 + 50 * Math.sin(t * 2 + i) | 0},30,.85)`; ctx.lineWidth = 2.5; ctx.beginPath(); let px = x, py = y; ctx.moveTo(px, py); for (let k = 0; k < 4; k++) { px += (R() - 0.5) * s * 2; py += (R() - 0.5) * s * 2; ctx.lineTo(px, py); } ctx.stroke(); }
     else { ctx.fillStyle = 'rgba(220,190,140,.35)'; ctx.beginPath(); ctx.ellipse(x, y, s * 2.2, s * 1.1, R() * 3, 0, 7); ctx.fill(); }
   }
+}
+// =====================================================================
+//  TERASPIX, SAIL HUNTERS, NIGHT CRAWLERS, REBIRTH TREES AND THE BIG MAP
+// =====================================================================
+// ---- AI extras: oasis guards, Sail Runner hunters
+function solThink(e, others) {
+  if (e.def.oasisGuard) { const z = G.zones.find(z => z.k === 'oasis' && (e.x - z.x) ** 2 + (e.y - z.y) ** 2 < (z.r + 120) ** 2); if (z) { const intr = others.find(o => o.def.id !== e.def.id && (o.x - z.x) ** 2 + (o.y - z.y) ** 2 < (z.r + 60) ** 2); if (intr) e.target = intr; } }
+  if (e.def.huntsRunners && !e.target) { const r = others.filter(o => o.def.id === 'sailrunner' && o.lvl <= e.lvl + 1).sort((a, b) => d2(a, e) - d2(b, e))[0]; if (r) e.target = r; }
+}
+// ---- Sail Hunter quills: three volleys, then it stands grey, bare and vulnerable until they regrow
+function quillVolley(e) {
+  if (e.quills == null) e.quills = 3; if (e.quills <= 0) { if (e === G.player) floatText(e.x, e.y - e.r, 'no quills left: wait for them to regrow', '#c8c0b0'); return false; }
+  e.quills--; const fx = Math.cos(e.ang), fy = Math.sin(e.ang);
+  for (let i = -3; i <= 3; i++) { const a = e.ang + i * 0.16; G.proj.push({ ug: e.ug || false, x: e.x + Math.cos(a) * e.r, y: e.y + Math.sin(a) * e.r, vx: Math.cos(a) * 640, vy: Math.sin(a) * 640, dmg: e.dmg * 0.45, owner: e, life: 0.55, c: '#d8c8a0', r: 5, quill: true }); }
+  for (const o of G.creatures) { if (o === e || !o.alive || allied(o, e) || !!o.ug !== !!e.ug) continue; const dx = o.x - e.x, dy = o.y - e.y, d = Math.hypot(dx, dy); if (d < 360 && (dx * fx + dy * fy) / (d || 1) > 0.75) { o.bleed = Math.max(o.bleed || 0, 4); o.fx.slow = Math.max(o.fx.slow || 0, 2.5); } }
+  if (e.quills <= 0) { e.quillRegrow = 60; if (e === G.player) banner('🦔 Out of quills! You are bare and vulnerable until they regrow.', '#c8c0b0'); }
+  return true;
+}
+// ---- Night Crawler webs and grapples
+function layWeb(e) { G.webs = G.webs || []; G.webs.push({ x: e.x - Math.cos(e.ang) * e.r * 1.6, y: e.y - Math.sin(e.ang) * e.r * 1.6, r: 70 + e.r, owner: e.def.id, ug: !!e.ug, life: 150, seed: Math.random() * 100 }); if (G.webs.length > 40) G.webs.shift(); }
+function updateWebs(dt) {
+  const W = G.webs; if (!W || !W.length) return;
+  for (let i = W.length - 1; i >= 0; i--) { const w = W[i]; w.life -= dt; if (w.life <= 0) { W.splice(i, 1); continue; }
+    for (const o of G.creatures) { if (!o.alive || o.def.id === w.owner || !!o.ug !== w.ug || o.def.size >= 34 || moves(stageDef(o)).fly && o.air > 0.5) continue; if ((o.x - w.x) ** 2 + (o.y - w.y) ** 2 < (w.r + o.r * 0.5) ** 2) { o.fx.stun = Math.max(o.fx.stun || 0, 2.8); o.webbed = 2.8; W.splice(i, 1); if (o === G.player) banner('🕸️ You are caught in a web!', '#ddd'); break; } } }
+}
+function drawWebs(vx0, vy0, vx1, vy1, p) { const W = G.webs; if (!W) return; ctx.save(); for (const w of W) { if (!!w.ug !== !!p.ug || w.x < vx0 - 100 || w.x > vx1 + 100 || w.y < vy0 - 100 || w.y > vy1 + 100) continue; const mine = p.def.id === w.owner;
+  ctx.strokeStyle = `rgba(235,235,245,${mine ? 0.55 : 0.18})`; ctx.lineWidth = 1; for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283 + w.seed; ctx.beginPath(); ctx.moveTo(w.x, w.y); ctx.lineTo(w.x + Math.cos(a) * w.r, w.y + Math.sin(a) * w.r); ctx.stroke(); }
+  for (let r = w.r * 0.25; r < w.r; r += w.r * 0.18) { ctx.beginPath(); for (let k = 0; k <= 8; k++) { const a = k / 8 * 6.283 + w.seed; ctx.lineTo(w.x + Math.cos(a) * r, w.y + Math.sin(a) * r); } ctx.stroke(); } } ctx.restore(); }
+function startGrapple(e) { let best = null, bd = 230 * 230; for (const o of G.creatures) { if (o === e || !o.alive || allied(o, e) || !!o.ug !== !!e.ug || o.def.size >= 34) continue; const d = d2(o, e); if (d < bd) { bd = d; best = o; } }
+  if (!best) { if (e === G.player) floatText(e.x, e.y - e.r, 'nothing small enough to grab', '#ccc'); return false; } e.grap = { tgt: best, t: 3.2 }; return true; }
+function updateGrapple(e, dt) { const g = e.grap; if (!g) return; g.t -= dt; const o = g.tgt; if (g.t <= 0 || !o.alive || !e.alive) { e.grap = null; return; }
+  o.fx.stun = Math.max(o.fx.stun || 0, 0.2); o.poisonT = Math.max(o.poisonT || 0, 2); if (Math.random() < dt * 2) hurt(o, e.dmg * 0.25, e);
+  const d = Math.hypot(o.x - e.x, o.y - e.y) || 1, want = e.r + o.r * 0.8; if (e.r >= o.r) { o.x = e.x + (o.x - e.x) / d * want; o.y = e.y + (o.y - e.y) / d * want; } else { e.x = o.x + (e.x - o.x) / d * want; e.y = o.y + (e.y - o.y) / d * want; } }
+// ---- darkness: a Night Crawler holding still in the dark cannot be seen
+function inDark(e) { return e.ug || e.inCave || isNight() || (G.sol && inCastShadow(e.x, e.y)); }
+// ---- poison from fangs
+function poisonTick(e, dt) { if (!(e.poisonT > 0)) return; e.poisonT -= dt; e.hp -= e.maxhp * 0.018 * dt; if (Math.random() < dt * 5) G.parts.push({ x: e.x + rand(-e.r, e.r) * 0.5, y: e.y + rand(-e.r, e.r) * 0.5, vx: 0, vy: -25, life: 0.6, c: '#9dff4a', s: 3 }); }
+// ---- rebirth trees: groves of enormous trees that die back and rebloom with the weather
+function updateGroves(dt) { const g = G.sol; if (!g.groves) return; const W = g.wx && g.wx.id, harsh = W === 'heatwave' || W === 'hurricane' || W === 'ringfire', hot = !isNight() && sunK() > 0.85;
+  for (const v of g.groves) { const before = v.health; v.health = clamp(v.health + (harsh ? -0.02 : hot ? -0.002 : isNight() ? 0.008 : 0.004) * dt, 0, 1);
+    if (before > 0.5 && v.health <= 0.5 && G.player && Math.hypot(G.player.x - v.x, G.player.y - v.y) < 3000) banner('🍂 The rebirth trees are dying back in the heat…', '#c8a070');
+    if (before < 0.55 && v.health >= 0.55 && G.player && Math.hypot(G.player.x - v.x, G.player.y - v.y) < 3000) banner('🌳 The rebirth trees are blooming again!', '#9be36a');
+    if (v.health > 0.8 && Math.random() < dt * 0.6) { const t = pick(v.trees); const a = Math.random() * 6.283, d = t.r * (0.6 + Math.random() * 0.9); G.food.push({ x: t.x + Math.cos(a) * d, y: t.y + Math.sin(a) * d, r: 9, type: Math.random() < 0.65 ? 'plant' : 'meat', kind: Math.random() < 0.65 ? 'fruit' : 'insect', v: (Math.random() * 1000) | 0, xp: 5, ph: 0, life: 120, pid: 'dune' }); } } }
+function drawRebirthTree(o) { // seen from above: a huge crown that is lush and fruiting, or bare and grey, depending on the grove's health
+  const v = o.grove, h = v ? v.health : 1, R = solRng(o.seed), t = G.t;
+  ctx.fillStyle = 'rgba(30,18,8,.35)'; ctx.beginPath(); ctx.ellipse(o.x + o.r * 0.25, o.y + o.r * 0.32, o.r * 1.2, o.r * 1.05, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = '#5a4030'; ctx.lineCap = 'round'; for (let i = 0; i < 9; i++) { const a = i / 9 * 6.283 + R(), L = o.r * (0.8 + R() * 0.45); ctx.lineWidth = o.r * 0.1; ctx.beginPath(); ctx.moveTo(o.x, o.y); const mx = o.x + Math.cos(a + 0.2) * L * 0.55, my = o.y + Math.sin(a + 0.2) * L * 0.55; ctx.quadraticCurveTo(mx, my, o.x + Math.cos(a) * L, o.y + Math.sin(a) * L); ctx.stroke();
+    ctx.lineWidth = o.r * 0.04; for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(mx + Math.cos(a + s * 0.8) * L * 0.35, my + Math.sin(a + s * 0.8) * L * 0.35); ctx.stroke(); } }
+  const leaf = clamp((h - 0.35) / 0.4, 0, 1);
+  if (leaf > 0) { ctx.globalAlpha = leaf; for (let i = 0; i < 22; i++) { const a = R() * 6.283, d = Math.sqrt(R()) * o.r * 0.95, x = o.x + Math.cos(a) * d, y = o.y + Math.sin(a) * d, s = o.r * (0.22 + R() * 0.2), gr = ctx.createRadialGradient(x - s * 0.3, y - s * 0.3, s * 0.1, x, y, s);
+      gr.addColorStop(0, h > 0.7 ? '#8ad050' : '#b8b050'); gr.addColorStop(1, h > 0.7 ? '#3a6a24' : '#6a5a28'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, s, 0, 7); ctx.fill(); }
+    if (h > 0.8) { for (let i = 0; i < 14; i++) { const a = R() * 6.283, d = Math.sqrt(R()) * o.r * 0.9; ctx.fillStyle = ['#ff7a3a', '#ffcf3a', '#e8405a'][i % 3]; ctx.beginPath(); ctx.arc(o.x + Math.cos(a) * d, o.y + Math.sin(a) * d, o.r * 0.045, 0, 7); ctx.fill(); } } ctx.globalAlpha = 1; }
+  else { ctx.fillStyle = 'rgba(160,140,110,.35)'; for (let i = 0; i < 10; i++) { const a = R() * 6.283, d = R() * o.r * 1.1; ctx.beginPath(); ctx.ellipse(o.x + Math.cos(a) * d, o.y + Math.sin(a) * d, 5, 3, a, 0, 7); ctx.fill(); } } // fallen dry leaves
+  ctx.fillStyle = '#4a3424'; ctx.beginPath(); ctx.arc(o.x, o.y, o.r * 0.16, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.beginPath(); ctx.arc(o.x + o.r * 0.03, o.y + o.r * 0.03, o.r * 0.07, 0, 7); ctx.fill(); // a hollow in the trunk
+}
+// ---- the full map (M)
+let BIGMAP = false;
+function drawBigMap(p) {
+  const S = Math.min(VW, VH) * 0.86, mx = (VW - S) / 2, my = (VH - S) / 2, sc = S / WORLD; ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = 'rgba(6,4,12,.82)'; ctx.fillRect(0, 0, VW, VH); ctx.fillStyle = 'rgba(10,6,20,.9)'; ctx.fillRect(mx - 6, my - 6, S + 12, S + 12); ctx.strokeStyle = '#ffd27a'; ctx.lineWidth = 2; ctx.strokeRect(mx - 6, my - 6, S + 12, S + 12);
+  drawSolMinimap(mx, my, S); const g = G.sol;
+  for (const z of G.zones) { const col = { oasis: '#3fb8e0', spring: '#5fd0ff', shardforest: '#bfe8ff', shardmeadow: 'rgba(200,235,255,.6)', quicksand: '#b0844c', rebirth: '#7ac050' }[z.k]; if (!col) continue; ctx.fillStyle = col; ctx.beginPath(); ctx.arc(mx + z.x * sc, my + z.y * sc, Math.max(2, z.r * sc), 0, 7); ctx.fill(); }
+  for (const o of G.obstacles) { if (o.k !== 'spire' && o.k !== 'volcano' && o.k !== 'monolith') continue; ctx.fillStyle = o.k === 'volcano' ? '#ff5a2a' : '#2a1410'; ctx.beginPath(); ctx.arc(mx + o.x * sc, my + o.y * sc, Math.max(1.5, o.r * sc), 0, 7); ctx.fill(); }
+  for (const c of G.caves) if (!c.inner) { ctx.fillStyle = '#000'; ctx.strokeStyle = '#ffcf8a'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(mx + c.x * sc, my + c.y * sc, Math.max(2.5, c.R * sc), 0, 7); ctx.fill(); ctx.stroke(); }
+  if (!G.noHazard) { drawMigrationMinimap(p, mx, my, sc); if (p.def.followWind) { const M = migOf(ALIEN.sailrunner); if (M) { ctx.strokeStyle = 'rgba(255,140,140,.8)'; ctx.setLineDash([4, 4]); ctx.beginPath(); M.pts.forEach((s, i) => i ? ctx.lineTo(mx + s.x * sc, my + s.y * sc) : ctx.moveTo(mx + s.x * sc, my + s.y * sc)); ctx.closePath(); ctx.stroke(); ctx.setLineDash([]); } } }
+  ctx.fillStyle = '#7dffb2'; ctx.beginPath(); ctx.arc(mx + p.x * sc, my + p.y * sc, 6, 0, 7); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.font = 'bold 14px system-ui'; ctx.textAlign = 'center'; const lab = (t, x, y, c) => { ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.lineWidth = 4; ctx.strokeText(t, x, y); ctx.fillStyle = c; ctx.fillText(t, x, y); };
+  lab('THE HEART', mx + g.c * sc, my + (g.c - g.heart) * sc - 6, '#7affd8'); lab('THE SAND PIT', mx + g.c * sc, my + (g.c + g.ringIn * 0.55) * sc, '#ffd27a'); lab('THE RING', mx + g.c * sc, my + (g.c - g.ringOut) * sc + 16, '#ffb08a'); lab('THE OUTSKIRTS', mx + S / 2, my + 22, '#e0b080');
+  for (const f of g.forests) lab('SHARD FOREST', mx + f.x * sc, my + f.y * sc, '#bfe8ff'); for (const v of g.groves || []) lab('REBIRTH TREES', mx + v.x * sc, my + v.y * sc - 8, '#9be36a');
+  ctx.font = '13px system-ui'; lab('You · your herd’s route (gold) · press M or tap to close', VW / 2, my + S + 26, '#ddd'); ctx.restore();
 }
 function inObstacle(x, y, pad = 0) { for (const o of G.obstacles) if ((x - o.x) ** 2 + (y - o.y) ** 2 < (o.r + pad) ** 2) return true; return false; }
 function updateTerrain(dt) {
@@ -5181,9 +5296,10 @@ function drawAmbient2() {
 // =====================================================================
 const keys = {};
 let joy = null, mouse = null, usingMouse = false;
-addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if (G && !G.over && G.player && e.key.toLowerCase() === 'r' && !e.repeat && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) castBody(G.player); if (G && !G.over && G.player && G.player.elder && /^[1-5]$/.test(e.key) && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') { castElder(G.player, +e.key - 1); e.preventDefault(); } if ((e.key === ' ' || e.key.toLowerCase() === 'e') && G && !G.over) { useAbility(G.player); e.preventDefault(); } if (e.key.toLowerCase() === 'f' && G && !G.over && G.player.def.forms) cycleForm(G.player); if (e.key.toLowerCase() === 'q' && G && !G.over) useAbility(G.player, true); });
+addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if (e.key.toLowerCase() === 'm' && !e.repeat && G && G.sol && !G.over && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) BIGMAP = !BIGMAP; if (G && !G.over && G.player && e.key.toLowerCase() === 'r' && !e.repeat && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) castBody(G.player); if (G && !G.over && G.player && G.player.elder && /^[1-5]$/.test(e.key) && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') { castElder(G.player, +e.key - 1); e.preventDefault(); } if ((e.key === ' ' || e.key.toLowerCase() === 'e') && G && !G.over) { useAbility(G.player); e.preventDefault(); } if (e.key.toLowerCase() === 'f' && G && !G.over && G.player.def.forms) cycleForm(G.player); if (e.key.toLowerCase() === 'q' && G && !G.over) useAbility(G.player, true); });
 addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 cv.addEventListener('pointerdown', e => {
+  if (G && G.sol && !G.over) { if (BIGMAP) { BIGMAP = false; return; } const ms = Math.min(150, VW * 0.3); if (e.clientX > VW - ms - 20 && e.clientY < ms + 70 && e.clientY > 40) { BIGMAP = true; return; } }
   if (e.pointerType === 'mouse') { usingMouse = true; mouse = { x: e.clientX, y: e.clientY }; return; }
   joy = { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: e.clientX, y: e.clientY };
 });
@@ -5640,6 +5756,8 @@ function tryRebirth(t) {
 function hurt(t, amt, src) {
   if (!t.alive || t.fx.burrow > 0) return;
   amt = facePlate(t, src, amt); if (amt <= 0) return;
+  if (src && src.def && src.def.poisonFangs && src !== t) t.poisonT = Math.max(t.poisonT || 0, 3);
+  if (t.def.quillUser && t.quills === 0) amt *= 1.5;
   if (shellBlocks(t, src)) { if (t === G.player && Math.random() < 0.3) floatText(t.x, t.y - t.r, 'safe in its rock shell', '#d8c8a8'); return; }
   if (src && allied(t, src)) return;
   if (t.fx && t.fx.evade > 0) { if (t === G.player || src === G.player) floatText(t.x, t.y - t.r, 'DODGE', '#9fe3ff'); return; }
@@ -5726,6 +5844,7 @@ function thinkAI(e) {
     const intr = others.filter(o => d2(o, e) < 200 * 200 && o.def !== e.def)[0];
     if (intr) e.target = intr; else if (e.target && d2(e.target, e) > 400 * 400) e.target = null;
   }
+  if (G.sol) solThink(e, others);
   if (e.target && e.target.isPlayer && (e.target.fx.invis > 0)) e.target = null;
   // bots go for food when idle, and stay inside the zone
   if (!e.target && !e.fleeTarget) {
@@ -5868,7 +5987,7 @@ function update(dt) {
   }
   // Sandstorms on Dune
   if (G.reveal > 0) G.reveal -= dt;
-  updateTerrain(dt); if (G.sol) { solWeather(dt); updateMigrations(dt); updateCorpses(dt); updateQuicksand(dt); }
+  updateTerrain(dt); if (G.sol) { solWeather(dt); updateMigrations(dt); updateCorpses(dt); updateQuicksand(dt); updateWebs(dt); updateGroves(dt); }
   updateTerrain2(dt);
   updateDisaster(dt);
   for (let i = G.food.length - 1; i >= 0; i--) { const f = G.food[i]; if (f.life != null && (f.life -= dt) <= 0) G.food.splice(i, 1); }
@@ -6380,7 +6499,7 @@ function groundPattern(pid) {
 // =====================================================================
 //  ENVIRONMENT 2: caves, cover, climbing, swimming, flying
 // =====================================================================
-const CLIMBABLE = { spire: 1, monolith: 1, meteor: 1, skull: 1, boulder: 1, column: 1, asteroid: 1, mesa: 1, pillar: 1, obsidian: 1, crystal: 1, reef: 1, tree: 1, factory: 1 };
+const CLIMBABLE = { rtree: 1, spire: 1, monolith: 1, meteor: 1, skull: 1, boulder: 1, column: 1, asteroid: 1, mesa: 1, pillar: 1, obsidian: 1, crystal: 1, reef: 1, tree: 1, factory: 1 };
 const CAVE_STYLE = {
   dune: { rock: '#a9825a', rock2: '#6e5034', floor: '#3a2a1c', name: 'sandstone cave' },
   ice: { rock: '#bcd8ea', rock2: '#6f97b4', floor: '#26394a', name: 'ice cave' },
@@ -6452,7 +6571,7 @@ function ugNativeBase(def) { // creatures that belong underground
 }
 function buildUnder(wr) {
   const U = { caverns: [], tunnels: [], shafts: [] };
-  for (const c of G.caves) { const cv = { spring: !!c.spring, x: c.x, y: c.y, R: c.R * 1.25 + 40, sh: Array.from({ length: 14 }, () => 1 + (wr() - 0.5) * 0.18) }; U.caverns.push(cv); U.shafts.push({ x: c.x, y: c.y, r: 46, cave: c, cv }); c.shaft = true; }
+  for (const c of G.caves) { if (c.inner) continue; const cv = { spring: !!c.spring, x: c.x, y: c.y, R: c.R * 1.25 + 40, sh: Array.from({ length: 14 }, () => 1 + (wr() - 0.5) * 0.18) }; U.caverns.push(cv); U.shafts.push({ x: c.x, y: c.y, r: 46, cave: c, cv }); c.shaft = true; }
   if (G.sol) U.caverns.push({ x: G.sol.c, y: G.sol.c, R: G.sol.heart * 0.9, deep: true, sh: Array.from({ length: 14 }, () => 1 + (wr() - 0.5) * 0.18) });
   const extra = Math.min(40, Math.round(3 * CNT));
   for (let i = 0; i < extra; i++) { let x, y, R = 170 + wr() * 170, ok = false; for (let k = 0; k < 30 && !ok; k++) { x = 300 + wr() * (WORLD - 600); y = 300 + wr() * (WORLD - 600); ok = !U.caverns.some(c => Math.hypot(c.x - x, c.y - y) < c.R + R + 260); } if (ok) U.caverns.push({ x, y, R, sh: Array.from({ length: 14 }, () => 1 + (wr() - 0.5) * 0.22) }); }
@@ -6533,7 +6652,7 @@ function envPre(e, dt) {
   { let over = null; if (mv.fly && !e.ug) for (const o of sgNear(G.obstacles, G.ogrid, e.x, e.y)) if ((e.x - o.x) ** 2 + (e.y - o.y) ** 2 < (o.r + e.r * 0.3) ** 2) { over = o; break; }
     if (mv.fly) { // fliers land and tuck their wings when they stop, and take off again as soon as they move
       const mov = Math.hypot(e.vx || 0, e.vy || 0) > 25 || (e.cast && G.t - e.cast < 0.6); e.stillT = mov ? 0 : (e.stillT || 0) + dt;
-      const aloft = mov || e.stillT < 0.35 || (over && over.k === 'volcano'); e.air = (e.air == null ? 1 : e.air) + ((aloft ? 1 : 0) - (e.air == null ? 1 : e.air)) * Math.min(1, dt * (aloft ? 7 : 3.5));
+      const aloft = !(G.sol && e.exhausted) && (mov || e.stillT < 0.35) || (over && over.k === 'volcano'); e.air = (e.air == null ? 1 : e.air) + ((aloft ? 1 : 0) - (e.air == null ? 1 : e.air)) * Math.min(1, dt * (aloft ? 7 : 3.5));
       if (e.air < 0.5 && over) e.perch = over; } // a landed flier over a rock or tree sits on top of it
     e.overObst = !!over && !(e.air < 0.5); const tgt = mv.fly ? (e.air < 0.5 ? (over ? 0.75 : 0) : over ? 1 : 0.55) : e.perch ? 0.75 : 0; e.alt = (e.alt || 0) + (tgt - (e.alt || 0)) * Math.min(1, dt * (e.climbT > 0 ? 2.2 : 6)); }
   if (wasPerch && !e.perch) { e.pounce = 1.6; if (e === G.player) floatText(e.x, e.y - e.r, 'POUNCE READY', '#ffcf8a'); }
@@ -6563,6 +6682,7 @@ function envCollide(e, mv) {
 }
 function obstacleBlocks(e, o, mv) { if (mv.fly && o.k !== 'volcano') return false; if (mv.climb && CLIMBABLE[o.k]) return false; return true; }
 function seesThrough(a, b) { // can a notice b?
+  if (b.def.darkLove && (b.stillT || 0) > 0.8 && inDark(b)) return d2(a, b) < 60 * 60;
   if (hasAd(b, 'camo') && Math.hypot(b.vx || 0, b.vy || 0) < 25 && !(b.cdBite > -1)) return d2(a, b) < 90 * 90;
   if ((a.inCave || null) !== (b.inCave || null)) return d2(a, b) < 110 * 110;
   if (b.inCover && !(b.cdBite > -0.6)) return d2(a, b) < 120 * 120;
@@ -7871,7 +7991,7 @@ function render() {
   if (G.open) { for (const t of G.tiles) { if (t.x1 + 220 < vx0 || t.x0 - 220 > vx1 || t.y1 + 220 < vy0 || t.y0 - 220 > vy1) continue; ctx.fillStyle = groundPattern(t.pid); ctx.fill(t.path); } ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 26; for (const t of G.tiles) if (!(t.x1 + 220 < vx0 || t.x0 - 220 > vx1 || t.y1 + 220 < vy0 || t.y0 - 220 > vy1)) ctx.stroke(t.path); }
   else { ctx.fillStyle = groundPattern(G.planet); ctx.fillRect(Math.max(0, vx0), Math.max(0, vy0), Math.min(WORLD, vx1) - Math.max(0, vx0), Math.min(WORLD, vy1) - Math.max(0, vy0)); }
   if (G.sol) { drawSolTerrain(vx0, vy0, vx1, vy1); drawSolGround(vx0, vy0, vx1, vy1); } else drawGroundDetail(vx0, vy0, vx1, vy1); drawWorldEdge(vx0, vy0, vx1, vy1);
-  drawDecals(vx0, vy0, vx1, vy1); drawProps(vx0, vy0, vx1, vy1); drawPrints(vx0, vy0, vx1, vy1); if (G.sol) drawCorpses(vx0, vy0, vx1, vy1, p);
+  drawDecals(vx0, vy0, vx1, vy1); drawProps(vx0, vy0, vx1, vy1); drawPrints(vx0, vy0, vx1, vy1); if (G.sol) { drawCorpses(vx0, vy0, vx1, vy1, p); drawWebs(vx0, vy0, vx1, vy1, p); }
   // lava
   if (G.rivers) for (const riv of G.rivers) { if (riv.length < 2) continue; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; for (const [w, c, dash] of [[136, 'rgba(255,90,20,.25)'], [124, '#7a1606'], [104, '#d63a0c'], [62, '#ff8a1e'], [26, `rgba(255,220,90,${0.75 + 0.25 * Math.sin(G.t * 3)})`], [12, 'rgba(255,250,200,.85)', true]]) { ctx.strokeStyle = c; ctx.lineWidth = w; if (dash) { ctx.setLineDash([40, 70]); ctx.lineDashOffset = -G.t * 60; } ctx.beginPath(); riv.forEach((pt, i) => i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y)); ctx.stroke(); ctx.setLineDash([]); } }
   for (const lv of G.lava) if (lv.big && lv.x + lv.r * 1.2 > vx0 && lv.x - lv.r * 1.2 < vx1 && lv.y + lv.r * 1.2 > vy0 && lv.y - lv.r * 1.2 < vy1) drawLavaLake(lv);
@@ -7915,7 +8035,7 @@ function render() {
       for (let i = -2; i <= 2; i++) { const o = i * e.r * 0.42, j = ((e.animT || 0) * 7 + i * 0.37) % 1, b0 = e.r * (1.05 + j * 0.6), L2 = e.r * (0.5 + 0.35 * (1 - Math.abs(i) / 3)); ctx.beginPath(); ctx.moveTo(e.x - ca * b0 - sa * o, e.y - sa * b0 + ca * o); ctx.lineTo(e.x - ca * (b0 + L2) - sa * o, e.y - sa * (b0 + L2) + ca * o); ctx.stroke(); } ctx.restore(); }
     if (e.elder) drawElderAura(e);
     if (G.sol) { drawTongue(e); if (drawMimic(e)) continue; drawDecoUnder(e); }
-    drawAlien(CL || ctx, e.form ? formDef(e.def, e.form) : stageDef(e), e.x, e.y, e.r * shK, e.ang, e.animT || G.t, { run: e.runK || 0, crawl: e.crawlK || 0, turn: e.turnK || 0, mvK: e.mvK || 0, odo: e.odo || 0, trail: e.trail && e.trail.length > 2 ? localTrail(e) : null, air: e.air, lod: e.r * zoom, self: e === p, cast: e.cast, form: inForm(e) ? G.dis.id : null, apex: e.boss, lvl: e.minion ? Math.max(1, e.lvl - 1) : e.lvl, moving: Math.hypot(e.vx, e.vy) > 20, phase: e.phase, alpha, elev: elevOf(e), worldBoss: !!e.worldBoss, titan: !!e.titan, env: e.biome, adapted: e.biome ? resists(e, e.biome) : true, fx: e.fx, ab: e.def.ability, abK: AB[e.def.ability] ? 1 - e.cdAb / AB[e.def.ability].cd : 1, shadow: !CL, aura: e.hitFlash > 0 ? '#ff2a2a' : (e.fx.slow > 0 ? '#9fe3ff' : null) });
+    drawAlien(CL || ctx, e.form ? formDef(e.def, e.form) : stageDef(e), e.x, e.y, e.r * shK, e.ang, e.animT || G.t, { run: e.runK || 0, crawl: e.crawlK || 0, turn: e.turnK || 0, mvK: e.mvK || 0, odo: e.odo || 0, trail: e.trail && e.trail.length > 2 ? localTrail(e) : null, air: e.def.openWingsClimb && (e.perch || e.climbT > 0) ? 1 : e.air, lod: e.r * zoom, self: e === p, cast: e.cast, form: inForm(e) ? G.dis.id : null, apex: e.boss, lvl: e.minion ? Math.max(1, e.lvl - 1) : e.lvl, moving: Math.hypot(e.vx, e.vy) > 20, phase: e.phase, alpha, elev: elevOf(e), worldBoss: !!e.worldBoss, titan: !!e.titan, env: e.biome, adapted: e.biome ? resists(e, e.biome) : true, fx: e.fx, ab: e.def.ability, abK: AB[e.def.ability] ? 1 - e.cdAb / AB[e.def.ability].cd : 1, shadow: !CL, aura: e.hitFlash > 0 ? '#ff2a2a' : (e.fx.slow > 0 ? '#9fe3ff' : null) });
     if (G.sol) drawDecoOver(e);
   }
   if (CL) lit3dEnd(zoom);
@@ -8010,7 +8130,7 @@ function render() {
   if (p.fx.blind > 0) { ctx.fillStyle = `rgba(20,12,4,${Math.min(0.75, p.fx.blind * 0.5)})`; ctx.fillRect(0, 0, VW, VH); }
   if (G.timestopFx > 0) { G.timestopFx -= 1 / 90; ctx.fillStyle = `rgba(255,220,140,${G.timestopFx * 0.22})`; ctx.fillRect(0, 0, VW, VH); }
   if (G.eclipseFx > 0) { G.eclipseFx -= 1 / 60; ctx.fillStyle = `rgba(10,0,20,${G.eclipseFx * 0.6})`; ctx.fillRect(0, 0, VW, VH); }
-  drawHUD();
+  drawHUD(); if (BIGMAP && G.sol && G.player) drawBigMap(G.player);
 }
 const PATCH_TINT = { earth: ['150,200,90', '30,60,20'], mars: ['220,120,80', '60,20,8'], heaven: ['255,255,255', '220,190,120'], space: ['90,110,220', '0,0,0'], dune: ['235,205,150', '140,95,50'], ice: ['255,255,255', '110,160,205'], dark: ['80,45,125', '0,0,0'], hell: ['170,40,10', '15,0,0'], water: ['110,210,230', '5,35,75'], jungle: ['130,175,70', '10,32,10'], robo: ['135,145,160', '14,17,22'] };
 function drawGroundDetail(vx0, vy0, vx1, vy1) {
@@ -8423,113 +8543,11 @@ function walletHTML() {
 // =====================================================================
 //  CHANGELOG: newest first. Add an entry here with every update; players see it once on the main page.
 // =====================================================================
-const CHANGELOG = [
-  { v: '2.3', date: 'Nov 2026', title: 'Boss lairs and lifelike motion', items: [
-    'Boss lairs: every boss (Alphas, world bosses, mutants and holiday bosses) now lives in an arena built for its home: a Molten Pit with lava cracks and braziers, a Frozen Throne of ice spikes, a Sunken Reef, a Steel Foundry, a Golden Sanctum, a Containment Pen for mutants, and more. A glowing barrier holds the boss in. It cannot leave, but you can come and go.',
-    'Snakes slither for real: the body follows the exact path the head took in S-curves, instead of wiggling in place. Worms crawl with muscle bulges rippling down their ringed bodies.',
-    'Octopuses and krakens: at rest their arms spread and curl at the tips; when they swim the arms stream behind and ripple, and each jet pulse pulls them in and flares them out.',
-    'Better tails: tails bend smoothly and swing out when you turn, then catch up. Cats curl the tip of their tail while resting, and sprinters hold their tail straight out. Bushy tails show fur and horse tails are made of flowing hair.',
-    'Crawling: stalking, hiding, camouflaged or cloaked creatures creep low with their legs splayed, and baby humanoids crawl on their hands.',
-    'Sharper skill effects: shockwave rings flash and expand smoothly, sparks glow, projectiles leave streaks, and electric skills crackle with lightning. All 30 real-animal skills have their own cast animation and color.',
-    'Creature cards no longer show an "Inspired by" line.',
-  ] },
-  { v: '2.2', date: 'Nov 2026', title: 'Real animal skills', items: [
-    'All 111 real Earth animals now use skills from real life, and the skill changes as they grow: a Baby, a Juvenile and an Adult each have their own.',
-    'Babies hide in the grass, call their mother for help, curl up, or drop their tail. Juveniles learn to pounce, leap, zigzag and dig.',
-    'Adults hunt like the real animal: tigers stalk, cheetahs sprint, crocodiles death-roll, pythons constrict, cobras bite with venom, wolves howl in their pack, eagles dive with their talons, owls swoop in silence, elephants trumpet, gorillas beat their chest, skunks spray, octopuses squirt ink and electric eels shock.',
-    '30 new skills. Each creature card shows the skills for every life stage.',
-    'Humanoid creatures have realistic arms: a rounded shoulder, upper arm and forearm muscles, an elbow, a wrist, and a hand with four fingers, a thumb, and nails or claws.',
-    'Run animation: sprint, charge, pounce, dive and stampede skills make creatures break into a full run. Their legs move faster with a longer stride, four-legged animals switch to a gallop, and the body stretches and bounds. Dust puffs and speed lines trail behind them.',
-  ] },
-  { v: '2.1', date: 'Nov 2026', title: 'Folded wings', items: [
-    'Winged creatures now land when they stop and tuck their wings in: birds fold them along the body, bat and dragon wings fold back against the sides, and butterflies and wasps close theirs over the back',
-    'Move again to take off: the wings spread and start flapping',
-    'Land on top of a tree or rock to perch up high, safe from ground hunters, with a pounce ready when you take off',
-  ] },
-  { v: '2.0.1', date: 'Nov 2026', title: 'Google Pay and account controls', items: [
-    'The store now takes card, Google Pay and Apple Pay',
-    'New privacy policy page, linked from Settings',
-    'Delete my account: remove your account and all of its data from Settings',
-    'Fixed signing out, which could break the main menu',
-  ] },
-  { v: '2.0', date: 'Nov 2026', title: 'Full release: worldwide servers', items: [
-    'XENO.IO is out of beta!',
-    'Game servers in US West, US East, Europe and Asia: pick one on the Online screen, which shows live ping and player counts, and the closest server is chosen automatically',
-    'Leaderboards fixed: every player now gets an account automatically, so your scores show up without signing in; signing in with Google later keeps all of your records',
-    'Scores and progress are now kept permanently instead of resetting when the server restarts',
-  ] },
-  { v: '1.9', date: 'Nov 2026', title: 'Up and over', items: [
-    'Climbers now visibly climb up onto rocks, trees, pillars and cliffs, then perch on top: perched creatures look bigger and cast a shadow on the ground below',
-    'Fliers soar over trees, rocks and buildings, drawn above everything on the ground; the HUD shows when you are flying over obstacles',
-    'Wild climbers and fliers now take shortcuts over obstacles instead of walking around them',
-    'More real climbers: goats, ibex, monkeys, lemurs, raccoons, squirrels, leopards, lynxes, pythons, geckos, iguanas and more',
-    'Creatures look 3D: rounded bodies lit from one side, shadowed flanks, real fur, scale and feather texture, and glossy shine on scales and shells',
-  ] },
-  { v: '1.8', date: 'Nov 2026', title: 'Bigger worlds, better limbs', items: [
-    'Bigger maps: single worlds are now 8000 wide (was 6000) and the Open World is 11200 (was 8800), with more wildlife to match',
-    'Fixed the world-border glitch: the camera no longer slides into a black void at the edge; the world now ends at rocky cliffs behind a glowing barrier',
-    'Mouse aiming stays accurate near the border',
-    'Creature limbs redrawn: muscled thighs and upper arms, tapered shins, shaded knees and elbows, padded feet with jointed toes and hooked claws',
-    'Four-legged aliens and big cats now show their legs properly instead of hiding them under the body',
-    'Confirm before you spend: unlocking creatures, buying skins, awakening Primordial and Titan forms, and currency trades now ask first',
-    'Sacrifices now ask "Are you sure?" a second time before a creature is lost forever',
-  ] },
-  { v: '1.7', date: 'Nov 2026', title: 'Install it like an app', items: [
-    'XENO.IO can now be installed on your phone or computer like an app, with its own icon',
-    'The game opens even when you are offline (online modes still need a connection)',
-    'Getting ready for Google Play',
-  ] },
-  { v: '1.6', date: 'Nov 2026', title: 'Growing up, body skills and chat', items: [
-    'Creatures look their age: babies have little horn nubs, no wing membranes or tail weapons; juveniles grow half-sized horns and crests',
-    'Butterflies hatch as caterpillars, wasps and beetles as grubs, frogs as tadpoles then froglets, and birds as fluffy chicks',
-    'Cubs and calves have no manes, antlers or tusks until they grow up',
-    'Body skills: every creature gets a second skill from its body (horns charge, stingers sting, tails club, wings burst, extra eyes see all). Press R or tap the gold button',
-    'Body skills unlock as you grow, and rarer creatures recharge them faster',
-    'Worlds are more detailed: cactus clusters, snowy pines, glowing mushroom rings, coral, tropical flowers, mossy logs, lava cracks, cables and golden blossoms',
-    'Weather you can see: falling leaves, snowflakes, ash and embers, sand streaks, drifting feathers and electric sparks',
-    'Chat in online matches (Enter or T, or the chat button), with quick messages. Swear words, social media names, links, handles, phone numbers and slang are filtered out',
-  ] },
-  { v: '1.5', date: 'Nov 2026', title: 'Alien makeover and sound', items: [
-    'Every alien redrawn: four-legged beasts, lizards, frogs, two-legged hunters, humanoids, serpents, fish and squid all have real anatomy',
-    'New limbs: shoulders, elbows and knees that bend, hands with clawed fingers, splayed clawed toes, webbed frog feet and swinging arms',
-    'Alien features are sharper: one to four glowing eyes, horns, flame crests, frost crystals, metal plating, leaves, wisps and star sparkles',
-    'Tails end in spiked clubs, stingers or glowing fins; serpents flick their tongues and flare their hoods',
-    'Sound effects: bites, crunches, hits, roars, fire, frost, splashes, lightning, quakes, explosions, level-ups and unlocks',
-    'Optional ad after you are defeated, with a choice to watch one to double the DNA you earned',
-    'The site is easier to find in search engines',
-  ] },
-  { v: '1.4', date: 'Nov 2026', title: 'Real creatures, codes and live leaderboards', items: [
-    'Bugs now look like bugs: six jointed legs, head, thorax and segmented abdomen, antennae, and wings on flying insects',
-    'Birds now look like birds: fanned tail feathers instead of lizard tails, folded or beating wings, proper beaks and feathered bodies',
-    'Furry and hoofed animals redrawn with real anatomy: shoulders and hips, legs under the body, hooves, paws, manes, horns, antlers and true coat patterns',
-    'Creatures are lit in 3D with real shadows (turn off in Settings if your device is slow)',
-    'Codes: redeem codes on the main menu to unlock exclusive creatures. Try HALCYON',
-    'Live match leaderboard during online matches, plus new Online Royale and Online Open World boards',
-    'Changelog on the main page, so you always know what is new',
-    'Pick a skin every time you equip a creature; unlock new skins with DNA',
-    'Bosses are rarer: slain alphas and world bosses return only after a respawn timer, shown on screen',
-  ] },
-  { v: '1.3', date: 'Nov 2026', title: 'Payments and accounts', items: [
-    'Sign in with Google to save your creatures to the cloud',
-    'Secure Stripe checkout for packs, premium creatures and gifts',
-    'Purchased and gifted DNA is no longer reduced',
-  ] },
-  { v: '1.2', date: 'Nov 2026', title: 'Elder Gods', items: [
-    'Seven Elder Gods with five abilities each, earned through hard trials',
-    'Abilities clash with each other and change the world: wildfires, flash freezes, obsidian, rockslides',
-    'Smarter wildlife: pack hunting, herds, retreating when hurt, fleeing to cover',
-    'Bigger maps with landmarks on every planet, footprints and splashes',
-    'Report players or bugs from the menu',
-  ] },
-  { v: '1.1', date: 'Nov 2026', title: 'Earth', items: [
-    'Earth creatures are real animals, its ancient creatures are myths and its mutants are cryptids',
-    'Shapeshifting creatures with forms for other worlds (F key)',
-  ] },
-];
+const CHANGELOG = []; // wiped for SOLKAR.IO: add new entries here, newest first
 function changelogHTML(n) {
   return CHANGELOG.slice(0, n || CHANGELOG.length).map(c => `<div style="text-align:left;margin:8px 0"><div style="font-weight:800;color:#ffd25a">v${c.v} · ${esc(c.title)} <small style="color:#999;font-weight:400">${c.date}</small></div><ul style="margin:4px 0 0 18px;padding:0;font-size:13px;line-height:1.45">${c.items.map(i => '<li>' + esc(i) + '</li>').join('')}</ul></div>`).join('');
 }
-function showChangelog() { modal("What's new in SOLKAR.IO", `<div style="max-height:56vh;overflow:auto">${changelogHTML()}</div>`, [['Play', null]]); save.seenVer = CHANGELOG[0].v; persist(); renderNews(); }
+function showChangelog() { modal("What's new in SOLKAR.IO", `<div style="max-height:56vh;overflow:auto">${changelogHTML()}</div>`, [['Play', null]]); if (CHANGELOG[0]) save.seenVer = CHANGELOG[0].v; persist(); renderNews(); }
 // =====================================================================
 //  ADS AFTER DEATH: Google AdSense "ads for games" (adBreak). Configure ADSENSE_CLIENT on the server.
 //  Without it, the death screen shows a small house promo instead. Ads never interrupt a match.
@@ -8595,7 +8613,7 @@ function chatInit() {
   setInterval(renderChat, 1000);
 }
 function renderNews() {
-  const el = $('newsBox'); if (!el) return; const c = CHANGELOG[0], fresh = save.seenVer !== c.v;
+  const el = $('newsBox'); if (!el) return; const c = CHANGELOG[0]; if (!c) { el.style.display = 'none'; return; } const fresh = save.seenVer !== c.v;
   el.innerHTML = `<b style="color:#ffd25a">${fresh ? 'NEW · ' : ''}Update v${c.v}: ${esc(c.title)}</b><br><span style="color:#ccc">${esc(c.items[0])}${c.items.length > 1 ? ' · and ' + (c.items.length - 1) + ' more' : ''}</span> <a href="#" id="newsMore" style="color:#7dffb2">See all changes</a>`;
   $('newsMore').onclick = e => { e.preventDefault(); showChangelog(); };
 }
@@ -8691,7 +8709,7 @@ function renderStory() {
     d.appendChild(b); L.appendChild(d);
   });
 }
-const ENV_TABS = [['heart', 'The Heart'], ['pit', 'Sand Pit'], ['ring', 'The Ring'], ['halo', "Devil's Halo"], ['out', 'Outskirts'], ['forest', 'Shard Forest'], ['oasis', 'Oases & springs'], ['under', 'Underground'], ['sky', 'Skypaths'], ['unknown', 'Unknown']];
+const ENV_TABS = [['rebirth', 'Rebirth Trees'], ['heart', 'The Heart'], ['pit', 'Sand Pit'], ['ring', 'The Ring'], ['halo', "Devil's Halo"], ['out', 'Outskirts'], ['forest', 'Shard Forest'], ['oasis', 'Oases & springs'], ['under', 'Underground'], ['sky', 'Skypaths'], ['unknown', 'Unknown']];
 const ENV_NAME = Object.fromEntries(ENV_TABS); const ENV_IDS = ENV_TABS.map(t => t[0]);
 const LAB_TABS = [['all', 'All'], ['owned', 'Owned'], ...ENV_TABS];
 const RAR_TABS = [['any', 'Any rarity'], ['common', 'Common'], ['uncommon', 'Uncommon'], ['rare', 'Rare'], ['epic', 'Epic'], ['legendary', 'Legendary']];
@@ -8813,7 +8831,7 @@ function modal(title, html, btns) {
 }
 
 if ('serviceWorker' in navigator && serverHosted()) navigator.serviceWorker.register('/sw.js').catch(() => {});
-chatInit(); $('bTrials').onclick = () => eldersOverview(); $('bCodes').onclick = redeemDialog; renderNews(); if (save.seenVer !== CHANGELOG[0].v && save.tutorialDone) setTimeout(showChangelog, 900); else if (!save.seenVer) { save.seenVer = CHANGELOG[0].v; persist(); }
+chatInit(); $('bTrials').onclick = () => eldersOverview(); $('bCodes').onclick = redeemDialog; renderNews(); if (CHANGELOG[0] && save.seenVer !== CHANGELOG[0].v && save.tutorialDone) setTimeout(showChangelog, 900); else if (!save.seenVer && CHANGELOG[0]) { save.seenVer = CHANGELOG[0].v; persist(); }
 refreshMenu();
 cloudInit();
 requestAnimationFrame(t => { last = t; running = true; loop(t); });
