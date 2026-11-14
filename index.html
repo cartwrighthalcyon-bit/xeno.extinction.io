@@ -614,6 +614,7 @@ const GOD_COL = { 'sun god': '#ffd84a', 'moon goddess': '#dfe8ff', 'storm god': 
 // Movement traits that come from a creature's appearance
 function moves(def) {
   if (def._mv) return def._mv;
+  if (def.mv) { const m = { climb: !!def.mv.climb, swim: !!def.mv.swim, fly: !!def.mv.fly }; m.list = ['climb', 'swim', 'fly'].filter(k => m[k]); return def._mv = m; }
   const L = def.look, P = anatomy(def), th = L.theme, s = th && th.s, m = { climb: false, swim: false, fly: false };
   if (L.wings && P.arch !== 'fish' && P.arch !== 'squid' && P.arch !== 'serpent') m.fly = true;
   if (['fish', 'squid'].includes(P.arch) || L.trait === 'fins' || ['eel', 'croc', 'frog', 'turtle', 'shark', 'ray', 'octopus'].includes(s) || (th && th.k === 'element' && s === 'water') || (th && s === 'sea god') || (P.arch === 'serpent' && def.planet === 'water')) m.swim = true;
@@ -1381,6 +1382,7 @@ Object.assign(AB, {
   clawsnap:    Object.assign({}, AB.snap, { name: 'Claw Snap', as: 'snap', desc: 'A crushing pinch of its big claw on the closest creature.' }),
   shellhide:   Object.assign({}, AB.curl, { name: 'Shell Hide', as: 'curl', desc: 'Pulls itself into its shell: takes almost no damage for 3s and heals a little.' }),
   wallscurry:  Object.assign({}, AB.scurry, { name: 'Wall Scurry', as: 'scurry' }),
+  run:         Object.assign({}, AB.sprint, { name: 'Run', as: 'sprint', desc: 'Runs flat out on its legs: almost double speed for 3s.' }),
 });
 Object.assign(DIETS, { insectivore: { name: 'Insect-eater', eats: ['meat'] }, herbinsect: { name: 'Herbivore & insect-eater', eats: ['plant', 'meat'] }, bonescav: { name: 'Scavenger (bones & carrion)', eats: ['meat'] } });
 const CUSTOM_CREATURES = {
@@ -1538,7 +1540,8 @@ const CREATURE_BASE = {}; // each modded creature as the game first built it, so
 function applyCreatureMod(id, m) {
   const def = ALIEN[id]; if (!def || !m) return;
   if (!CREATURE_BASE[id]) CREATURE_BASE[id] = JSON.parse(JSON.stringify(def, (k, v) => k === 'an' ? undefined : v));
-  for (const k of ['name', 'lore', 'ability', 'ult', 'hp', 'dmg', 'spd', 'size', 'adapts', 'diet', 'behavior', 'home']) if (m[k] !== undefined) def[k] = m[k];
+  for (const k of ['name', 'lore', 'ability', 'ult', 'hp', 'dmg', 'spd', 'size', 'adapts', 'diet', 'behavior', 'home', 'env', 'tempMax', 'tempMin']) if (m[k] !== undefined) def[k] = m[k];
+  if (m.mv !== undefined) { def.mv = m.mv; def._mv = null; }
   if (m.ugHome !== undefined) { def.ugHome = !!m.ugHome; def._ug = null; }
   if (m.rarity && RARITY_COST[m.rarity]) { def.rarity = m.rarity; if (!def.starter) def.cost = { dna: RARITY_COST[m.rarity] }; }
   if (m.starter !== undefined) { def.starter = !!m.starter; def.kind = m.starter ? 'basic' : 'wild'; def.cost = { dna: m.starter ? 0 : RARITY_COST[def.rarity] || 150 }; }
@@ -1552,9 +1555,9 @@ function applyCreatureMod(id, m) {
 }
 const RARITY_COST = { common: 150, uncommon: 400, rare: 800, epic: 1600, legendary: 3500 };
 function makeCustomDef(id, m) { // a brand-new creature made from scratch in the Workshop
-  if (ALIEN[id] || !ALIEN.hatchling) return ALIEN[id];
-  const d = JSON.parse(JSON.stringify(ALIEN.hatchling, (k, v) => k === 'an' ? undefined : v));
-  Object.assign(d, { id, name: m.name || 'New creature', lore: m.lore || '', kind: 'wild', starter: false, rarity: 'common', cost: { dna: RARITY_COST.common }, idx: ALIENS.length, seed: hashStr(id), fresh: true, adapts: [] });
+  if (ALIEN[id] || !ALIEN[DEFAULT_ID]) return ALIEN[id];
+  const d = JSON.parse(JSON.stringify(ALIEN[DEFAULT_ID], (k, v) => k === 'an' ? undefined : v));
+  Object.assign(d, { id, name: m.name || 'New creature', lore: m.lore || '', kind: 'wild', starter: false, rarity: 'common', cost: { dna: RARITY_COST.common }, idx: ALIENS.length, seed: hashStr(id), fresh: true, adapts: [], body2: null, mv: null, env: 'unknown' });
   d.look.seed2 = hashStr(id + 'look'); ALIENS.push(d); ALIEN[id] = d; return d;
 }
 function applyCreatureMods() {
@@ -1569,9 +1572,9 @@ function applyCreatureMods() {
 //  [id, name, rarity, size, skill, body skill, diet, behaviour, built-in adaptations, home, underground?, look, story]
 // =====================================================================
 const DESERT_ROSTER = [
-  ['hatchling', 'Hatchling', 'common', 10, 'dash', null, 'omnivore', 'grazer', [], 'Anywhere on the dunes', false,
-    { hue: 34, sat: 22, lig: 62, hue2: 30, eyes: 2, eyeStyle: 0, eyeHue: 40, horns: 0, wings: 0, legs: 4, tail: 0.4, noMark: true },
-    'A placeholder baby alien, so the game still runs while the real desert creatures are being designed.'],
+  ['sandskink', 'Sand Skink', 'common', 10, 'run', ['camo', 'Camouflage', 'its sand-colored scales', 2], 'insectivore', 'skittish', ['camo', 'sand'], 'The Outskirts and the edge of the Sand Pit', false,
+    { arch: 'lizard', hue: 38, sat: 42, lig: 64, hue2: 28, eyes: 2, eyeStyle: 0, eyeHue: 30, horns: 0, wings: 0, legs: 4, tail: 0, noMark: false },
+    'A small, smooth-scaled lizard of the open sand. It outruns danger in short bursts, and when it stops, its sandy scales make it almost invisible.'],
   ['dunegecko', 'Dune Gecko', 'common', 11, 'echoloc', ['wallscurry', 'Wall Scurry', 'its sticky toes', 2], 'insectivore', 'grazer', ['ears', 'heat'], 'Rock walls and dunes (climbs walls)', false,
     { arch: 'lizard', hue: 34, sat: 30, lig: 58, hue2: 24, frill: true, popEars: true, rockScales: true, geckoToes: true, eyes: 2, eyeStyle: 0, eyeHue: 45, horns: 0, wings: 0, legs: 4, tail: 0, noMark: true },
     'A small gecko that runs up rock walls. Its ears pop out when it echolocates, and rock scales cover it from head to tail.'],
@@ -1616,8 +1619,9 @@ const DESERT_ROSTER = [
   ['stormdrake', 'Storm Drake', 'legendary', 42, 'dustdevil', null, 'carnivore', 'predator', ['heat', 'night', 'sand'], 'Rides the sandstorms', false,
     { sp: 'westerndragon', hue: 30, sat: 45, lig: 48, wings: 1 }, 'The apex hunter of Solkar. It rides inside sandstorms and drops out of the dust onto its prey.'],
 ];
-const STARTER_IDS = ['hatchling'];
-const DESERT_ACTIVE = new Set(['hatchling']); // every other desert design is removed: owners get their DNA back
+const DESERT_EXTRA = { sandskink: { env: 'out', tempMax: 54, tempMin: 10, mv: { climb: true } } }; // environment, body temperature limits (°C) and traits
+const STARTER_IDS = ['sandskink'];
+const DESERT_ACTIVE = new Set(['sandskink']); // every other desert design is removed: owners get their DNA back
 const DEFAULT_ID = STARTER_IDS[0];
 function applyDesign(d, m) { // give a creature a hand-made look (used by the desert roster)
   const L = d.look, k = m.look; delete L.mut; delete L.sig; delete L.an; L.rainbow = false;
@@ -1636,7 +1640,7 @@ function applyDesign(d, m) { // give a creature a hand-made look (used by the de
     if (STARTER_IDS.includes(id)) { d.cost = { dna: 0 }; d.starter = true; }
     d.look.seed2 = hashStr(id + 'look'); d.look.habitat = 'dune'; d.look.habitats = ['dune'];
     if (body && AB[body[0]]) d.body2 = { ab: body[0], name: body[1], from: body[2], need: body[3], cd: AB[body[0]].cd };
-    applyDesign(d, { look });
+    Object.assign(d, DESERT_EXTRA[id] || {}); applyDesign(d, { look });
     ALIENS.push(d); ALIEN[id] = d;
   });
 })();
@@ -1739,8 +1743,8 @@ const AB_COL = { mutagen: '#9dff3a', splice: '#9dff3a', regrow: '#9dff3a', blood
 Object.assign(CAST_KIND, { hide: 'vanish', mothercall: 'roar', zigzag: 'dash', sprint: 'dash', pounce: 'dash', stalk: 'vanish', maul: 'chomp', venombite: 'chomp', constrict: 'spin', deathroll: 'spin', snap: 'chomp', kick: 'slam', talondive: 'dash', swoop: 'vanish', howl: 'roar', sting: 'lash', curl: 'glow', stampede: 'dash', chestbeat: 'roar', trumpet: 'roar', spray: 'breath', ink: 'vanish', shock: 'spin', camo: 'vanish', tailshed: 'vanish', toxin: 'glow', breach: 'dash', leap: 'dash', spit: 'breath', dig: 'vanish' });
 Object.assign(AB_COL, { hide: '#9aae6a', mothercall: '#ffe7a8', zigzag: '#ffffff', sprint: '#fff2c8', pounce: '#ffd27a', stalk: '#5a6a3a', maul: '#ff5a4a', venombite: '#b6ff4a', constrict: '#c8a85a', deathroll: '#5ab0e0', snap: '#ff4a5a', kick: '#e8d6b0', talondive: '#ffe08a', swoop: '#d8d0ff', howl: '#cfd8ff', sting: '#e8ff7a', curl: '#c8b090', stampede: '#d8b07a', chestbeat: '#ffb05a', trumpet: '#ffd77a', spray: '#c8d86a', ink: '#3a2a4a', shock: '#9fe3ff', camo: '#7ab05a', tailshed: '#c8b88a', toxin: '#b6ff4a', breach: '#9fe3ff', leap: '#e8d6b0', spit: '#e8e8c8', dig: '#9a7a5a' });
 // the new creature skills borrow their colour and cast style from the skill they're built on
-Object.assign(AB_COL, { echoloc: AB_COL.echo, vanish: AB_COL.shadow, poisonspray: '#b6ff4a', tonguesnatch: '#ff7a9a', clawsnap: '#ff7a4a', shellhide: '#e8d2a0', wallscurry: AB_COL.scurry || '#fff' });
-Object.assign(CAST_KIND, { echoloc: CAST_KIND.echo, vanish: CAST_KIND.shadow, poisonspray: CAST_KIND.acid, tonguesnatch: CAST_KIND.vinewhip, clawsnap: 'chomp', shellhide: CAST_KIND.curl, wallscurry: CAST_KIND.scurry });
+Object.assign(AB_COL, { run: AB_COL.sprint, echoloc: AB_COL.echo, vanish: AB_COL.shadow, poisonspray: '#b6ff4a', tonguesnatch: '#ff7a9a', clawsnap: '#ff7a4a', shellhide: '#e8d2a0', wallscurry: AB_COL.scurry || '#fff' });
+Object.assign(CAST_KIND, { run: CAST_KIND.sprint, echoloc: CAST_KIND.echo, vanish: CAST_KIND.shadow, poisonspray: CAST_KIND.acid, tonguesnatch: CAST_KIND.vinewhip, clawsnap: 'chomp', shellhide: CAST_KIND.curl, wallscurry: CAST_KIND.scurry });
 function hexA(h, a) { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${clamp(a, 0, 1)})`; }
 function drawFormInner(c, form, L, r, t) { // inside body clip
   if (form === 'eclipse') { c.fillStyle = 'rgba(12,0,24,.72)'; c.fillRect(-r * 2.5, -r * 2, r * 5, r * 4); }
@@ -3531,10 +3535,72 @@ function drawNight(p) { // night on the dunes: dark, with a circle of sight arou
   g.addColorStop(0, 'rgba(8,10,40,0)'); g.addColorStop(1, `rgba(6,8,32,${0.88 * dusk})`); ctx.fillStyle = `rgba(16,20,60,${(hasAd(p, 'night') ? 0.25 : 0.4) * dusk})`; ctx.fillRect(0, 0, VW, VH); ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
   ctx.globalAlpha = dusk * 0.8; ctx.fillStyle = '#fff'; for (let i = 0; i < 40; i++) { const x = (i * 197.3 + 31) % VW, y = (i * 113.7 + 17) % (VH * 0.6); ctx.fillRect(x, y, 1.2, 1.2); } ctx.restore();
 }
+// =====================================================================
+//  NEEDS (SOLKAR): to grow up a creature must wait, eat, drink and stay alive.
+//  Hunger and thirst run down over time; body temperature follows the air around it,
+//  and each species has a heat limit (and a cold limit) past which it starts dying.
+// =====================================================================
+const GROW_WAIT = [0, 60, 100, 150, 200]; // seconds a creature must live in a stage before it can grow out of it
+const SOL_AIR = { heart: [30, 20], pit: [56, 8], ring: [46, 10], halo: [66, 40], out: [42, 6], forest: [44, 6] }; // [midday, night] °C
+function tempLimits(e) { const d = e.def; let hi = d.tempMax != null ? d.tempMax : 50, lo = d.tempMin != null ? d.tempMin : 8; if (hasAd(e, 'heat')) hi += 12; if (hasAd(e, 'lava')) hi += 40; if (hasAd(e, 'water')) hi += 3; return [hi, lo]; }
+function airTemp(e) {
+  if (e.ug || e.inCave) return 24; if (e.fx.burrow > 0) return 27; if (e.inWater || e.drinking) return 22;
+  const reg = G.sol ? solRegion(e.x, e.y) : 'out', A = SOL_AIR[reg] || SOL_AIR.out, k = isNight() ? 0 : Math.max(0.25, sunK());
+  let t = A[1] + (A[0] - A[1]) * k; if (G.sol && G.sol.wx && G.sol.wx.id === 'heatwave' && !isNight()) t += 14;
+  if (!isNight() && inShade(e)) t -= 12; if (e.onLava) t = 95; return t;
+}
+function waterHere(e) { // can e drink where it stands?
+  if (e.inWater) return true; if (e.inCave && e.inCave.spring) return true;
+  if (e.ug && G.under) { for (const c of G.under.caverns) if ((c.spring || c.deep) && (e.x - c.x) ** 2 + (e.y - c.y) ** 2 < (c.R * 0.6) ** 2) return true; return false; }
+  for (const z of sgNear(G.zones, G.zgrid, e.x, e.y)) if ((z.k === 'oasis' || z.k === 'spring') && (e.x - z.x) ** 2 + (e.y - z.y) ** 2 < (z.r * (z.k === 'oasis' ? 0.6 : 1)) ** 2) return true;
+  return false;
+}
+function needsOn(e) { return G.sol && !G.noHazard && e.alive && !e.remote && (e.isPlayer || e.isBot); }
+function updateNeeds(e, dt) {
+  if (!needsOn(e)) return; const mine = e === G.player;
+  if (e.food == null) { e.food = 80; e.water = 80; e.temp = 30; e.stageT = 0; }
+  e.stageT += dt;
+  // temperature
+  e.onLava = false; if (G.lava.length && !moves(e.def).fly && !e.ug) for (const lv of sgNear(G.lava, G.lgrid, e.x, e.y)) if ((e.x - lv.x) ** 2 + (e.y - lv.y) ** 2 < lv.r * lv.r) { e.onLava = true; break; }
+  const air = airTemp(e), k = clamp(0.06 * 16 / (e.r + 6), 0.015, 0.12); e.temp += (air - e.temp) * Math.min(1, k * dt * (e.onLava ? 4 : 1)); e.airT = air;
+  const [hi, lo] = tempLimits(e); e.tHi = hi; e.tLo = lo;
+  if (e.temp > hi) { e.hp -= e.maxhp * 0.012 * Math.min(3, 1 + (e.temp - hi) / 4) * dt; e.overheat = 1; if (mine && Math.random() < dt * 0.6) floatText(e.x, e.y - e.r, 'overheating!', '#ff7a3d'); } else e.overheat = 0;
+  if (e.temp < lo) { e.hp -= e.maxhp * 0.007 * Math.min(3, 1 + (lo - e.temp) / 4) * dt; e.freezing = 1; if (mine && Math.random() < dt * 0.5) floatText(e.x, e.y - e.r, 'too cold!', '#9fe3ff'); } else e.freezing = 0;
+  if (e.isBot) return; // bots only feel the heat and cold
+  // thirst and hunger
+  const hot = 1 + Math.max(0, e.temp - 32) / 18;
+  e.water -= 0.42 * hot * (hasAd(e, 'water') ? 0.5 : 1) * dt; e.food -= 0.28 * dt;
+  e.drinking = waterHere(e) && e.water < 100; if (e.drinking) { e.water = Math.min(100, e.water + 28 * dt); if (mine && Math.random() < dt * 3) G.parts.push({ x: e.x + rand(-e.r, e.r), y: e.y + rand(-e.r, e.r), vx: 0, vy: -30, life: 0.5, c: '#7fd0ff', s: 3 }); }
+  if (e.water <= 0) { e.water = 0; e.hp -= e.maxhp * 0.015 * dt; if (mine && Math.random() < dt * 0.4) floatText(e.x, e.y - e.r, 'dying of thirst', '#7fd0ff'); }
+  if (e.food <= 0) { e.food = 0; e.hp -= e.maxhp * 0.012 * dt; if (mine && Math.random() < dt * 0.4) floatText(e.x, e.y - e.r, 'starving', '#ffcf8a'); }
+  // growing up: when every need is met, the waiting creature grows
+  if (e.lvl < LEVELS.length && e.xp >= LEVELS[e.lvl].xp && !growBlocked(e).length) addXP(e, 0);
+}
+function growBlocked(e) { // what still stops e from growing into its next life stage
+  if (!needsOn(e) || e.isBot || e.lvl >= LEVELS.length) return [];
+  const out = []; if (e.xp < LEVELS[e.lvl].xp) out.push('eat'); if ((e.stageT || 0) < GROW_WAIT[e.lvl]) out.push('wait'); if ((e.food || 0) < 50) out.push('food'); if ((e.water || 0) < 50) out.push('water'); return out;
+}
+function drawNeedsHUD(p, x, y, w) {
+  if (!needsOn(p) || p.food == null) return 0; const h = 84; ctx.fillStyle = 'rgba(10,6,20,.6)'; ctx.fillRect(x, y, w, h);
+  const bar = (yy, label, v, col, warn) => { ctx.fillStyle = '#ddd'; ctx.font = '11px system-ui'; ctx.fillText(label, x + 8, yy + 8); ctx.fillStyle = '#333'; ctx.fillRect(x + 62, yy, w - 70, 9); ctx.fillStyle = v < warn ? '#ff5a5a' : col; ctx.fillRect(x + 62, yy, (w - 70) * clamp(v / 100, 0, 1), 9); };
+  bar(y + 8, '🍖 Food', p.food, '#ffb35a', 20); bar(y + 22, '💧 Water', p.water, '#5fc8ff', 20);
+  // temperature gauge from 0 °C to 80 °C with the species' limits marked
+  const gx = x + 62, gw = w - 70, gy = y + 36, tx = v => gx + gw * clamp(v / 80, 0, 1); ctx.fillStyle = '#ddd'; ctx.fillText('🌡 ' + Math.round(p.temp) + '°', x + 8, gy + 8);
+  const gr = ctx.createLinearGradient(gx, 0, gx + gw, 0); gr.addColorStop(0, '#5fc8ff'); gr.addColorStop(0.45, '#7dffb2'); gr.addColorStop(0.7, '#ffcf5a'); gr.addColorStop(1, '#ff4a2a'); ctx.fillStyle = gr; ctx.fillRect(gx, gy, gw, 9);
+  ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(gx, gy, tx(p.tLo) - gx, 9); ctx.fillRect(tx(p.tHi), gy, gx + gw - tx(p.tHi), 9);
+  ctx.fillStyle = '#fff'; ctx.fillRect(tx(p.temp) - 1.5, gy - 2, 3, 13);
+  // growth checklist
+  const b = growBlocked(p); ctx.font = '11px system-ui';
+  if (p.lvl >= LEVELS.length) { ctx.fillStyle = '#7dffb2'; ctx.fillText('Fully grown', x + 8, y + 64); }
+  else { const left = Math.max(0, GROW_WAIT[p.lvl] - (p.stageT || 0)), it = [['eat', 'Eat', b.includes('eat')], ['wait', left > 0 ? 'Wait ' + fmtTime(left) : 'Wait', b.includes('wait')], ['food', 'Fed', b.includes('food')], ['water', 'Drink', b.includes('water')]];
+    ctx.fillStyle = '#c9b6ff'; ctx.fillText('To grow into ' + LEVELS[p.lvl].n + ':', x + 8, y + 62); let xx = x + 8; for (const [, l, bad] of it) { const s = (bad ? '○ ' : '✔ ') + l; ctx.fillStyle = bad ? '#ffcf8a' : '#7dffb2'; ctx.fillText(s, xx, y + 77); xx += ctx.measureText(s).width + 10; } }
+  return h + 4;
+}
 function addXP(e, n) {
   e.xp += n; e.score += n;
   while (e.lvl < LEVELS.length && e.xp >= LEVELS[e.lvl].xp) {
-    e.lvl++; recalc(e); e.hp = Math.min(e.maxhp, e.hp + e.maxhp * 0.3);
+    if (growBlocked(e).length) { e.xp = Math.min(e.xp, LEVELS[e.lvl].xp); break; } // must also wait, eat and drink
+    e.lvl++; e.stageT = 0; recalc(e); e.hp = Math.min(e.maxhp, e.hp + e.maxhp * 0.3);
     if (e === G.player && e.lvl === 5 && G.mode !== 'tutorial') { const S = tstat(); const pl = G.planet || e.def.planet; if (!S.alpha[pl]) { S.alpha[pl] = 1; persist(); setTimeout(trialCheck, 1500); } }
     if (e.lvl >= 2 && e.lvl <= 5 && G.planet === 'dune' && G.mode !== 'tutorial' && (e === G.player || e.isBot)) { if (e === G.player) { e.adQ = (e.adQ || 0) + 1; if (e.adQ === 1) setTimeout(() => G && e.alive && offerAdaptation(e), 900); } else offerAdaptation(e); }
     if (e === G.player) { banner('Grew into ' + LEVELS[e.lvl - 1].n + '!', '#7dffb2'); sfx(660, 0.15); if (e.lvl === 5 && (save.titan || {})[e.def.id]) setTimeout(() => G && becomeTitan(e, 'Your awakened hidden evolution surges!'), 1200); }
@@ -3543,8 +3609,8 @@ function addXP(e, n) {
 
 function startMatch(cfg) {
   // cfg: {mode:'offline'|'story'|'online', planet, chapter, net, seed}
-  WORLD = cfg.mode === 'tutorial' ? 3400 : cfg.mode === 'open' ? OW_T * OW_N : cfg.mode === 'offline' || cfg.mode === 'story' ? 12000 : 8000; CNT = (WORLD / 3400) ** 2; REG = null; // offline and story zones are 1.5x wider
-  const OPEN = cfg.mode === 'open', homePid = (ALIEN[save.equipped] || ALIEN[DEFAULT_ID]).planet;
+  WORLD = cfg.mode === 'tutorial' ? 6000 : cfg.mode === 'open' ? (cfg.net ? OW_T * OW_N : 16000) : cfg.mode === 'offline' || cfg.mode === 'story' ? 12000 : cfg.net ? 8000 : 10000; CNT = (WORLD / 3400) ** 2; REG = null; // offline and story zones are 1.5x wider
+  const OPEN = cfg.mode === 'open' && !!cfg.net, homePid = (ALIEN[save.equipped] || ALIEN[DEFAULT_ID]).planet;
   let planetId = 'dune'; // SOLKAR.IO: every match is on the desert world of Solkar
   const seed = cfg.seed || (Math.random() * 1e9) | 0;
   const wr = mulberry32(seed);
@@ -3557,9 +3623,9 @@ function startMatch(cfg) {
   G.clouds = Array.from({ length: Math.round(8 * CNT) }, () => ({ x: wr() * WORLD, y: wr() * WORLD, r: 260 + wr() * 320, v: 10 + wr() * 18, sq: 0.5 + wr() * 0.4 }));
   for (let i = 0; i < Math.round(110 * CNT); i++) G.decor.push({ x: wr() * WORLD, y: wr() * WORLD, r: 20 + wr() * 70, k: wr() });
   if (OPEN) { const c0 = CNT; CNT = (OW_T / 3400) ** 2; for (const t of G.tiles) { REG = t; regionExtras(t.pid, wr); buildTerrain(t.pid, wr); } REG = null; CNT = c0; }
-  else if (planetId === 'dune' && (cfg.mode === 'offline' || cfg.mode === 'story')) { G.sol = solGeo(); G.nextDis = Infinity; regionExtras(planetId, wr); buildSolkar(wr); }
+  else if (planetId === 'dune' && !cfg.net) { G.sol = solGeo(); G.nextDis = Infinity; regionExtras(planetId, wr); buildSolkar(wr); }
   else { regionExtras(planetId, wr); buildTerrain(planetId, wr); }
-  if (!OPEN && (cfg.mode === 'offline' || cfg.mode === 'story')) buildUnder(wr);
+  if (!OPEN && !cfg.net) buildUnder(wr);
   for (let i = 0; i < Math.round(420 * CNT * (OPEN ? 0.45 : 0.8)); i++) spawnFood(wr);
   if (G.under) for (let i = 0; i < Math.round(32 * CNT); i++) spawnUnderFood(wr);
   for (let i = 0; i < Math.round((cfg.mode === 'tutorial' ? 7 : 4) * CNT); i++) { let fx, fy; do { fx = 200 + wr() * (WORLD - 400); fy = 200 + wr() * (WORLD - 400); } while (inObstacle(fx, fy, 40)); G.fossils.push({ x: fx, y: fy, hp: cfg.mode === 'tutorial' ? 3 : 6, r: 26 }); }
@@ -3573,7 +3639,7 @@ function startMatch(cfg) {
   const natives = nativesOf(planetId);
   const TUTM = cfg.mode === 'tutorial';
   const wildCount = Math.round((TUTM ? 18 : OPEN ? 275 : cfg.mode === 'offline' ? 165 : 150) * (TUTM || OPEN || cfg.mode === 'online' ? 1 : (WORLD / 8000) ** 2));
-  for (let i = 0; i < wildCount; i++) spawnWild(TUTM ? natives.filter(n => n.behavior === 'grazer') : natives, TUTM ? 1 : 0);
+  for (let i = 0; i < wildCount; i++) spawnWild(TUTM ? (natives.filter(n => n.behavior === 'grazer').length ? natives.filter(n => n.behavior === 'grazer') : natives) : natives, TUTM ? 1 : 0);
   // Alpha boss
   if (OPEN) { placeLairs(wr); for (const L of G.lairs) spawnWorldBoss(L); }
   G.alphaNext = null; if (!TUTM) for (let k = 0; k < (OPEN ? 2 : 1); k++) { if (Math.random() > (OPEN && k === 0 ? 1 : 0.5)) { G.alphaNext = 150 + Math.random() * 90; continue; } const bt = OPEN ? pick(G.tiles) : null, bx = bt ? rand(bt.x0 + 300, bt.x1 - 300) : rand(300, WORLD - 300), by = bt ? rand(bt.y0 + 300, bt.y1 - 300) : rand(300, WORLD - 300), nat = OPEN ? nativesOf(biomeAt(bx, by)) : natives; G.creatures.push(newEntity(pick(nat.filter(n => n.behavior === 'predator')) || pick(nat), bx, by, 5, { boss: true, ai: 'predator' })); }
@@ -3685,6 +3751,115 @@ function buildTerrain(pid, wr) {
 //   Skypaths: floating boulders that drift around the Ring.
 //  Weather: day/night, heatwaves, shard rain, the sand hurricane, meteor showers, eruptions, the Ring of Fire.
 // =====================================================================
+// =====================================================================
+//  REALISTIC SOLKAR TERRAIN: the ground is painted pixel by pixel from layered noise
+//  (wind-shaped dunes lit from the low sun, ripples, gravel, cracked hardpan, volcanic rock,
+//  scorched ground near lava, damp sand and plants near water), cut into cached chunks.
+//  Mountains, volcanoes, mesas and the meteor are drawn from height maps with real light and shadow.
+// =====================================================================
+const TN = (() => {
+  let seed = 1; const P = new Uint8Array(512);
+  const reseed = s => { seed = s >>> 0; const r = mulberry32(seed), p = Array.from({ length: 256 }, (_, i) => i); for (let i = 255; i > 0; i--) { const j = (r() * (i + 1)) | 0; [p[i], p[j]] = [p[j], p[i]]; } for (let i = 0; i < 512; i++) P[i] = p[i & 255]; };
+  const V = new Float32Array(256); { const r = mulberry32(77); for (let i = 0; i < 256; i++) V[i] = r(); }
+  const n2 = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf), X = xi & 255, Y = yi & 255;
+    const a = V[P[P[X] + Y]], b = V[P[P[X + 1] + Y]], c = V[P[P[X] + Y + 1]], d = V[P[P[X + 1] + Y + 1]]; return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; };
+  const fbm = (x, y, o) => { let s = 0, a = 0.5, f = 1, t = 0; for (let i = 0; i < o; i++) { s += a * n2(x * f + i * 17.3, y * f - i * 9.1); t += a; a *= 0.5; f *= 2.03; } return s / t; };
+  return { reseed, n2, fbm };
+})();
+const SS = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+function buildTerrainFields() { // influence grids: lava, water and valleys, sampled per ground pixel
+  const g = G.sol, cell = 50, n = Math.ceil(WORLD / cell), lava = new Float32Array(n * n), wet = new Float32Array(n * n), val = new Float32Array(n * n);
+  const stamp = (arr, x, y, r, fall) => { const R = r + fall, x0 = Math.max(0, Math.floor((x - R) / cell)), x1 = Math.min(n - 1, Math.floor((x + R) / cell)), y0 = Math.max(0, Math.floor((y - R) / cell)), y1 = Math.min(n - 1, Math.floor((y + R) / cell));
+    for (let gx = x0; gx <= x1; gx++) for (let gy = y0; gy <= y1; gy++) { const d = Math.hypot(gx * cell + 25 - x, gy * cell + 25 - y), v = d < r ? 1 : 1 - (d - r) / fall; if (v > arr[gy * n + gx]) arr[gy * n + gx] = v; } };
+  for (const l of G.lava) stamp(lava, l.x, l.y, l.r, 380);
+  for (const z of G.zones) if (z.k === 'oasis' || z.k === 'spring') stamp(wet, z.x, z.y, z.r, z.k === 'oasis' ? 340 : 200);
+  for (const v of g.valleys) for (let k = 0; k <= 20; k++) { const u = k / 20 - 0.5, ca = Math.cos(v.a), sa = Math.sin(v.a), off = Math.sin(u * 6) * v.w * 0.6; stamp(val, v.x + ca * u * v.len - sa * off, v.y + sa * u * v.len + ca * off, v.w * 0.35, v.w * 0.6); }
+  g.tf = { cell, n, lava, wet, val }; g.chunks = new Map(); g.chunkQ = 0; TN.reseed((G.cfg.seed || 1) ^ 0x5a17);
+}
+function tfAt(arr, x, y) { const T = G.sol.tf, gx = clamp(x / T.cell - 0.5, 0, T.n - 1.001), gy = clamp(y / T.cell - 0.5, 0, T.n - 1.001), ix = gx | 0, iy = gy | 0, fx = gx - ix, fy = gy - iy, n = T.n;
+  const a = arr[iy * n + ix], b = arr[iy * n + ix + 1] || 0, c = arr[(iy + 1) * n + ix] || 0, d = arr[(iy + 1) * n + ix + 1] || 0; return (a * (1 - fx) + b * fx) * (1 - fy) + (c * (1 - fx) + d * fx) * fy; }
+const CHUNK = 512, CRES = 0.5;
+function groundColor(x, y, out) {
+  const g = G.sol, n2 = TN.n2, fbm = TN.fbm, d = Math.hypot(x - g.c, y - g.c);
+  const heartW = SS(g.heart * 1.12, g.heart * 0.8, d), ringW = SS(g.ringIn - 300, g.ringIn + 80, d) * SS(g.ringOut + 320, g.ringOut - 40, d), outW = SS(g.ringOut - 40, g.ringOut + 380, d) * (1 - ringW * 0), pitW = Math.max(0, 1 - heartW - ringW - outW);
+  // dunes: a long wavy height field, lit from the upper left
+  const sx = x * 0.0016, sy = y * 0.0016, h = fbm(sx + 0.3 * n2(sy * 2, sx * 2), sy * 0.6, 3), h2 = fbm(sx + 0.006 + 0.3 * n2(sy * 2 + 0.012, sx * 2 + 0.012), sy * 0.6 + 0.004, 3);
+  const dune = clamp((h - h2) * 55, -0.32, 0.32), m = fbm(x * 0.006, y * 0.006, 3), f = n2(x * 0.06, y * 0.06), grain = n2(x * 0.14, y * 0.14);
+  const rip = Math.sin((x * 0.75 + y * 0.66) * 0.07 + m * 9 + h * 30) * (0.06 + 0.04 * f);
+  // sand of the Sand Pit and dunes in the Outskirts
+  let sr = 226 + 12 * m, sg = 188 + 10 * m, sb = 134 + 6 * m; const sl = 1 + dune * (pitW + outW * 0.6) + rip * (1 - Math.abs(dune) * 2) + (grain - 0.5) * 0.05; sr *= sl; sg *= sl; sb *= sl;
+  // the Outskirts: red hardpan with gravel and cracks, between sand drifts
+  const hard = SS(0.42, 0.62, fbm(x * 0.0022 + 5, y * 0.0022 - 3, 3)), cr = Math.abs(n2(x * 0.035, y * 0.035) - 0.5) + 0.03 * n2(x * 0.2, y * 0.2), crack = (1 - SS(0.0, 0.03, cr)) * SS(0.45, 0.6, n2(x * 0.004, y * 0.004)), gn = n2(x * 0.12 + 3, y * 0.12), grav = 1 + (gn - 0.5) * 0.22;
+  let hr = (168 + 22 * m) * grav * (1 - crack * 0.35), hg = (104 + 14 * m) * grav * (1 - crack * 0.38), hb = (66 + 10 * m) * grav * (1 - crack * 0.4);
+  const oS = 1 + dune * 0.4; hr *= oS; hg *= oS; hb *= oS;
+  const outR = sr + (hr - sr) * hard, outG = sg + (hg - sg) * hard, outB = sb + (hb - sb) * hard;
+  // the Ring: dark volcanic rock and ash
+  const ash = SS(0.45, 0.6, fbm(x * 0.004 - 7, y * 0.004 + 2, 3)), rk = 0.85 + 0.3 * fbm(x * 0.02, y * 0.02, 2) + (grain - 0.5) * 0.12;
+  const rR = (88 + (70 - 88) * ash) * rk, rG = (52 + (64 - 52) * ash) * rk, rB = (40 + (66 - 40) * ash) * rk;
+  // the Heart: moss, dark wet soil and a crystal glow
+  const moss = SS(0.35, 0.6, fbm(x * 0.01, y * 0.01, 3)), hrR = (66 + 24 * moss) * (0.9 + 0.2 * f), hrG = (60 + 62 * moss) * (0.9 + 0.2 * f), hrB = (44 + 18 * moss) * (0.9 + 0.2 * f);
+  let r = sr * pitW + outR * outW + rR * ringW + hrR * heartW, gg = sg * pitW + outG * outW + rG * ringW + hrG * heartW, b = sb * pitW + outB * outW + rB * ringW + hrB * heartW;
+  const tot = pitW + outW + ringW + heartW || 1; r /= tot; gg /= tot; b /= tot;
+  // valleys: deep shaded floors
+  const vv = tfAt(g.tf.val, x, y); if (vv > 0) { const k = 1 - 0.32 * SS(0, 1, vv); r *= k; gg *= k * 0.98; b *= k * 0.96; }
+  // damp sand and plants around water
+  const w = tfAt(g.tf.wet, x, y); if (w > 0) { const k = SS(0, 1, w), green = k * SS(0.4, 0.7, f + k * 0.3); r = r * (1 - k * 0.3) - green * 60; gg = gg * (1 - k * 0.15) + green * 10; b = b * (1 - k * 0.25) - green * 30; }
+  // scorched ground and ember glow near lava
+  const L = tfAt(g.tf.lava, x, y); if (L > 0) { const k = SS(0, 1, L); r = r + (34 - r) * k * 0.85; gg = gg + (24 - gg) * k * 0.85; b = b + (22 - b) * k * 0.85; if (L > 0.7) { const e = (L - 0.7) / 0.3 * (0.6 + 0.4 * f); r += 140 * e; gg += 40 * e; } }
+  out[0] = r; out[1] = gg; out[2] = b;
+}
+function makeChunk(cx, cy) {
+  const W = CHUNK * CRES, cv = document.createElement('canvas'); cv.width = cv.height = W; const c = cv.getContext('2d'), im = c.createImageData(W, W), D = im.data, col = [0, 0, 0];
+  for (let py = 0; py < W; py++) for (let px = 0; px < W; px++) { groundColor(cx * CHUNK + (px + 0.5) / CRES, cy * CHUNK + (py + 0.5) / CRES, col); const i = (py * W + px) * 4; D[i] = col[0]; D[i + 1] = col[1]; D[i + 2] = col[2]; D[i + 3] = 255; }
+  c.putImageData(im, 0, 0); return cv;
+}
+function drawSolTerrain(vx0, vy0, vx1, vy1) {
+  const g = G.sol; if (!g.tf) buildTerrainFields(); const C = g.chunks; let made = 0;
+  const x0 = Math.max(0, Math.floor(vx0 / CHUNK)), x1 = Math.min(Math.ceil(WORLD / CHUNK) - 1, Math.floor(vx1 / CHUNK)), y0 = Math.max(0, Math.floor(vy0 / CHUNK)), y1 = Math.min(Math.ceil(WORLD / CHUNK) - 1, Math.floor(vy1 / CHUNK));
+  const pcx = (vx0 + vx1) / 2, pcy = (vy0 + vy1) / 2, want = [];
+  for (let cx = x0; cx <= x1; cx++) for (let cy = y0; cy <= y1; cy++) want.push([cx, cy, Math.hypot((cx + 0.5) * CHUNK - pcx, (cy + 0.5) * CHUNK - pcy)]);
+  want.sort((a, b) => a[2] - b[2]); ctx.imageSmoothingEnabled = true;
+  for (const [cx, cy] of want) { const k = cx + cy * 1000; let ch = C.get(k);
+    if (!ch && (C.size < 6 || performance.now() < GEN_UNTIL)) { ch = { cv: makeChunk(cx, cy) }; C.set(k, ch); made++; }
+    if (ch) { ch.used = G.t; ctx.drawImage(ch.cv, cx * CHUNK, cy * CHUNK, CHUNK + 1, CHUNK + 1); } }
+  if (C.size > 90) { const old = [...C.entries()].sort((a, b) => a[1].used - b[1].used).slice(0, C.size - 70); for (const [k] of old) C.delete(k); }
+}
+// ---- relief: mountains, volcanoes, mesas and the meteor from height maps
+function reliefShape(o) { // returns radius at angle a, as a fraction 0..1 of o.R
+  if (o.pts) { const n = o.pts.length; return a => { a = (a % 6.2832 + 6.2832) % 6.2832; let i = 0; while (i < n - 1 && o.pts[i + 1][0] < a) i++; const [a0, r0] = o.pts[i], [a1, r1] = o.pts[(i + 1) % n], span = ((a1 - a0) + 6.2832) % 6.2832 || 0.4, u = clamp((((a - a0) + 6.2832) % 6.2832) / span, 0, 1); return (r0 + (r1 - r0) * u) / o.R; }; }
+  if (o.sh) { const n = o.sh.length; return a => { const t = ((a / 6.2832) % 1 + 1) % 1 * n, i = t | 0, u = t - i, r0 = o.sh[i % n], r1 = o.sh[(i + 1) % n]; return (r0 + (r1 - r0) * u) / o.R; }; }
+  return () => o.r / o.R;
+}
+function makeRelief(o) {
+  o.R = o.pts ? Math.max(...o.pts.map(p => p[1])) : o.sh ? Math.max(...o.sh) : o.r;
+  const res = o.k === 'meteor' ? 0.7 : o.R > 160 ? 0.45 : 0.55, pad = 60, S = Math.ceil((o.R * 2 + pad * 2) * res), H = new Float32Array(S * S), shape = reliefShape(o), kind = o.k;
+  const sd = (o.seed || (o.x * 13 + o.y * 7)) % 997;
+  for (let py = 0; py < S; py++) for (let px = 0; px < S; px++) { const wx = (px + 0.5) / res - pad - o.R, wy = (py + 0.5) / res - pad - o.R, d = Math.hypot(wx, wy), a = Math.atan2(wy, wx), rr = shape(a) * o.R, u = d / Math.max(1, rr);
+    let h = 0; if (u < 1) {
+      const nz = TN.fbm(wx * 0.02 + sd, wy * 0.02 - sd, 4), rid = 1 - Math.abs(TN.n2(wx * 0.03 + sd, wy * 0.03) * 2 - 1);
+      if (kind === 'spire') h = Math.pow(1 - u, 1.25) * (0.75 + 0.5 * nz) + 0.18 * rid * (1 - u);
+      else if (kind === 'volcano') h = u < 0.32 ? 0.75 - (0.32 - u) * 1.4 : Math.pow((1 - u) / 0.68, 1.1) * 0.85 * (0.85 + 0.3 * nz);
+      else if (kind === 'mesa') h = SS(1, 0.82, u) * (0.7 + 0.08 * nz) + 0.02 * rid;
+      else if (kind === 'boulder') h = Math.pow(1 - u * u, 0.55) * (0.75 + 0.35 * nz);
+      else h = Math.pow(1 - u * u, 0.6) * (0.6 + 0.5 * nz);
+      h *= SS(1, 0.93, u) * 0.6 + 0.4 * (u < 0.93 ? 1 : 1);
+    } H[py * S + px] = h; }
+  const cv = document.createElement('canvas'); cv.width = cv.height = S; const c = cv.getContext('2d'), im = c.createImageData(S, S), D = im.data, hk = o.R * 0.9 * res, sh = Math.round(28 * res), shy = Math.round(36 * res);
+  for (let py = 0; py < S; py++) for (let px = 0; px < S; px++) { const i = py * S + px, h = H[i], o4 = i * 4;
+    if (h <= 0) { const sp = px - sh, sq = py - shy; if (sp >= 0 && sq >= 0 && H[sq * S + sp] > 0.02) { D[o4] = 20; D[o4 + 1] = 10; D[o4 + 2] = 6; D[o4 + 3] = 95; } continue; }
+    const hx = (H[i + 1] || 0) - (H[i - 1] || 0), hy = (H[i + S] || 0) - (H[i - S] || 0), nx = -hx * hk, ny = -hy * hk, nl = Math.hypot(nx, ny, 1), lam = clamp((-nx * 0.55 - ny * 0.55 + 0.65) / nl, 0, 1.4);
+    const wx = px / res, wy = py / res, n = TN.n2(wx * 0.08 + sd, wy * 0.08), strata = Math.sin(h * 40 + n * 3) * 0.06;
+    let r, g, b;
+    if (kind === 'spire') { r = 92 + 90 * h; g = 52 + 52 * h; b = 36 + 34 * h; }
+    else if (kind === 'volcano') { r = 58 + 40 * h; g = 38 + 24 * h; b = 34 + 18 * h; if (h > 0.55 && Math.hypot(px - S / 2, py - S / 2) / res < o.R * 0.34) { r = 40; g = 22; b = 18; } }
+    else if (kind === 'boulder') { r = (o.red ? 140 : 150) + 50 * h; g = (o.red ? 82 : 112) + 36 * h; b = (o.red ? 60 : 82) + 26 * h; }
+    else if (kind === 'mesa') { r = (o.red ? 150 : 176) + 40 * h; g = (o.red ? 70 : 108) + 26 * h; b = (o.red ? 46 : 66) + 20 * h; }
+    else { r = 50 + 30 * h; g = 48 + 28 * h; b = 56 + 30 * h; }
+    const L = (0.45 + 0.75 * lam) * (1 + strata + (n - 0.5) * 0.18); D[o4] = clamp(r * L, 0, 255); D[o4 + 1] = clamp(g * L, 0, 255); D[o4 + 2] = clamp(b * L, 0, 255); D[o4 + 3] = 255; }
+  c.putImageData(im, 0, 0); o._img = { cv, x: -o.R - pad, w: (o.R + pad) * 2 };
+}
+let RELIEF_BUDGET = 0, GEN_UNTIL = 0; // terrain is painted a little each frame so the game never stutters
+function drawRelief(o) { if (!o._img) { if (RELIEF_BUDGET <= 0 || performance.now() > GEN_UNTIL) return false; RELIEF_BUDGET--; makeRelief(o); } const I = o._img; ctx.drawImage(I.cv, o.x + I.x, o.y + I.x, I.w, I.w); return true; }
 function solGeo() { const S = WORLD / 12000; return { c: WORLD / 2, S, heart: 700 * S, ringIn: 3500 * S, ringOut: 4250 * S }; }
 function solDist(x, y) { return Math.hypot(x - G.sol.c, y - G.sol.c); }
 const SOL_REGIONS = {
@@ -3731,7 +3906,7 @@ function buildSolkar(wr) {
   const steps = Math.round(6.283 * ringMid / 120);
   for (let i = 0; i < steps; i++) { const a = i / steps * 6.283; if (inPass(a)) continue;
     for (let row = 0; row < 3; row++) { const d = g.ringIn + ringW * (0.15 + row * 0.35) + (wr() - 0.5) * 120, r = 80 + wr() * 110, [x, y] = at(d, a + (wr() - 0.5) * 0.02); if (wr() < 0.25 || !clear(x, y, r, -r * 0.55)) continue;
-      O.push({ x, y, r, k: 'spire', seed: (wr() * 1e6) | 0, pts: Array.from({ length: 16 }, (_, j) => [j / 16 * 6.283 + (wr() - 0.5) * 0.12, r * (j % 2 ? 0.5 + wr() * 0.15 : 0.85 + wr() * 0.35)]) }); } }
+      O.push({ x, y, r, k: 'spire', seed: (wr() * 1e6) | 0, pts: Array.from({ length: 13 }, (_, j) => [j / 13 * 6.283 + (wr() - 0.5) * 0.2, r * (0.72 + wr() * 0.38)]) }); } }
   for (let i = 0; i < 7; i++) { const a = passes[i] + 0.25, [x, y] = at(g.ringIn - 120, a); if (clear(x, y, 160, 20)) cave(x, y, 160, false); }
   // ---- THE DEVIL'S HALO: lava streams from each volcano; two run inward into the pit and drain underground
   G.rivers = G.rivers || [];
@@ -3754,6 +3929,9 @@ function buildSolkar(wr) {
   for (let i = 0; i < Math.round(5 * CNT / 12.46 + 2); i++) { const s = outSpot(150, 200); if (s) Z.push({ x: s[0], y: s[1], r: 110 + wr() * 60, k: 'droppit', ph: wr() * 6 }); }
   for (let i = 0; i < 2; i++) { const s = outSpot(170, 600); if (s) Z.push({ x: s[0], y: s[1], r: 160 + wr() * 30, k: 'oasis', pond: true, palms: Array.from({ length: 5 }, () => wr() * 6.28) }); }
   for (let i = 0; i < Math.round(10 * CNT / 12.46 + 5); i++) { const s = outSpot(200, 160); if (s) Z.push({ x: s[0], y: s[1], r: 160 + wr() * 120, k: 'brush', seed: (wr() * 1e6) | 0 }); }
+  // rare springs: crystal formations that trap water
+  for (let i = 0; i < Math.round(7 * CNT / 12.46 + 3); i++) { const s = outSpot(150, 250); if (!s) continue; Z.push({ x: s[0], y: s[1], r: 55 + wr() * 15, k: 'spring', seed: (wr() * 1e6) | 0 });
+    for (let k = 0; k < 3; k++) { const a = wr() * 6.283, d = 95 + wr() * 30; O.push({ x: s[0] + Math.cos(a) * d, y: s[1] + Math.sin(a) * d, r: 20 + wr() * 16, k: 'crystal', rot: wr() * 6.28, sol: true, hue: 190 }); } }
   for (let i = 0; i < Math.round(30 * CNT / 12.46 + 12); i++) { const s = outSpot(120, 80); if (!s) continue; const n = 1 + (wr() * 4 | 0); for (let k = 0; k < n; k++) { const r = 50 + wr() * 110, x = s[0] + (wr() - 0.5) * 300, y = s[1] + (wr() - 0.5) * 300; if (clear(x, y, r, 10)) O.push({ x, y, r, k: wr() < 0.3 ? 'mesa' : 'boulder', red: wr() < 0.5, sh: blob(r, 12, 0.18) }); } }
   for (let i = 0; i < Math.round(6 * CNT / 12.46 + 3); i++) { const s = outSpot(160, 300); if (s) cave(s[0], s[1], 150 + wr() * 50, false); }
   g.valleys = Array.from({ length: Math.round(6 * CNT / 12.46 + 3) }, () => { const s = outSpot(10, 0) || [C, C], a = wr() * 6.283; return { x: s[0], y: s[1], a, len: 900 + wr() * 900, w: 140 + wr() * 120 }; });
@@ -3766,6 +3944,7 @@ function buildSolkar(wr) {
   G.traps = (G.traps || []).filter(t => solDist(t.x, t.y) > g.ringOut);
   const lavaHit = (x, y, r) => G.lava.some(l => Math.hypot(l.x - x, l.y - y) < l.r + r);
   G.obstacles = G.obstacles.filter(o => o.k === 'volcano' || !lavaHit(o.x, o.y, o.r * 0.6)); G.zones = G.zones.filter(z => z.heart || z.k === 'heartglow' || !lavaHit(z.x, z.y, z.r * 0.5));
+  for (const c of G.caves) if (wr() < (c.deep ? 1 : 0.45)) c.spring = true; // some caves hold water
   if (G.props) G.props = G.props.filter(p => { const d = solDist(p.x, p.y); return d > g.heart && (d > g.ringIn || p.k === 'bones' || wr() < 0.25); });
   g.wx = null; g.nextWx = 70 + wr() * 40; g.nextErupt = 200 + wr() * 160; g.nextFire = 1800 + wr() * 1200; g.nextMeteor = 900 + wr() * 900; g.nextHurr = 420 + wr() * 300;
 }
@@ -3837,16 +4016,7 @@ function solEffects(e, dt) { // what Solkar does to every creature
 function solLabel() { const g = G.sol; if (!g || !g.wx) return ''; const W = SOL_WX[g.wx.id]; return W.icon + ' ' + W.name + ' ' + Math.ceil(g.wx.t) + 's  ·  '; }
 // ---------------------------------------------------------------- drawing
 function drawSolGround(vx0, vy0, vx1, vy1) {
-  const g = G.sol, C = g.c, M = WORLD * 0.75, gr = ctx.createRadialGradient(C, C, 0, C, C, M), f = r => clamp(r / M, 0, 1);
-  gr.addColorStop(0, 'rgba(40,120,100,.45)'); gr.addColorStop(f(g.heart * 0.95), 'rgba(60,140,110,.3)'); gr.addColorStop(f(g.heart * 1.15), 'rgba(255,240,200,.28)');
-  gr.addColorStop(f(g.ringIn * 0.8), 'rgba(255,230,180,.22)'); gr.addColorStop(f(g.ringIn - 60), 'rgba(160,100,60,.25)'); gr.addColorStop(f(g.ringIn + 80), 'rgba(70,36,28,.6)');
-  gr.addColorStop(f(g.ringOut - 60), 'rgba(70,36,28,.6)'); gr.addColorStop(f(g.ringOut + 150), 'rgba(150,72,40,.3)'); gr.addColorStop(1, 'rgba(140,70,40,.35)');
-  ctx.fillStyle = gr; const x0 = Math.max(0, vx0), y0 = Math.max(0, vy0); ctx.fillRect(x0, y0, Math.min(WORLD, vx1) - x0, Math.min(WORLD, vy1) - y0);
-  // crater rim shadow
-  ctx.strokeStyle = 'rgba(40,20,10,.25)'; ctx.lineWidth = 120; ctx.beginPath(); ctx.arc(C, C, g.ringIn - 40, 0, 7); ctx.stroke();
-  for (const v of g.valleys) { if (v.x + v.len < vx0 || v.x - v.len > vx1 || v.y + v.len < vy0 || v.y - v.len > vy1) continue; ctx.save(); ctx.translate(v.x, v.y); ctx.rotate(v.a); ctx.lineCap = 'round';
-    ctx.strokeStyle = 'rgba(70,30,15,.18)'; ctx.lineWidth = v.w; ctx.beginPath(); ctx.moveTo(-v.len / 2, 0); ctx.bezierCurveTo(-v.len / 6, v.w, v.len / 6, -v.w, v.len / 2, 0); ctx.stroke();
-    ctx.strokeStyle = 'rgba(40,15,5,.18)'; ctx.lineWidth = v.w * 0.35; ctx.stroke(); ctx.restore(); }
+  const g = G.sol;
   // heat shimmer over the Sand Pit by day
   if (!isNight() && sunK() > 0.4) { ctx.save(); ctx.globalAlpha = 0.06 * sunK(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; for (let i = 0; i < 18; i++) { const y = vy0 + ((i * 97 + G.t * 30) % (vy1 - vy0)); if (solDist((vx0 + vx1) / 2, y) > g.ringIn) continue; ctx.beginPath(); for (let x = vx0; x < vx1; x += 40) ctx.lineTo(x, y + Math.sin(x * 0.02 + G.t * 3 + i) * 6); ctx.stroke(); } ctx.restore(); }
 }
@@ -3854,7 +4024,7 @@ function solRng(seed) { let s = seed >>> 0 || 1; return () => (s = (s * 1664525 
 function drawSolObstacle(o) {
   const t = G.t;
   switch (o.k) {
-    case 'spire': { // a jagged spiked mountain seen from above: sharp ridges radiating from a high peak
+    case 'spire': { if (drawRelief(o)) return true; // a jagged spiked mountain seen from above: sharp ridges radiating from a high peak
       const poly = (k, dx, dy) => { ctx.beginPath(); o.pts.forEach(([a, rr], i) => { const x = o.x + dx + Math.cos(a) * rr * k, y = o.y + dy + Math.sin(a) * rr * k; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.closePath(); };
       ctx.fillStyle = 'rgba(25,8,4,.4)'; poly(1.05, 26, 32); ctx.fill();
       ctx.fillStyle = '#3a1c14'; poly(1, 0, 0); ctx.fill();
@@ -3875,7 +4045,7 @@ function drawSolObstacle(o) {
       ctx.fillStyle = '#efe4c8'; for (let i = -3; i <= 3; i++) { ctx.beginPath(); ctx.moveTo(-o.r * 1.1, i * o.r * 0.1); ctx.lineTo(-o.r * 1.32, i * o.r * 0.1 + o.r * 0.04); ctx.lineTo(-o.r * 1.1, i * o.r * 0.1 + o.r * 0.08); ctx.fill(); }
       ctx.restore(); return true; }
     case 'meteor': { // the fallen meteor: dark stone, glowing crystal veins, moss
-      ctx.fillStyle = 'rgba(0,0,0,.35)'; blobPath(o.x + 18, o.y + 22, o.sh); ctx.fill(); ctx.fillStyle = '#2c2a30'; blobPath(o.x, o.y, o.sh); ctx.fill(); ctx.fillStyle = '#3e3a44'; blobPath(o.x - 8, o.y - 10, o.sh.map(v => v * 0.75)); ctx.fill();
+      if (!drawRelief(o)) { ctx.fillStyle = '#2c2a30'; blobPath(o.x, o.y, o.sh); ctx.fill(); }
       const R = solRng(o.seed); ctx.fillStyle = 'rgba(80,140,60,.55)'; for (let i = 0; i < 7; i++) { ctx.beginPath(); ctx.arc(o.x + (R() - 0.5) * o.r * 1.2, o.y + (R() - 0.5) * o.r * 1.2, o.r * (0.12 + R() * 0.15), 0, 7); ctx.fill(); }
       ctx.strokeStyle = `rgba(110,255,220,${0.6 + 0.3 * Math.sin(t * 2 + o.seed)})`; ctx.shadowColor = '#6affd8'; ctx.shadowBlur = 14; ctx.lineWidth = 3; for (let i = 0; i < 4; i++) { ctx.beginPath(); let x = o.x, y = o.y; ctx.moveTo(x, y); for (let k = 0; k < 4; k++) { x += (R() - 0.5) * o.r * 0.6; y += (R() - 0.5) * o.r * 0.6; ctx.lineTo(x, y); } ctx.stroke(); } ctx.shadowBlur = 0; return true; }
     case 'glassspike': { const R = solRng(o.seed); ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.rot);
@@ -3885,7 +4055,8 @@ function drawSolObstacle(o) {
     case 'crystal': if (!o.sol) return false; { ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.rot); ctx.shadowColor = `hsl(${o.hue},90%,60%)`; ctx.shadowBlur = 24;
       for (let i = 0; i < 3; i++) { const a = i * 2.1, L = o.r * (1.1 - i * 0.2); ctx.fillStyle = `hsl(${o.hue + i * 8},75%,${55 + 10 * Math.sin(t * 2 + o.rot + i)}%)`; ctx.beginPath(); ctx.moveTo(Math.cos(a + 1.2) * o.r * 0.35, Math.sin(a + 1.2) * o.r * 0.35); ctx.lineTo(Math.cos(a) * L, Math.sin(a) * L); ctx.lineTo(Math.cos(a - 1.2) * o.r * 0.35, Math.sin(a - 1.2) * o.r * 0.35); ctx.closePath(); ctx.fill(); }
       ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(-o.r * 0.1, -o.r * 0.1, o.r * 0.12, 0, 7); ctx.fill(); ctx.restore(); return true; }
-    case 'volcano': if (!o.sol) return false; { drawObstacle(Object.assign({}, o, { sol: false, t: o.erupting > 0 ? 0.5 : 9 }));
+    case 'mesa': case 'boulder': return drawRelief(o);
+    case 'volcano': if (!o.sol) return false; { if (drawRelief(o)) { const k = o.erupting > 0 ? 1 : o.warn > 0 ? 0.55 : 0.25 + 0.1 * Math.sin(t * 2), cg = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r * 0.42); cg.addColorStop(0, `rgba(255,230,120,${k})`); cg.addColorStop(0.5, `rgba(255,100,20,${k * 0.85})`); cg.addColorStop(1, 'rgba(120,20,0,0)'); ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(o.x, o.y, o.r * 0.42, 0, 7); ctx.fill(); } else drawObstacle(Object.assign({}, o, { sol: false, t: o.erupting > 0 ? 0.5 : 9 }));
       if (o.warn > 0) { const k = 1 - o.warn / 50, g = ctx.createRadialGradient(o.x, o.y, o.r * 0.4, o.x, o.y, o.r * (1.6 + k)); g.addColorStop(0, `rgba(255,120,30,${0.25 + 0.35 * k})`); g.addColorStop(1, 'rgba(255,60,10,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(o.x, o.y, o.r * (1.6 + k), 0, 7); ctx.fill(); }
       if (o.erupting > 0 && Math.random() < 0.5) G.parts.push({ x: o.x + rand(-30, 30), y: o.y + rand(-30, 30), vx: rand(-40, 40), vy: rand(-90, -40), life: 1, c: Math.random() < 0.5 ? '#ff7a1e' : '#ffd040', s: rand(5, 11) });
       return true; }
@@ -3901,10 +4072,17 @@ function drawSolZone(z) {
         ctx.fillStyle = `rgba(210,240,255,${0.35 + 0.4 * tw})`; ctx.beginPath(); ctx.moveTo(x, y - s); ctx.lineTo(x + s * 0.5, y); ctx.lineTo(x, y + s * 0.6); ctx.lineTo(x - s * 0.4, y); ctx.fill(); } return true; }
     case 'droppit': { const g = ctx.createRadialGradient(z.x, z.y, 0, z.x, z.y, z.r); g.addColorStop(0, 'rgba(60,40,20,.85)'); g.addColorStop(0.35, 'rgba(150,110,60,.6)'); g.addColorStop(1, 'rgba(200,160,100,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, 7); ctx.fill();
       ctx.strokeStyle = 'rgba(90,60,30,.45)'; ctx.lineWidth = 3; for (let i = 0; i < 4; i++) { ctx.beginPath(); for (let k = 0; k < 30; k++) { const u = k / 30, a = u * 5 + i * 1.57 + t * 1.2 + z.ph, d = z.r * (1 - u) * 0.95; ctx.lineTo(z.x + Math.cos(a) * d, z.y + Math.sin(a) * d); } ctx.stroke(); } return true; }
+    case 'spring': { const g = ctx.createRadialGradient(z.x, z.y, z.r * 0.2, z.x, z.y, z.r * 1.5); g.addColorStop(0, 'rgba(70,120,60,.0)'); g.addColorStop(0.6, 'rgba(70,120,60,.35)'); g.addColorStop(1, 'rgba(70,120,60,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(z.x, z.y, z.r * 1.5, 0, 7); ctx.fill();
+      drawSpringPool(z.x, z.y, z.r); return true; }
     case 'brush': { const R = solRng(z.seed); ctx.lineCap = 'round'; for (let i = 0; i < 14; i++) { const a = R() * 6.283, d = Math.sqrt(R()) * z.r, x = z.x + Math.cos(a) * d, y = z.y + Math.sin(a) * d, s = 10 + R() * 16;
       ctx.fillStyle = 'rgba(60,40,20,.2)'; ctx.beginPath(); ctx.ellipse(x + 4, y + 5, s, s * 0.7, 0, 0, 7); ctx.fill(); ctx.strokeStyle = R() < 0.5 ? '#7a8a3a' : '#9a8a4a'; ctx.lineWidth = 2; for (let k = 0; k < 7; k++) { const b = k * 0.9 + R(); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(b) * s, y + Math.sin(b) * s); ctx.stroke(); } } return true; }
   }
   return false;
+}
+function drawSpringPool(x, y, r) { // clear water in a rock basin, with light dancing on it
+  ctx.fillStyle = '#6a5040'; ctx.beginPath(); ctx.ellipse(x, y, r * 1.08, r * 0.92, 0, 0, 7); ctx.fill();
+  const g = ctx.createRadialGradient(x - r * 0.2, y - r * 0.2, r * 0.1, x, y, r); g.addColorStop(0, '#7fe0f0'); g.addColorStop(0.6, '#2a90b8'); g.addColorStop(1, '#165a78'); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, r * 0.95, r * 0.8, 0, 0, 7); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.5; for (let i = 0; i < 3; i++) { const k = (G.t * 0.4 + i / 3) % 1; ctx.globalAlpha = 1 - k; ctx.beginPath(); ctx.ellipse(x, y, r * 0.9 * k, r * 0.75 * k, 0, 0, 7); ctx.stroke(); } ctx.globalAlpha = 1;
 }
 function drawSolSky(vx0, vy0, vx1, vy1) { // floating boulders, drawn above everything on the ground
   const g = G.sol; for (const s of g.sky) { if (s.x + s.r + 100 < vx0 || s.x - s.r - 100 > vx1 || s.y + s.r + 120 < vy0 || s.y - s.r - 100 > vy1) continue;
@@ -5394,7 +5572,7 @@ function update(dt) {
     if (e.fx.invis > 0) sp *= 1.15;
     if (e.fx.dash > 0) sp *= 3;
     // planet hazards
-    desertHeat(e, dt); if (G.sol) { solEffects(e, dt); if (e.updraft) sp *= 1.25; } if (hasAd(e, 'water') && e.alive && e.hp < e.maxhp) e.hp = Math.min(e.maxhp, e.hp + e.maxhp * 0.002 * dt); if (hasAd(e, 'sand') && !e.ug && !e.inWater) sp *= 1.15;
+    if (!G.sol) desertHeat(e, dt); if (G.sol) { updateNeeds(e, dt); solEffects(e, dt); if (e.updraft) sp *= 1.25; } if (hasAd(e, 'water') && e.alive && e.hp < e.maxhp) e.hp = Math.min(e.maxhp, e.hp + e.maxhp * 0.002 * dt); if (hasAd(e, 'sand') && !e.ug && !e.inWater) sp *= 1.15;
     let hzK = G.noHazard ? 0 : has(e, 'hardy') ? 0.4 : 1; if (e.inCave) hzK *= 0.3;
     const bio = e.biome || G.planet;
     if (!resists(e, bio)) {
@@ -5471,6 +5649,7 @@ function update(dt) {
         f.gone = true; G.foodGone = true; if (e === G.player) SND('crunch'); const sc = has(e, 'scavenger') ? 1.5 : 1; addXP(e, f.xp * sc); e.hp = Math.min(e.maxhp, e.hp + 2 * sc);
         if (e === p && G.tut) G.tut.eat++;
         if (e === p && G.mstat) G.mstat.eat++;
+        if (e.food != null) e.food = Math.min(100, e.food + 7 + (f.xp || 3) * 1.6);
         if (e === p) { if (f.token) { G.earned.tokens++; floatText(f.x, f.y, '+1 token', '#ff8ad8'); } if (G.objective && G.objective.onEat) G.objective.onEat(); }
         if (!f.drop) { const gm = G; setTimeout(() => G === gm && !G.over && spawnFood(), rand(2000, 6000)); }
       }
@@ -5602,7 +5781,7 @@ const STORY = [
 function tutDone() { return save.tutorialDone || save.story > 0; }
 const nearestOf = (list, p) => { let b = null, bd = Infinity; for (const o of list) { const d = d2(o, p); if (d < bd) { bd = d; b = o; } } return b; };
 const TUT = [
-  { text: () => `<b>Welcome, hatchling!</b> You just hatched on the Dune Sea. Move around: drag anywhere on the screen, or use WASD / arrow keys / your mouse.`,
+  { text: () => `<b>Welcome, hatchling!</b> You just hatched on the burning planet Solkar. Move around: drag anywhere on the screen, or use WASD / arrow keys / your mouse.`,
     start(T, p) { T.sx = p.x; T.sy = p.y; }, done(T, p) { return Math.hypot(p.x - T.sx, p.y - T.sy) > 350; } },
   { text: (p, T) => `<b>Eat to grow (${Math.min(T.eat, 5)}/5).</b> Your alien is a <b>${DIETS[p.def.diet].name}</b>: it eats ${DIETS[p.def.diet].eats.map(x => FOODS[x].name.toLowerCase()).join(' and ')}. Faded food isn't on your diet. Hunting drops meat.`,
     start(T) { T.eat = 0; }, done(T) { return T.eat >= 5; }, target: p => nearestOf(G.food.filter(f => canEat(p, f)), p) },
@@ -5931,7 +6110,7 @@ function ugNativeBase(def) { // creatures that belong underground
 }
 function buildUnder(wr) {
   const U = { caverns: [], tunnels: [], shafts: [] };
-  for (const c of G.caves) { const cv = { x: c.x, y: c.y, R: c.R * 1.25 + 40, sh: Array.from({ length: 14 }, () => 1 + (wr() - 0.5) * 0.18) }; U.caverns.push(cv); U.shafts.push({ x: c.x, y: c.y, r: 46, cave: c, cv }); c.shaft = true; }
+  for (const c of G.caves) { const cv = { spring: !!c.spring, x: c.x, y: c.y, R: c.R * 1.25 + 40, sh: Array.from({ length: 14 }, () => 1 + (wr() - 0.5) * 0.18) }; U.caverns.push(cv); U.shafts.push({ x: c.x, y: c.y, r: 46, cave: c, cv }); c.shaft = true; }
   if (G.sol) U.caverns.push({ x: G.sol.c, y: G.sol.c, R: G.sol.heart * 0.9, deep: true, sh: Array.from({ length: 14 }, () => 1 + (wr() - 0.5) * 0.18) });
   const extra = Math.round(3 * CNT);
   for (let i = 0; i < extra; i++) { let x, y, R = 170 + wr() * 170, ok = false; for (let k = 0; k < 30 && !ok; k++) { x = 300 + wr() * (WORLD - 600); y = 300 + wr() * (WORLD - 600); ok = !U.caverns.some(c => Math.hypot(c.x - x, c.y - y) < c.R + R + 260); } if (ok) U.caverns.push({ x, y, R, sh: Array.from({ length: 14 }, () => 1 + (wr() - 0.5) * 0.22) }); }
@@ -7337,19 +7516,19 @@ function render() {
   ctx.save(); ctx.scale(zoom, zoom); ctx.translate(-camX, -camY);
   const vx0 = camX - 200, vy0 = camY - 200, vx1 = camX + VW / zoom + 200, vy1 = camY + VH / zoom + 200;
   const inView = o => o.x > vx0 && o.x < vx1 && o.y > vy0 && o.y < vy1;
-  if (p.ug) drawUnderground(vx0, vy0, vx1, vy1); else { // underground: caverns and tunnels instead of the surface
+  if (p.ug) { drawUnderground(vx0, vy0, vx1, vy1); if (G.sol && G.under) for (const c of G.under.caverns) if ((c.spring || c.deep) && inView(c)) drawSpringPool(c.x, c.y, c.deep ? 120 : 45); } else { // underground: caverns and tunnels instead of the surface
   // ground
   if (G.open && G.shift) { ctx.fillStyle = primordialPattern(); ctx.fillRect(Math.max(0, vx0), Math.max(0, vy0), Math.min(WORLD, vx1) - Math.max(0, vx0), Math.min(WORLD, vy1) - Math.max(0, vy0)); }
   if (G.open) { for (const t of G.tiles) { if (t.x1 + 220 < vx0 || t.x0 - 220 > vx1 || t.y1 + 220 < vy0 || t.y0 - 220 > vy1) continue; ctx.fillStyle = groundPattern(t.pid); ctx.fill(t.path); } ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 26; for (const t of G.tiles) if (!(t.x1 + 220 < vx0 || t.x0 - 220 > vx1 || t.y1 + 220 < vy0 || t.y0 - 220 > vy1)) ctx.stroke(t.path); }
   else { ctx.fillStyle = groundPattern(G.planet); ctx.fillRect(Math.max(0, vx0), Math.max(0, vy0), Math.min(WORLD, vx1) - Math.max(0, vx0), Math.min(WORLD, vy1) - Math.max(0, vy0)); }
-  drawGroundDetail(vx0, vy0, vx1, vy1); if (G.sol) drawSolGround(vx0, vy0, vx1, vy1); drawWorldEdge(vx0, vy0, vx1, vy1);
+  if (G.sol) { RELIEF_BUDGET = 2; GEN_UNTIL = performance.now() + 12; drawSolTerrain(vx0, vy0, vx1, vy1); drawSolGround(vx0, vy0, vx1, vy1); } else drawGroundDetail(vx0, vy0, vx1, vy1); drawWorldEdge(vx0, vy0, vx1, vy1);
   drawDecals(vx0, vy0, vx1, vy1); drawProps(vx0, vy0, vx1, vy1); drawPrints(vx0, vy0, vx1, vy1);
   // lava
   if (G.rivers) for (const riv of G.rivers) { if (riv.length < 2) continue; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; for (const [w, c, dash] of [[136, 'rgba(255,90,20,.25)'], [124, '#7a1606'], [104, '#d63a0c'], [62, '#ff8a1e'], [26, `rgba(255,220,90,${0.75 + 0.25 * Math.sin(G.t * 3)})`], [12, 'rgba(255,250,200,.85)', true]]) { ctx.strokeStyle = c; ctx.lineWidth = w; if (dash) { ctx.setLineDash([40, 70]); ctx.lineDashOffset = -G.t * 60; } ctx.beginPath(); riv.forEach((pt, i) => i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y)); ctx.stroke(); ctx.setLineDash([]); } }
   for (const lv of G.lava) if (!lv.river && inView(lv)) { const g = ctx.createRadialGradient(lv.x, lv.y, 0, lv.x, lv.y, lv.r); g.addColorStop(0, '#ffdd55'); g.addColorStop(0.5, '#ff7a1e'); g.addColorStop(1, '#a8200a'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(lv.x, lv.y, lv.r * (1 + Math.sin(G.t * 2 + lv.x) * 0.02), 0, 7); ctx.fill(); }
   // decor
   for (const z of G.zones) if (z.x + z.r > vx0 && z.x - z.r < vx1 && z.y + z.r > vy0 && z.y - z.r < vy1) { if (G.sol && drawSolZone(z)) continue; drawZone(z); drawZone2(z); }
-  for (const c of G.caves) if (c.x + c.R > vx0 && c.x - c.R < vx1 && c.y + c.R > vy0 && c.y - c.R < vy1) { drawCaveFloor(c); drawShaftHole(c); }
+  for (const c of G.caves) if (c.x + c.R > vx0 && c.x - c.R < vx1 && c.y + c.R > vy0 && c.y - c.R < vy1) { drawCaveFloor(c); drawShaftHole(c); if (c.spring && G.sol) drawSpringPool(c.x + Math.cos(c.ent + 2.4) * c.R * 0.45, c.y + Math.sin(c.ent + 2.4) * c.R * 0.45, 32); }
   if (G.lairs) for (const L of G.lairs) if (L.x + 560 > vx0 && L.x - 560 < vx1 && L.y + 560 > vy0 && L.y - 560 < vy1 && !(L.boss && L.boss.arena)) drawLair(L);
   if (G.arenas) for (const A of G.arenas) if (A.x + A.r + 80 > vx0 && A.x - A.r - 80 < vx1 && A.y + A.r + 80 > vy0 && A.y - A.r - 80 < vy1) { drawArena(A, 'floor'); drawArena(A, 'wall'); }
   if (G.traps) for (const t of G.traps) if (inView(t)) drawTrap(t, p);
@@ -7602,7 +7781,8 @@ function drawHUD() {
   { const st = p.inCave ? 'In cave: sheltered' : p.climbT > 0 ? 'Climbing…' : p.perch ? 'Perched up high' : p.overObst ? 'Flying over obstacles' : p.air != null && p.air < 0.5 ? 'Landed: move to take off' : p.inCover ? 'Hidden in cover' : (moves(p.def).swim && p.inMist) ? 'Diving, hidden' : moves(p.def).fly ? 'Flying' : ''; const tr = moves(p.def).list.map(k => MOVE_INFO[k].icon).join(''); if (st || tr) { ctx.textAlign = 'right'; ctx.fillStyle = '#ffcf8a'; ctx.fillText((st ? st + ' ' : '') + tr, 10 + pw - 8, topY + 63); ctx.textAlign = 'left'; } }
   const ok = resists(p, G.planet) && !(G.planet === 'dune' && p.sunburn);
   ctx.fillStyle = '#c9b6ff'; ctx.fillText('Diet: ' + DIETS[p.def.diet].name + ' (' + DIETS[p.def.diet].eats.map(x => FOODS[x].name.toLowerCase()).join(', ') + ')' + (G.dis ? (inForm(p) ? ' · ' + DISASTERS[G.planet].form + '!' : '') : ''), 18, topY + 91);
-  ctx.fillStyle = ok ? '#7dffb2' : '#ffb35a'; ctx.fillText(G.planet === 'dune' && !G.noHazard ? (G.sol ? solLabel() : '') + (isNight() ? '🌙 Night on the dunes' : p.sunburn ? '☀️ The midday sun is burning you: find shade, a cave or water' : (p.ug ? '⛰️ Underground: cool and dark' : '☀️ Day') + (p.ug ? '' : hasAd(p, 'heat') ? ' · Heat Shield' : inShade(p) ? ' · In shade' : '')) + (p.adapts && p.adapts.length ? '  ·  ' + p.adapts.map(k => ADAPTS[k].icon).join('') : '') : ok ? 'Adapted to ' + G.P.name : { dune: 'Heat is draining you', ice: 'Cold slows and chills you', dark: 'Darkness limits your sight', hell: 'Fire is burning you', water: 'You are short of breath', heaven: 'Holy radiance sears you', earth: 'Heavy gravity tires you', mars: 'Thin frozen air chokes you', space: 'The vacuum is suffocating you', jungle: 'Toxic spores poison you', robo: 'Static radiation burns you' }[G.planet] + ' (not adapted)', 18, topY + 77);
+  ctx.fillStyle = ok ? '#7dffb2' : '#ffb35a'; ctx.fillText(G.sol && !G.noHazard ? solLabel() + (p.ug ? '⛰️ Underground' : isNight() ? '🌙 Night' : '☀️ Day') + (p.overheat ? ' · Overheating: find shade, a cave or water!' : p.freezing ? ' · Too cold: find shelter' : p.drinking ? ' · Drinking' : '') + (p.adapts && p.adapts.length ? '  ·  ' + p.adapts.map(k => ADAPTS[k].icon).join('') : '') : G.planet === 'dune' && !G.noHazard ? (isNight() ? '🌙 Night on the dunes' : p.sunburn ? '☀️ The midday sun is burning you: find shade, a cave or water' : (p.ug ? '⛰️ Underground: cool and dark' : '☀️ Day') + (p.ug ? '' : hasAd(p, 'heat') ? ' · Heat Shield' : inShade(p) ? ' · In shade' : '')) + (p.adapts && p.adapts.length ? '  ·  ' + p.adapts.map(k => ADAPTS[k].icon).join('') : '') : ok ? 'Adapted to ' + G.P.name : { dune: 'Heat is draining you', ice: 'Cold slows and chills you', dark: 'Darkness limits your sight', hell: 'Fire is burning you', water: 'You are short of breath', heaven: 'Holy radiance sears you', earth: 'Heavy gravity tires you', mars: 'Thin frozen air chokes you', space: 'The vacuum is suffocating you', jungle: 'Toxic spores poison you', robo: 'Static radiation burns you' }[G.planet] + ' (not adapted)', 18, topY + 77);
+  drawNeedsHUD(p, 10, topY + 100, pw);
   // timer / mode line
   ctx.textAlign = 'center';
   const cx = narrow ? (VW - 70) / 2 : VW / 2;
@@ -7614,14 +7794,14 @@ function drawHUD() {
     if (G.objective) info = 'Goal: ' + G.objective.text();
     ctx.font = 'bold 13px system-ui'; ctx.fillStyle = G.objective && G.objective.done ? '#7dffb2' : G.objective ? '#ffd77a' : '#ccc'; ctx.fillText(info, cx, 68);
     if (p.alive && Math.hypot(p.x - G.zone.x, p.y - G.zone.y) > G.zone.r) { ctx.fillStyle = '#ff5a5a'; ctx.font = 'bold 15px system-ui'; ctx.fillText('METEOR STORM! Get inside the safe zone!', VW / 2, topY + 104); }
-  } else { ctx.font = 'bold 14px system-ui'; ctx.fillStyle = '#9fe3ff'; ctx.fillText(G.mode === 'tutorial' ? 'TUTORIAL: FIRST STEPS' : G.open ? 'OPEN WORLD · ' + G.P.name.toUpperCase() + ' · ' + fmtTime(G.t) : 'SURVIVAL — ' + fmtTime(G.t), cx, 26);
+  } else { ctx.font = 'bold 14px system-ui'; ctx.fillStyle = '#9fe3ff'; ctx.fillText(G.mode === 'tutorial' ? 'TUTORIAL: FIRST STEPS' : G.open || G.mode === 'open' ? 'OPEN WORLD · ' + G.P.name.toUpperCase() + ' · ' + fmtTime(G.t) : 'SURVIVAL — ' + fmtTime(G.t), cx, 26);
     if (G.wev) { const W = G.wev; ctx.font = 'bold 13px system-ui'; ctx.fillStyle = WEV_INFO[W.id].col; ctx.fillText(WEV_INFO[W.id].name + (W.label ? ' (' + W.label + ')' : '') + ' · ' + fmtTime(W.t), cx, 44); } else if (G.open && G.nextWev != null) { ctx.font = '12px system-ui'; ctx.fillStyle = '#aaa'; ctx.fillText('Next world event in ' + fmtTime(G.nextWev), cx, 44); } }
   if (G.alphaNext != null && !G.royale) { ctx.textAlign = 'center'; ctx.font = 'bold 12px system-ui'; ctx.fillStyle = '#ff9a8a'; ctx.fillText('Alpha boss returns in ' + fmtTime(G.alphaNext), VW / 2, narrow ? 158 : 64); } // on phones the stats panel fills the top-left, so the timer goes below it
   // minimap
   const mx = VW - ms - 12, my = narrow ? topY : 52;
   ctx.fillStyle = 'rgba(10,6,20,.65)'; ctx.fillRect(mx, my, ms, ms); ctx.strokeStyle = '#5a46a0'; ctx.strokeRect(mx, my, ms, ms);
   const sc = ms / WORLD;
-  const ZC = { meadow: '#9be36a', crater: '#5a2010', dustdevil: '#e0a070', fissure: '#2a1a0a', sanctum: '#ffd86a', oasis: '#3fb8e0', quicksand: '#b0844c', lake: '#d6f1ff', mist: G.planet === 'heaven' ? '#ffffff' : '#4a2f7a', grove: '#5fe08a', geyser: '#ffffff', vent: '#ff7a2a' };
+  const ZC = { spring: '#3fb8e0', meadow: '#9be36a', crater: '#5a2010', dustdevil: '#e0a070', fissure: '#2a1a0a', sanctum: '#ffd86a', oasis: '#3fb8e0', quicksand: '#b0844c', lake: '#d6f1ff', mist: G.planet === 'heaven' ? '#ffffff' : '#4a2f7a', grove: '#5fe08a', geyser: '#ffffff', vent: '#ff7a2a' };
   if (p.ug && G.under) { ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(mx, my, ms, ms); ctx.strokeStyle = '#c8a07a'; ctx.lineCap = 'round'; for (const t of G.under.tunnels) { ctx.lineWidth = Math.max(1.5, t.w * sc); ctx.beginPath(); ctx.moveTo(mx + t.x1 * sc, my + t.y1 * sc); ctx.lineTo(mx + t.x2 * sc, my + t.y2 * sc); ctx.stroke(); } ctx.fillStyle = '#c8a07a'; for (const c of G.under.caverns) { ctx.beginPath(); ctx.arc(mx + c.x * sc, my + c.y * sc, Math.max(2, c.R * sc), 0, 7); ctx.fill(); } ctx.fillStyle = '#ffe7a8'; for (const s2 of G.under.shafts) { ctx.beginPath(); ctx.arc(mx + s2.x * sc, my + s2.y * sc, 2, 0, 7); ctx.fill(); } } else
   if (G.sol && !p.ug) drawSolMinimap(mx, my, ms);
   for (const z of G.zones) { if (G.sol && (z.k === 'heartglow' || z.k === 'brush')) continue; ctx.fillStyle = ZC[z.k] || '#888'; ctx.globalAlpha = 0.55; ctx.beginPath(); ctx.arc(mx + z.x * sc, my + z.y * sc, Math.max(1.5, z.r * sc), 0, 7); ctx.fill(); }
@@ -8157,7 +8337,9 @@ function renderStory() {
     d.appendChild(b); L.appendChild(d);
   });
 }
-const LAB_TABS = [['all', 'All'], ['owned', 'Owned'], ['dune', 'Dune'], ['ice', 'Ice'], ['dark', 'Darkness'], ['hell', 'Hell'], ['water', 'Water'], ['jungle', 'Jungle'], ['robo', 'Robotic'], ['space', 'Space'], ['heaven', 'Heaven'], ['earth', 'Earth'], ['mars', 'Mars'], ['ancient', 'Ancient'], ['mutant', 'Mutant'], ['boss', 'Bosses'], ['premium', 'Premium'], ['event', 'Holiday'], ['lucky', 'Lucky'], ['elder', 'Elder Gods'], ['exclusive', 'Exclusive']];
+const ENV_TABS = [['heart', 'The Heart'], ['pit', 'Sand Pit'], ['ring', 'The Ring'], ['halo', "Devil's Halo"], ['out', 'Outskirts'], ['forest', 'Shard Forest'], ['oasis', 'Oases & springs'], ['under', 'Underground'], ['sky', 'Skypaths'], ['unknown', 'Unknown']];
+const ENV_NAME = Object.fromEntries(ENV_TABS); const ENV_IDS = ENV_TABS.map(t => t[0]);
+const LAB_TABS = [['all', 'All'], ['owned', 'Owned'], ...ENV_TABS];
 const RAR_TABS = [['any', 'Any rarity'], ['common', 'Common'], ['uncommon', 'Uncommon'], ['rare', 'Rare'], ['epic', 'Epic'], ['legendary', 'Legendary']];
 const LAB_PAGE = 24;
 let labTab = 'all', labRar = 'any', labQ = '', labPage = 0, labSort = 'price';
@@ -8190,7 +8372,7 @@ function renderLab() {
   R.appendChild(srch); R.appendChild(sortB); T.appendChild(R);
   const Gd = $('labGrid'); Gd.innerHTML = '';
   const ev = activeEvent();
-  let list = ALIENS.filter(a => labTab === 'all' || (labTab === 'owned' && owns(a.id)) || (PLANET_IDS.includes(labTab) && a.planet === labTab && ['basic', 'common', 'wild'].includes(a.kind)) || (labTab === 'ancient' && ['foreign', 'prehistoric', 'mutated'].includes(a.kind)) || a.kind === labTab);
+  let list = ALIENS.filter(a => labTab === 'all' || (labTab === 'owned' && owns(a.id)) || (ENV_IDS.includes(labTab) && (a.env || 'unknown') === labTab) || (labTab === 'ancient' && ['foreign', 'prehistoric', 'mutated'].includes(a.kind)) || a.kind === labTab);
   if (labRar !== 'any') list = list.filter(a => (a.kind === 'basic' ? 'common' : a.rarity) === labRar);
   if (labQ) list = list.filter(a => a.name.toLowerCase().includes(labQ) || AB[a.ability].name.toLowerCase().includes(labQ) || DIETS[a.diet].name.toLowerCase().includes(labQ));
   const val = a => a.cost ? (a.cost.dna || 0) + (a.cost.adna || 0) * 400 + (a.cost.mdna || 0) * 1500 + (a.cost.shards ? 50000 : 0) + (a.cost.usd ? 1e6 : 0) + (a.cost.tokens ? 5e5 : 0) : (a.kind === 'lucky' ? 9e5 : 0);
@@ -8208,7 +8390,7 @@ function renderLab() {
     c.innerHTML = `<span class="tag" style="color:${tc}">${tl}</span>` + (a.apex ? `<span class="tag" style="left:auto;right:6px;color:#ff6b6b">APEX</span>` : '');
     const th = alienThumb(own ? playerDef(a.id) : a, 96); if (!own && (a.kind === 'lucky')) th.style.filter = 'brightness(0)'; c.appendChild(th);
     const info = document.createElement('div');
-    info.innerHTML = `<div class="nm">${a.name}</div><div class="meta">${a.look.theme && a.look.mut ? '<span style="color:#e05cff">Spliced from ' + themeName(a) + '</span><br>' : ''}${PLANETS[a.planet].name} · resists ${a.res.length >= PLANET_IDS.length ? 'ALL' : a.res.map(r => PLANETS[r].name).join('/')}${a.forms ? '<br><span style="color:#7dffb2">Shapeshifter: ' + a.forms.map(f => HAB_NAME[f] + ' (' + PLANETS[f].name + ')').join(' · ') + ' forms</span>' : ''}${a.myth ? '<br><span style="color:#ffd38a">Mythical beast</span>' : ''}${a.cryptid ? '<br><span style="color:#e05cff">Cryptid</span>' : ''}</div>${skillHTML(a)}${a.ult ? `<div class="ab" style="color:#ffd25a">ULT: ${AB[a.ult].name}</div>` : ''}<div class="st" style="color:#c9b6ff">${a.passives.map(x => PASSIVES[x].name).join(' · ')}</div>${moveHTML(a)}<div class="st" style="color:#9fe3ff">${a.sizeClass || 'Medium'}${a.immune && a.immune.length ? ' · Immune: ' + a.immune.map(k => IMM_NAME[k]).join(', ') : ''}${a.res.includes('space') && a.planet !== 'space' && a.res.length < PLANET_IDS.length ? ' · Space-proof' : ''}</div><div class="st" style="color:#9be36a">Diet: ${DIETS[a.diet].name}${a.adapt ? ` · <span style="color:#ffb35a">${DISASTERS[a.planet].form}</span>` : ''}</div><div class="st">HP ${a.hp} · DMG ${a.dmg} · SPD ${a.spd}</div>`;
+    info.innerHTML = `<div class="nm">${a.name}</div><div class="meta">${a.look.theme && a.look.mut ? '<span style="color:#e05cff">Spliced from ' + themeName(a) + '</span><br>' : ''}${a.desert || a.fresh ? 'Lives in: ' + (ENV_NAME[a.env || 'unknown'] || 'Unknown') + (a.tempMax != null ? ' · heat limit ' + a.tempMax + '°' : '') : PLANETS[a.planet].name + ' · resists ' + (a.res.length >= PLANET_IDS.length ? 'ALL' : a.res.map(r => PLANETS[r].name).join('/'))}${a.forms ? '<br><span style="color:#7dffb2">Shapeshifter: ' + a.forms.map(f => HAB_NAME[f] + ' (' + PLANETS[f].name + ')').join(' · ') + ' forms</span>' : ''}${a.myth ? '<br><span style="color:#ffd38a">Mythical beast</span>' : ''}${a.cryptid ? '<br><span style="color:#e05cff">Cryptid</span>' : ''}</div>${skillHTML(a)}${a.ult ? `<div class="ab" style="color:#ffd25a">ULT: ${AB[a.ult].name}</div>` : ''}<div class="st" style="color:#c9b6ff">${a.passives.map(x => PASSIVES[x].name).join(' · ')}</div>${moveHTML(a)}<div class="st" style="color:#9fe3ff">${a.sizeClass || 'Medium'}${a.immune && a.immune.length ? ' · Immune: ' + a.immune.map(k => IMM_NAME[k]).join(', ') : ''}${a.res.includes('space') && a.planet !== 'space' && a.res.length < PLANET_IDS.length ? ' · Space-proof' : ''}</div><div class="st" style="color:#9be36a">Diet: ${DIETS[a.diet].name}${a.adapt ? ` · <span style="color:#ffb35a">${DISASTERS[a.planet].form}</span>` : ''}</div><div class="st">HP ${a.hp} · DMG ${a.dmg} · SPD ${a.spd}</div>`;
     c.appendChild(info);
     const b = document.createElement('button'); b.className = 'btn';
     if (own) { b.textContent = save.equipped === a.id ? 'Equipped · Skins' : 'Equip'; b.className += ' green'; b.onclick = () => { save.equipped = a.id; persist(); renderLab(); skinPicker(a); }; }
@@ -8336,7 +8518,7 @@ requestAnimationFrame(t => { last = t; running = true; loop(t); });
   const merged = id => { const a = CREATURE_MODS[id] || {}, b = local[id] || {}; return Object.assign({}, a, b, { look: Object.assign({}, a.look, b.look) }); };
   const snap = def => { if (!CREATURE_BASE[def.id]) CREATURE_BASE[def.id] = JSON.parse(JSON.stringify(def, (k, v) => k === 'an' ? undefined : v)); };
   function restore(def) { const B = JSON.parse(JSON.stringify(CREATURE_BASE[def.id]));
-    for (const k of ['name', 'lore', 'ability', 'ult', 'hp', 'dmg', 'spd', 'size', 'adapts', 'diet', 'behavior', 'home', 'ugHome', 'rarity', 'starter', 'kind', 'cost']) def[k] = B[k]; def._ug = null;
+    for (const k of ['name', 'lore', 'ability', 'ult', 'hp', 'dmg', 'spd', 'size', 'adapts', 'diet', 'behavior', 'home', 'ugHome', 'rarity', 'starter', 'kind', 'cost', 'env', 'tempMax', 'tempMin', 'mv']) def[k] = B[k]; def._ug = null; def._mv = null;
     for (const k in def.look) delete def.look[k]; Object.assign(def.look, B.look); }
   function rebuild(def) { snap(def); restore(def); applyCreatureMod(def.id, merged(def.id)); }
 
@@ -8406,7 +8588,11 @@ ${d.desert || d.fresh ? `<label class="w"><span>Rarity</span><select data-d="rar
 <label class="w"><span>Free starter</span><input type="checkbox" data-d="starter" ${d.starter ? 'checked' : ''} style="width:auto"></label>
 <label class="w"><span>Diet</span><select data-d="diet">${['herbivore', 'carnivore', 'omnivore', 'insectivore', 'scavenger'].map(r => `<option ${d.diet === r ? 'selected' : ''}>${r}</option>`).join('')}</select></label>
 <label class="w"><span>Behaviour</span><select data-d="behavior">${['grazer', 'predator', 'territorial', 'skittish', 'scavenger', 'ambusher', 'pack'].map(r => `<option ${d.behavior === r ? 'selected' : ''}>${r}</option>`).join('')}</select></label>
+<label class="w"><span>Environment</span><select data-d="env">${ENV_TABS.map(([k, n]) => `<option value="${k}" ${(d.env || 'unknown') === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
 <label class="w"><span>Home</span><input data-d="home" value="${esc(d.home || '')}" placeholder="e.g. Rock walls and dunes"></label>
+<label class="w"><span>Heat limit °C</span><input type="number" data-d="tempMax" min="20" max="120" value="${d.tempMax != null ? d.tempMax : 50}"></label>
+<label class="w"><span>Cold limit °C</span><input type="number" data-d="tempMin" min="-30" max="40" value="${d.tempMin != null ? d.tempMin : 8}"></label>
+<div style="display:flex;gap:12px;margin:4px 0 8px;font-size:12.5px"><span style="color:#9fb0c2;width:95px">Traits</span>${['climb', 'swim', 'fly'].map(k => `<label style="display:flex;gap:4px;align-items:center;cursor:pointer"><input type="checkbox" data-mv="${k}" ${moves(d)[k] ? 'checked' : ''}>${{ climb: '🧗 Climber', swim: '🌊 Swimmer', fly: '🪽 Flier' }[k]}</label>`).join('')}</div>
 <label class="w"><span>Lives underground</span><input type="checkbox" data-d="ugHome" ${d.ugHome ? 'checked' : ''} style="width:auto"></label>` : ''}
 ${typeof ADAPTS !== 'undefined' && d.desert ? `<h4>Born adapted to</h4><div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;font-size:12.5px">${Object.keys(ADAPTS).map(k => `<label title="${esc(ADAPTS[k].desc)}" style="display:flex;gap:5px;align-items:center;cursor:pointer"><input type="checkbox" data-ad="${k}" ${(d.adapts || []).includes(k) ? 'checked' : ''}>${ADAPTS[k].icon} ${ADAPTS[k].name}</label>`).join('')}</div><div style="color:#9fb0c2;font-size:11.5px;margin:3px 0 6px">Players pick more as they grow (one at each new life stage).</div>` : ''}
 ${(() => { const I = habInfo(d), other = (d.res || []).filter(x => x !== d.planet && PLANETS[x]).map(x => PLANETS[x].name);
@@ -8450,9 +8636,10 @@ ${sel('ult', 'Ultimate', [['', '(none)']].concat(ULTL.map(k => [k, AB[k].name]))
   function setMod(path, k, v) { const m = local[cur.id] || (local[cur.id] = {}); if (path === 'l') (m.look || (m.look = {}))[k] = v; else m[k] = v; store(); }
   q('wsR').addEventListener('input', e => {
     const el = e.target; if (!cur) return;
+    if (el.dataset.mv) { const mv = {}; for (const x of q('wsR').querySelectorAll('[data-mv]')) mv[x.dataset.mv] = x.checked; setMod('d', 'mv', mv); rebuild(cur); flash('Saved on this device'); return; }
     if (el.dataset.ad) { const arr = [...q('wsR').querySelectorAll('[data-ad]')].filter(x => x.checked).map(x => x.dataset.ad); setMod('d', 'adapts', arr); rebuild(cur); flash('Saved on this device'); return; }
     const k = el.dataset.l || el.dataset.d; if (!k) return;
-    let v = el.type === 'checkbox' ? el.checked : el.type === 'range' ? +el.value : el.value;
+    let v = el.type === 'checkbox' ? el.checked : el.type === 'range' || el.type === 'number' ? +el.value : el.value;
     if (k === 'ult' && v === '') v = null;
     setMod(el.dataset.l ? 'l' : 'd', k, k === 'body' ? +v : v);
     rebuild(cur);
