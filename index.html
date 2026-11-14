@@ -1383,6 +1383,11 @@ Object.assign(AB, {
   shellhide:   Object.assign({}, AB.curl, { name: 'Shell Hide', as: 'curl', desc: 'Pulls itself into its shell: takes almost no damage for 3s and heals a little.' }),
   wallscurry:  Object.assign({}, AB.scurry, { name: 'Wall Scurry', as: 'scurry' }),
   run:         Object.assign({}, AB.sprint, { name: 'Run', as: 'sprint', desc: 'Runs flat out on its legs: almost double speed for 3s.' }),
+  abduct:      Object.assign({}, AB.shield, { name: 'Abduct', as: 'shield', cd: 10, desc: 'While floating, swallows and digests a Tiny or Small creature beneath it.' }),
+  float:       Object.assign({}, AB.shield, { name: 'Float', as: 'shield', cd: 30, desc: 'Fills its bell and stays aloft for 2 minutes, even when still.' }),
+  bloodtongue: Object.assign({}, AB.tonguesnatch, { name: 'Blood Tongue', as: 'tonguesnatch', cd: 9, desc: 'Launches its tongue at prey, paralysing it and drinking its blood.' }),
+  clawswipe:   Object.assign({}, AB.maul, { name: 'Claw Swipe', as: 'maul', desc: 'Slashes with its long claws, leaving prey bleeding.' }),
+  defcurl:     Object.assign({}, AB.curl, { name: 'Defense Curl', as: 'curl', desc: 'Curls into a scaly ball that blocks damage, but drains stamina.' }),
   acidspit:    Object.assign({}, AB.spit, { name: 'Acid Spit', as: 'spit', desc: 'Spits acid that blinds prey or predators; too weak to hurt most creatures.' }),
   quilllaunch: Object.assign({}, AB.quills, { name: 'Quill Launch', as: 'quills', cd: 4, desc: 'Launches its thorns forward: they make prey bleed and slow down. Three volleys, then it is bare until they regrow.' }),
   websnare:    Object.assign({}, AB.web, { name: 'Web Snare', as: 'web', cd: 8, desc: 'Lays a translucent web trap behind it that catches Medium or smaller prey.' }),
@@ -1397,7 +1402,7 @@ Object.assign(AB, {
   dive:        Object.assign({}, AB.burrow, { name: 'Dive', as: 'burrow', desc: 'Dives under the lava (or the sand): unseen and untouchable for 2s.' }),
   sparkspit:   Object.assign({}, AB.acid, { name: 'Spark Spit', as: 'acid', desc: 'Spits a short burst of sparks. Several sparks spitting together look like one big predator and scare hunters off.' }),
 });
-Object.assign(DIETS, { scavomni: { name: 'Scavenger (meat & plants)', eats: ['meat', 'plant'] }, carrion: { name: 'Carrion-eater', eats: ['meat'] }, lavaeater: { name: 'Lava pebbles & meat', eats: ['rock', 'meat'] }, insectivore: { name: 'Insect-eater', eats: ['meat'] }, herbinsect: { name: 'Herbivore & insect-eater', eats: ['plant', 'meat'] }, bonescav: { name: 'Scavenger (bones & carrion)', eats: ['meat'] } });
+Object.assign(DIETS, { blood: { name: 'Blood-drinker', eats: [] }, scavomni: { name: 'Scavenger (meat & plants)', eats: ['meat', 'plant'] }, carrion: { name: 'Carrion-eater', eats: ['meat'] }, lavaeater: { name: 'Lava pebbles & meat', eats: ['rock', 'meat'] }, insectivore: { name: 'Insect-eater', eats: ['meat'] }, herbinsect: { name: 'Herbivore & insect-eater', eats: ['plant', 'meat'] }, bonescav: { name: 'Scavenger (bones & carrion)', eats: ['meat'] } });
 const CUSTOM_CREATURES = {
   duneskink: { name: 'Dune Gecko', size: 13, ability: 'echoloc', body: ['wallscurry', 'Wall Scurry', 'its sticky toes', 2], diet: 'insectivore', behavior: 'grazer', home: 'Rock walls and dunes (climbs walls)',
     lore: 'A small dune-adapted gecko that runs up rock walls. Its ears pop out when it echolocates, like all its dune relatives, and rock scales cover it from head to tail.',
@@ -1586,6 +1591,15 @@ function applyCreatureMods() {
 //  [id, name, rarity, size, skill, body skill, diet, behaviour, built-in adaptations, home, underground?, look, story]
 // =====================================================================
 const DESERT_ROSTER = [
+  ['duskreaper', 'Duskreaper', 'epic', 40, 'abduct', ['float', 'Float', 'its gas-filled bell', 1], 'carnivore', 'predator', [], 'Open sand where the dust clouds drift', false,
+    { jelly: true, hue: 34, sat: 30, lig: 74 },
+    'A large, translucent jellyfish of the air that drifts like a dust cloud. Its tentacles cannot be seen unless it moves. It is so light that flying costs it nothing, but it has little health. Light passes almost straight through it, so hunters rarely notice it, and inside a dust cloud it vanishes completely. While floating it can swallow and digest Tiny and Small creatures beneath it. Float keeps it aloft for 2 minutes.'],
+  ['nightjackal', 'Night Jackal', 'common', 15, 'dash', ['howl', 'Howl', 'its pack', 2], 'carrion', 'skittish', [], 'Caves by day; the open Outskirts at night', false,
+    { sp: 'africanwilddog', hue: 0, sat: 0, lig: 7, hue2: 0 },
+    'Small, pitch-black scavengers that live in packs of three or four. They hide in caves by day and come out at night to feed on corpses, which they can smell from far away.'],
+  ['bloodtongue', 'Bloodtongue', 'uncommon', 24, 'bloodtongue', ['clawswipe', 'Claw Swipe', 'its long claws', 2], 'blood', 'predator', [], 'The Outskirts', false,
+    { sp: 'giantanteater', hue: 12, sat: 18, lig: 30, hue2: 8, rocky: true },
+    'Looks like an anteater covered in scales, with long claws and a tongue that flickers like a lizard\u2019s. It drinks only blood, and its belly swells as it fills. Drinking blood heals it and keeps it hydrated. Its claws cause bleeding and its scales stop some attacks. It can curl into a scaly ball that blocks damage but drains stamina.'],
   ['teraspix', 'Teraspix', 'uncommon', 24, 'acidspit', ['flyup', 'Fly', 'its feathered wings', 1], 'insectivore', 'territorial', [], 'Inside the enormous rebirth trees of the Outskirts', false,
     { sp: 'harpyeagle', hue: 30, sat: 32, lig: 46, hue2: 22 },
     'A feathered flier like a pteranodon, with a long tail. It eats bugs and lives inside the enormous rebirth trees. It hates the heat and hates sharing water: a pack that claims an oasis as its rest spot drives every other species away. It can climb and fly, and flies longer than most. Its wings fold in when it walks, but open when it climbs. Its acid spit blinds prey and predators, but is too weak to hurt most creatures.'],
@@ -1669,6 +1683,9 @@ const DESERT_EXTRA = {
     stages: { 1: { look: { crab: true, hue: 30, sat: 6, lig: 92, hue2: 30 } }, 2: { look: { crab: true, hue: 30, sat: 36, lig: 40, hue2: 26 } } } },
   sandfly: { env: 'under', tempMax: 38, tempMin: 4, smell: true, hp: 52, growAdapts: { 2: 'night', 3: 'camo' },
     stages: { 1: { look: { sp: 'mongoliandeathworm', hue: 38, sat: 32, lig: 70, hue2: 36 }, mv: { climb: false, swim: false, fly: false } }, 2: { look: { sp: 'asiangianthornet', hue: 26, sat: 35, lig: 26, hue2: 30, rocky: true, dull: true }, mv: { climb: false, swim: false, fly: true } } } },
+  duskreaper: { env: 'pit', growAdapts: { 2: 'heat', 4: 'night' }, tempMax: 58, tempMin: 6, featherweight: true, translucent: true, hpK: 0.6, spdK: 0.75, mv: { climb: false, swim: false, fly: true } },
+  nightjackal: { env: 'out', growAdapts: { 2: 'night', 3: 'ears' }, tempMax: 46, tempMin: 2, smell: true, nocturnal: true, packSize: 4 },
+  bloodtongue: { env: 'out', growAdapts: { 2: 'armor', 3: 'night' }, tempMax: 52, tempMin: 6, ult: 'defcurl', bloodDrinker: true, sharpClaws: true, scaleArmor: true, curlDrain: true, deco: 'bloodtongue' },
   teraspix: { env: 'rebirth', growAdapts: { 2: 'night', 3: 'ears' }, tempMax: 40, tempMin: 4, oasisGuard: true, longFlight: true, openWingsClimb: true, deco: 'teraspix', mv: { climb: true, swim: false, fly: true } },
   sailhunter: { env: 'oasis', growAdapts: { 2: 'heat', 3: 'armor' }, tempMax: 46, tempMin: 6, runner: true, followWind: true, huntsRunners: true, quillUser: true, deco: 'sailhunter', spdK: 1.1 },
   nightcrawler: { env: 'under', growAdapts: { 3: 'armor' }, tempMax: 44, tempMin: 2, darkLove: true, slowMeta: true, poisonFangs: true, hpK: 1.2, mv: { climb: true, swim: false, fly: false } },
@@ -1681,13 +1698,13 @@ const DESERT_EXTRA = {
     stages: { 1: { look: { sp: 'greatwhiteshark', hue: 52, sat: 100, lig: 60, hue2: 48 } }, 2: { look: { sp: 'greatwhiteshark', hue: 36, sat: 100, lig: 55, hue2: 28 } } } },
 }; // environment, body temperature limits (°C), traits and life stages // environment, body temperature limits (°C) and traits
 const STARTER_IDS = ['sandskink', 'ceble', 'sandfly', 'spark'];
-const DESERT_ACTIVE = new Set([...STARTER_IDS, 'sailrunner', 'gurgleguru', 'skitter', 'krongero', 'teraspix', 'sailhunter', 'nightcrawler']); // the creatures you have designed so far // every other desert design is removed: owners get their DNA back
+const DESERT_ACTIVE = new Set([...STARTER_IDS, 'sailrunner', 'gurgleguru', 'skitter', 'krongero', 'teraspix', 'sailhunter', 'nightcrawler', 'duskreaper', 'nightjackal', 'bloodtongue']); // the creatures you have designed so far // every other desert design is removed: owners get their DNA back
 const DEFAULT_ID = STARTER_IDS[0];
 function applyDesign(d, m) { // give a creature a hand-made look (used by the desert roster)
   const L = d.look, k = m.look; delete L.mut; delete L.sig; delete L.an; L.rainbow = false;
   if (k.sp) { const S = SPECIES[k.sp]; L.sp = k.sp; L.feats = S.feats.concat(k.extraFeats || []); L.spf = Object.assign({}, S.f); L.theme = { k: 'animal', s: S.tpl }; L.humanoid = S.arch === 'humanoid'; L.body = 7; L.wings = 0; L.heads = S.f.heads || 1; L.noMark = S.pat < 0; if (S.pat >= 0) { L.pattern = S.pat; L.markCol = S.mark || 'dark'; } }
   else { delete L.sp; delete L.feats; delete L.spf; L.theme = null; L.humanoid = false; if (k.arch === 'lizard') L.body = 1; }
-  for (const f of ['arch', 'hue', 'sat', 'lig', 'hue2', 'frill', 'popEars', 'rockScales', 'geckoToes', 'eyes', 'eyeStyle', 'eyeHue', 'eyeGlow', 'horns', 'wings', 'legs', 'tail', 'noMark', 'cyclops', 'rocky', 'crab', 'dull', 'noHorn', 'tadpole']) if (k[f] !== undefined) L[f] = k[f];
+  for (const f of ['arch', 'hue', 'sat', 'lig', 'hue2', 'frill', 'popEars', 'rockScales', 'geckoToes', 'eyes', 'eyeStyle', 'eyeHue', 'eyeGlow', 'horns', 'wings', 'legs', 'tail', 'noMark', 'cyclops', 'rocky', 'crab', 'dull', 'noHorn', 'tadpole', 'jelly']) if (k[f] !== undefined) L[f] = k[f];
   if (k.hue2 === undefined) L.hue2 = L.hue; L.trait = null; L.myth = null; d._mv = null;
 }
 (function buildDesert() {
@@ -1804,8 +1821,8 @@ const AB_COL = { mutagen: '#9dff3a', splice: '#9dff3a', regrow: '#9dff3a', blood
 Object.assign(CAST_KIND, { hide: 'vanish', mothercall: 'roar', zigzag: 'dash', sprint: 'dash', pounce: 'dash', stalk: 'vanish', maul: 'chomp', venombite: 'chomp', constrict: 'spin', deathroll: 'spin', snap: 'chomp', kick: 'slam', talondive: 'dash', swoop: 'vanish', howl: 'roar', sting: 'lash', curl: 'glow', stampede: 'dash', chestbeat: 'roar', trumpet: 'roar', spray: 'breath', ink: 'vanish', shock: 'spin', camo: 'vanish', tailshed: 'vanish', toxin: 'glow', breach: 'dash', leap: 'dash', spit: 'breath', dig: 'vanish' });
 Object.assign(AB_COL, { hide: '#9aae6a', mothercall: '#ffe7a8', zigzag: '#ffffff', sprint: '#fff2c8', pounce: '#ffd27a', stalk: '#5a6a3a', maul: '#ff5a4a', venombite: '#b6ff4a', constrict: '#c8a85a', deathroll: '#5ab0e0', snap: '#ff4a5a', kick: '#e8d6b0', talondive: '#ffe08a', swoop: '#d8d0ff', howl: '#cfd8ff', sting: '#e8ff7a', curl: '#c8b090', stampede: '#d8b07a', chestbeat: '#ffb05a', trumpet: '#ffd77a', spray: '#c8d86a', ink: '#3a2a4a', shock: '#9fe3ff', camo: '#7ab05a', tailshed: '#c8b88a', toxin: '#b6ff4a', breach: '#9fe3ff', leap: '#e8d6b0', spit: '#e8e8c8', dig: '#9a7a5a' });
 // the new creature skills borrow their colour and cast style from the skill they're built on
-Object.assign(AB_COL, { acidspit: AB_COL.spit, quilllaunch: '#d8c8a0', websnare: '#ddd', grapple: '#aaa', ramcharge: AB_COL.charge, sprintboost: AB_COL.sprint, sandscreen: AB_COL.sandveil, tonguegrab: AB_COL.tonguesnatch, manthra: '#d8b070', bastion: AB_COL.shield, flyup: AB_COL.dash, dive: AB_COL.burrow, sparkspit: '#ffb030', run: AB_COL.sprint, echoloc: AB_COL.echo, vanish: AB_COL.shadow, poisonspray: '#b6ff4a', tonguesnatch: '#ff7a9a', clawsnap: '#ff7a4a', shellhide: '#e8d2a0', wallscurry: AB_COL.scurry || '#fff' });
-Object.assign(CAST_KIND, { acidspit: CAST_KIND.spit, quilllaunch: CAST_KIND.quills, websnare: CAST_KIND.web, grapple: CAST_KIND.web, ramcharge: CAST_KIND.charge, sprintboost: CAST_KIND.sprint, sandscreen: CAST_KIND.sandveil, tonguegrab: CAST_KIND.tonguesnatch, manthra: CAST_KIND.shield, bastion: CAST_KIND.shield, flyup: CAST_KIND.dash, dive: CAST_KIND.burrow, sparkspit: CAST_KIND.acid, run: CAST_KIND.sprint, echoloc: CAST_KIND.echo, vanish: CAST_KIND.shadow, poisonspray: CAST_KIND.acid, tonguesnatch: CAST_KIND.vinewhip, clawsnap: 'chomp', shellhide: CAST_KIND.curl, wallscurry: CAST_KIND.scurry });
+Object.assign(AB_COL, { abduct: '#e8d8b8', float: '#e8d8b8', bloodtongue: '#a01828', clawswipe: AB_COL.maul, defcurl: AB_COL.curl, acidspit: AB_COL.spit, quilllaunch: '#d8c8a0', websnare: '#ddd', grapple: '#aaa', ramcharge: AB_COL.charge, sprintboost: AB_COL.sprint, sandscreen: AB_COL.sandveil, tonguegrab: AB_COL.tonguesnatch, manthra: '#d8b070', bastion: AB_COL.shield, flyup: AB_COL.dash, dive: AB_COL.burrow, sparkspit: '#ffb030', run: AB_COL.sprint, echoloc: AB_COL.echo, vanish: AB_COL.shadow, poisonspray: '#b6ff4a', tonguesnatch: '#ff7a9a', clawsnap: '#ff7a4a', shellhide: '#e8d2a0', wallscurry: AB_COL.scurry || '#fff' });
+Object.assign(CAST_KIND, { abduct: CAST_KIND.shield, float: CAST_KIND.shield, bloodtongue: CAST_KIND.tonguesnatch, clawswipe: CAST_KIND.maul, defcurl: CAST_KIND.curl, acidspit: CAST_KIND.spit, quilllaunch: CAST_KIND.quills, websnare: CAST_KIND.web, grapple: CAST_KIND.web, ramcharge: CAST_KIND.charge, sprintboost: CAST_KIND.sprint, sandscreen: CAST_KIND.sandveil, tonguegrab: CAST_KIND.tonguesnatch, manthra: CAST_KIND.shield, bastion: CAST_KIND.shield, flyup: CAST_KIND.dash, dive: CAST_KIND.burrow, sparkspit: CAST_KIND.acid, run: CAST_KIND.sprint, echoloc: CAST_KIND.echo, vanish: CAST_KIND.shadow, poisonspray: CAST_KIND.acid, tonguesnatch: CAST_KIND.vinewhip, clawsnap: 'chomp', shellhide: CAST_KIND.curl, wallscurry: CAST_KIND.scurry });
 function hexA(h, a) { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${clamp(a, 0, 1)})`; }
 function drawFormInner(c, form, L, r, t) { // inside body clip
   if (form === 'eclipse') { c.fillStyle = 'rgba(12,0,24,.72)'; c.fillRect(-r * 2.5, -r * 2, r * 5, r * 4); }
@@ -3509,7 +3526,7 @@ function alienThumb(def, size = 96, lvl = 3, form = null) {
 // =====================================================================
 //  GAME STATE
 // =====================================================================
-const cv = $('c'), ctx = cv.getContext('2d');
+const cv = $('c'); let ctx = cv.getContext('2d'); // let: the minimap cache borrows it briefly
 let VW = 0, VH = 0, DPR = 1;
 function resize() { DPR = Math.min(2, window.devicePixelRatio || 1); VW = innerWidth; VH = innerHeight; cv.width = VW * DPR; cv.height = VH * DPR; }
 addEventListener('resize', resize); resize();
@@ -3687,7 +3704,7 @@ function addXP(e, n) {
 
 function startMatch(cfg) {
   // cfg: {mode:'offline'|'story'|'online', planet, chapter, net, seed}
-  WORLD = cfg.mode === 'tutorial' ? 6000 : cfg.net ? (cfg.mode === 'open' ? OW_T * OW_N : 8000) : 60000; CNT = (WORLD / 3400) ** 2; REG = null; // Solkar is three times wider than before; // offline and story zones are 1.5x wider
+  WORLD = cfg.mode === 'tutorial' ? 6000 : cfg.net ? (cfg.mode === 'open' ? OW_T * OW_N : 8000) : 72000; CNT = (WORLD / 3400) ** 2; REG = null; // Solkar is three times wider than before; // offline and story zones are 1.5x wider
   const OPEN = cfg.mode === 'open' && !!cfg.net, homePid = (ALIEN[save.equipped] || ALIEN[DEFAULT_ID]).planet;
   GEN.jobs = []; let planetId = 'dune'; // SOLKAR.IO: every match is on the desert world of Solkar
   const seed = cfg.seed || (Math.random() * 1e9) | 0;
@@ -3778,6 +3795,7 @@ function spawnWild(natives, fixedLvl = 0) {
   const lvl = fixedLvl || (Math.random() < 0.5 ? 1 : Math.random() < 0.6 ? 2 : Math.random() < 0.7 ? 3 : 4);
   const ent = newEntity(def, x, y, lvl); if (!ent) return;
   if (G.sol && def.lavaDweller && G.lava.length) { const l = pick(G.lava); ent.x = l.x; ent.y = l.y; G.creatures.push(ent); return; }
+  if (G.sol && def.packSize && !fixedLvl && G.creatures.filter(c => c.alive && c.def === def).length < 24) { const n = 2 + (Math.random() < 0.5 ? 1 : 0); for (let i = 0; i < n; i++) { const m = newEntity(def, ent.x + rand(-140, 140), ent.y + rand(-140, 140), Math.max(1, lvl - (Math.random() < 0.5 ? 1 : 0))); if (m) G.creatures.push(m); } } // packs of three or four
   if (G.under && ugNative(def) && Math.random() < 0.7 && G.creatures.reduce((n, o) => n + (o.ug && o.alive ? 1 : 0), 0) < G.creatures.length * 0.3) { const s = ugRandomSpot(); ent.x = s.x; ent.y = s.y; ent.ug = true; } // cave and burrow natives live underground
   G.creatures.push(ent);
 }
@@ -4052,6 +4070,7 @@ function buildSolkar(wr) {
   // rebirth trees: groves of enormous trees that die back and rebloom with the weather
   g.groves = []; for (let i = 0; i < Math.min(14, Math.round(5 * CNT / 12.46 + 3)); i++) { const gr = (520 + wr() * 380) * Math.max(1, S * 0.45), s = outSpot(gr, 250); if (!s) continue; const v = { x: s[0], y: s[1], r: gr, health: 0.6 + wr() * 0.4, trees: [] }; g.groves.push(v); Z.push({ x: s[0], y: s[1], r: gr, k: 'rebirth', grove: v });
     for (let k = 0; k < 3 + (wr() * 4 | 0); k++) { const a = wr() * 6.283, d = Math.sqrt(wr()) * gr * 0.75, tr = (130 + wr() * 110) * Math.max(1, S * 0.35), x = s[0] + Math.cos(a) * d, y = s[1] + Math.sin(a) * d; if (O.some(o => Math.hypot(o.x - x, o.y - y) < o.r + tr * 0.9)) continue; const t = { x, y, r: tr, k: 'rtree', seed: (wr() * 1e6) | 0, grove: v }; O.push(t); v.trees.push(t); } }
+  g.dust = []; for (let i = 0; i < Math.min(40, Math.round(14 * CNT / 12.46 + 6)); i++) { const a = wr() * 6.283, d = g.heart + 400 + wr() * (WORLD * 0.6), x = clamp(g.c + Math.cos(a) * d, 600, WORLD - 600), y = clamp(g.c + Math.sin(a) * d, 600, WORLD - 600); if (solDist(x, y) > g.ringIn && solDist(x, y) < g.ringOut) continue; g.dust.push({ x, y, r: 500 + wr() * 700, vx: (wr() - 0.5) * 40, vy: (wr() - 0.5) * 40, seed: (wr() * 1e6) | 0 }); }
   // rare springs: crystal formations that trap water
   for (let i = 0; i < Math.round(7 * CNT / 12.46 + 3); i++) { const s = outSpot(150, 250); if (!s) continue; Z.push({ x: s[0], y: s[1], r: 55 + wr() * 15, k: 'spring', seed: (wr() * 1e6) | 0 });
     for (let k = 0; k < 3; k++) { const a = wr() * 6.283, d = 95 + wr() * 30; O.push({ x: s[0] + Math.cos(a) * d, y: s[1] + Math.sin(a) * d, r: 20 + wr() * 16, k: 'crystal', rot: wr() * 6.28, sol: true, hue: 190 }); } }
@@ -4123,7 +4142,7 @@ function solWeather(dt) {
 function solHeatMul(e) { const g = G.sol; if (!g) return 1; const r = solRegion(e.x, e.y); if (r === 'heart') return 0; let m = r === 'pit' ? 1.7 : r === 'halo' ? 1.5 : 1; if (g.wx && g.wx.id === 'heatwave') m *= 2.2; return m; }
 function solShade(e) { const g = G.sol; if (!g) return false; if (inCastShadow(e.x, e.y)) return true; if (g.groves) for (const v of g.groves) if (v.health > 0.5 && (e.x - v.x) ** 2 + (e.y - v.y) ** 2 < v.r * v.r) for (const t of v.trees) if ((e.x - t.x) ** 2 + (e.y - t.y) ** 2 < t.r * t.r) return true; for (const s of g.shade) if ((e.x - s.x) ** 2 + (e.y - s.y) ** 2 < s.r * s.r * 0.25) return true; for (const s of g.sky) if ((e.x - s.x - 60) ** 2 + (e.y - s.y - 80) ** 2 < s.r * s.r) return true; return false; }
 function solEffects(e, dt) { // what Solkar does to every creature
-  const g = G.sol; if (!g || !e.alive || G.noHazard) return; const p = G.player, mine = e === p; lavaLife(e, dt); poisonTick(e, dt); updateGrapple(e, dt);
+  const g = G.sol; if (!g || !e.alive || G.noHazard) return; const p = G.player, mine = e === p; lavaLife(e, dt); poisonTick(e, dt); updateGrapple(e, dt); updateDrink(e, dt);
   if (e.quillRegrow > 0) { e.quillRegrow -= dt; if (e.quillRegrow <= 0) { e.quills = 3; if (mine) banner('🦔 Your quills have grown back.', '#c8c0b0'); } }
   if (e.def.size >= 22 && g.inner) for (const c of g.inner) { let dx = e.x - c.x, dy = e.y - c.y, d = Math.hypot(dx, dy); const lim = c.R + e.r * 0.6; if (d < 1) { dx = Math.cos(e.ang); dy = Math.sin(e.ang); d = 1; } if (d < lim) { e.x = c.x + dx / d * lim; e.y = c.y + dy / d * lim; if (mine && Math.random() < dt) floatText(e.x, e.y - e.r, 'too big to fit in there', '#ccc'); } } // inner caves are only for small creatures
   if (e.bleed > 0) { e.bleed -= dt; e.hp -= e.maxhp * 0.012 * dt; if (Math.random() < dt * 6) G.parts.push({ x: e.x + rand(-e.r, e.r) * 0.5, y: e.y + rand(-e.r, e.r) * 0.5, vx: 0, vy: 20, life: 0.6, c: '#c01828', s: 3 }); }
@@ -4319,7 +4338,7 @@ function stageDef(e) {
 }
 // ---------------------------------------------------------------- corpses
 function addCorpse(t) {
-  if (!G.sol || t.minion || t.remote) return false; G.corpses = G.corpses || [];
+  if (t.swallowed) return true; if (!G.sol || t.minion || t.remote) return false; G.corpses = G.corpses || [];
   const onLava = G.lava.some(l => (t.x - l.x) ** 2 + (t.y - l.y) ** 2 < l.r * l.r), reg = solRegion(t.x, t.y);
   G.corpses.push({ x: t.x, y: t.y, ug: !!t.ug, ang: t.ang, def: stageDef(t), lvl: t.lvl, r: t.r, meat: 25 + t.maxhp * 0.6, max: 25 + t.maxhp * 0.6, age: 0, life: onLava ? 25 : t.ug || reg === 'heart' ? 420 : reg === 'pit' || reg === 'halo' ? 170 : 260, lava: onLava, seed: Math.random() * 6 });
   if (G.corpses.length > 140) G.corpses.shift(); return true;
@@ -4376,8 +4395,9 @@ function drawGlow(e) { const g = e.def.glow; if (!g) return; const k = 0.6 + 0.3
 // ---- stamina: running and sprinting burn it; exhausted animals are slow and easy prey
 function staminaStep(e, dt) {
   if (e.sta == null) e.sta = 100; const v = Math.hypot(e.vx || 0, e.vy || 0), burst = e.fx.sprint > 0 || e.fx.dash > 0 || e.fx.charge > 0 || e.fx.haste > 0;
-  const flying = e.air != null && e.air > 0.5 && moves(stageDef(e)).fly, drain = (burst ? 24 : v > e.spd * 0.8 ? 3.5 : 0) + (flying ? (e.def.longFlight ? 1.5 : 4) : 0), regen = (e.def.runner ? 2.2 : 1) * (v < 40 ? 16 : 8);
+  const flying = e.air != null && e.air > 0.5 && moves(stageDef(e)).fly, drain = (burst ? 24 : v > e.spd * 0.8 ? 3.5 : 0) + (flying && !e.def.featherweight ? (e.def.longFlight ? 1.5 : 4) : 0) + (e.fx.curl > 0 && e.def.curlDrain ? 14 : 0), regen = (e.def.runner ? 2.2 : 1) * (v < 40 ? 16 : 8);
   e.sta = clamp(e.sta - drain * dt + (drain ? 0 : regen * dt), 0, 100);
+  if (e.sta < 6 && e.fx.curl > 0 && e.def.curlDrain) e.fx.curl = 0;
   if (e.sta < 6) { if (!e.exhausted && e === G.player) floatText(e.x, e.y - e.r, 'exhausted!', '#ffcf8a'); e.exhausted = true; } else if (e.sta > 35) e.exhausted = false;
   return e.exhausted ? 0.55 : 1;
 }
@@ -4413,10 +4433,11 @@ function drawDecoUnder(e) {
 function drawTongue(e) { // a sticky pink tongue shooting out to the prey and snapping back
   const T = e.tongue; if (!T) return; T.t += 1 / 60; const P = 0.5; if (T.t > P) { e.tongue = null; return; } const k = Math.sin(T.t / P * Math.PI), tx = T.tgt && T.tgt.alive ? T.tgt.x : T.x, ty = T.tgt && T.tgt.alive ? T.tgt.y : T.y;
   const mx = e.x + Math.cos(e.ang) * e.r * 0.8, my = e.y + Math.sin(e.ang) * e.r * 0.8, ex = mx + (tx - mx) * k, ey = my + (ty - my) * k;
-  ctx.lineCap = 'round'; ctx.strokeStyle = '#b03a5a'; ctx.lineWidth = Math.max(2, e.r * 0.22); ctx.beginPath(); ctx.moveTo(mx, my); ctx.quadraticCurveTo((mx + ex) / 2 + Math.sin(T.t * 30) * 6, (my + ey) / 2, ex, ey); ctx.stroke();
+  ctx.lineCap = 'round'; ctx.strokeStyle = T.col || '#b03a5a'; ctx.lineWidth = Math.max(2, e.r * 0.22); ctx.beginPath(); ctx.moveTo(mx, my); ctx.quadraticCurveTo((mx + ex) / 2 + Math.sin(T.t * 30) * 6, (my + ey) / 2, ex, ey); ctx.stroke();
   ctx.strokeStyle = '#e8708a'; ctx.lineWidth = Math.max(1, e.r * 0.1); ctx.stroke(); ctx.fillStyle = '#d04a6a'; ctx.beginPath(); ctx.arc(ex, ey, Math.max(3, e.r * 0.2), 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath(); ctx.arc(ex - 1, ey - 1, Math.max(1, e.r * 0.06), 0, 7); ctx.fill(); }
 function drawDecoOver(e) {
   const k = e.def.deco; if (!k) return; const { r, a, at } = decoFrame(e);
+  if (k === 'bloodtongue') drawBloodtongue(e);
   if (k === 'sailhunter') { const bare = e.quills === 0; if (!bare) { for (let i = 0; i < 12; i++) { const u = i / 11, s = i % 2 ? 1 : -1, [x0, y0] = at(0.35 - u * 0.85, s * 0.18), [x1, y1] = at(0.25 - u * 0.85 - 0.18, s * 0.42); ctx.strokeStyle = '#a89878'; ctx.lineWidth = Math.max(1, r * 0.04); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); }
       const [hx, hy] = at(0.92, 0); for (let i = -2; i <= 2; i++) { const fa = a + Math.PI + i * 0.25, L = r * (0.34 - Math.abs(i) * 0.05); ctx.fillStyle = '#b8a888'; ctx.beginPath(); ctx.moveTo(hx + Math.cos(fa + 1.57) * r * 0.025, hy + Math.sin(fa + 1.57) * r * 0.025); ctx.lineTo(hx + Math.cos(fa) * L, hy + Math.sin(fa) * L); ctx.lineTo(hx + Math.cos(fa - 1.57) * r * 0.025, hy + Math.sin(fa - 1.57) * r * 0.025); ctx.fill(); } }
     else { ctx.fillStyle = 'rgba(150,150,150,.45)'; ctx.beginPath(); ctx.arc(e.x, e.y, r * 0.55, 0, 7); ctx.fill(); } }
@@ -4436,7 +4457,7 @@ function drawTadpole(e, L) { // a round grey head-body and a long wriggling tail
   for (const s of [-1, 1]) { ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(r * 0.3, s * r * 0.22, r * 0.09, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.beginPath(); ctx.arc(r * 0.32, s * r * 0.2, r * 0.03, 0, 7); ctx.fill(); }
   ctx.restore(); }
 function drawMimic(e) {
-  { const sd = stageDef(e); if (sd && sd.look.tadpole) { drawTadpole(e, sd.look); return true; } }
+  { const sd = stageDef(e); if (sd && sd.look.tadpole) { drawTadpole(e, sd.look); return true; } if (sd && sd.look.jelly) { drawJelly(e, sd.look); return true; } }
   const m = e.def.mimic; if (!m || !(e.stillT > 1.2)) return false; const r = e.r, a = e.ang;
   if (m === 'rock') drawRockChunk(e.x, e.y, r * 0.95, e.id * 97, '#9a8a72', '#3a3026', true);
   else { ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(a); ctx.strokeStyle = '#5a4430'; ctx.lineCap = 'round'; ctx.lineWidth = r * 0.16; ctx.beginPath(); ctx.moveTo(-r * 1.1, 0); ctx.lineTo(r * 1.0, r * 0.05); ctx.stroke();
@@ -4458,6 +4479,9 @@ const SKILL_SMALL = 22; // Tiny and Small creatures only
 { const base = useAbility; useAbility = function (e, ult = false) {
   const a = ult ? e.def.ult : curAbility(e); if (!a || !G) return base(e, ult);
   if (!ult && (e.cdAb > 0)) return base(e, ult);
+  if (a === 'abduct') { if (abduct(e)) e.cdAb = AB.abduct.cd; return; }
+  if (a === 'float') { e.floatT = 120; e.cdAb = AB.float.cd; if (e === G.player) banner('🎐 You float on the hot air for 2 minutes.', '#e8d8b8'); return; }
+  if (a === 'bloodtongue') { startDrink(e); e.cdAb = AB.bloodtongue.cd; return; }
   if (a === 'quilllaunch') { if (quillVolley(e)) e.cdAb = AB.quilllaunch.cd; return; }
   if (a === 'websnare') { layWeb(e); e.cdAb = AB.websnare.cd; if (e === G.player) floatText(e.x, e.y - e.r, 'web laid', '#ddd'); return; }
   if (a === 'grapple') { if (startGrapple(e)) e.cdAb = AB.grapple.cd; return; }
@@ -4468,6 +4492,7 @@ const SKILL_SMALL = 22; // Tiny and Small creatures only
   if ((a === 'sprintboost' || a === 'run' || a === 'sprint') && e.exhausted) { if (e === G.player) floatText(e.x, e.y - e.r, 'too tired to sprint', '#ffcf8a'); return; }
   const r = base(e, ult);
   if (a === 'bastion') e.bastionT = 4;
+  if (a === 'clawswipe') for (const o of G.creatures) if (o !== e && o.alive && !allied(o, e) && d2(o, e) < (e.r + o.r + 70) ** 2) o.bleed = Math.max(o.bleed || 0, 4);
   if (a === 'tonguegrab') { let best = null, bd = 340 * 340; for (const o of G.creatures) { if (o === e || !o.alive || allied(o, e) || !!o.ug !== !!e.ug) continue; const d = d2(o, e); if (d < bd) { bd = d; best = o; } } e.tongue = { t: 0, tgt: best, x: e.x + Math.cos(e.ang) * 300, y: e.y + Math.sin(e.ang) * 300 }; }
   if (a === 'sandscreen') e.swipeT = 0.7;
   return r; }; }
@@ -4560,6 +4585,43 @@ function drawBigMap(p) {
   lab('THE HEART', mx + g.c * sc, my + (g.c - g.heart) * sc - 6, '#7affd8'); lab('THE SAND PIT', mx + g.c * sc, my + (g.c + g.ringIn * 0.55) * sc, '#ffd27a'); lab('THE RING', mx + g.c * sc, my + (g.c - g.ringOut) * sc + 16, '#ffb08a'); lab('THE OUTSKIRTS', mx + S / 2, my + 22, '#e0b080');
   for (const f of g.forests) lab('SHARD FOREST', mx + f.x * sc, my + f.y * sc, '#bfe8ff'); for (const v of g.groves || []) lab('REBIRTH TREES', mx + v.x * sc, my + v.y * sc - 8, '#9be36a');
   ctx.font = '13px system-ui'; lab('You · your herd’s route (gold) · press M or tap to close', VW / 2, my + S + 26, '#ddd'); ctx.restore();
+}
+// =====================================================================
+//  DUSKREAPERS, NIGHT JACKALS, BLOODTONGUES AND DRIFTING DUST CLOUDS
+// =====================================================================
+// ---- dust clouds that drift across the open sand; a Duskreaper inside one is invisible
+function updateDust(dt) { const g = G.sol; if (!g.dust) return; for (const z of g.dust) { z.x += z.vx * dt; z.y += z.vy * dt; if (z.x < 300 || z.x > WORLD - 300) z.vx *= -1; if (z.y < 300 || z.y > WORLD - 300) z.vy *= -1; } }
+function inDust(e) { const g = G.sol; if (!g || !g.dust || e.ug) return false; for (const z of g.dust) if ((e.x - z.x) ** 2 + (e.y - z.y) ** 2 < z.r * z.r) return true; return false; }
+function drawDust(vx0, vy0, vx1, vy1) { const g = G.sol; if (!g.dust) return; for (const z of g.dust) { if (z.x + z.r < vx0 || z.x - z.r > vx1 || z.y + z.r < vy0 || z.y - z.r > vy1) continue; const R = solRng(z.seed);
+  for (let i = 0; i < 9; i++) { const a = R() * 6.283, d = R() * z.r * 0.7, x = z.x + Math.cos(a + G.t * 0.05) * d, y = z.y + Math.sin(a + G.t * 0.05) * d, s = z.r * (0.3 + R() * 0.3), gr = ctx.createRadialGradient(x, y, 0, x, y, s); gr.addColorStop(0, 'rgba(214,186,140,.32)'); gr.addColorStop(1, 'rgba(214,186,140,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, s, 0, 7); ctx.fill(); } } }
+// ---- the Duskreaper: a big translucent jellyfish that drifts like a dust cloud
+function drawJelly(e, L) {
+  const r = e.r, v = Math.min(1, Math.hypot(e.vx, e.vy) / 50), t = G.t + e.id, mine = e === G.player, base = mine ? 0.55 : 0.32, hide = inDust(e) ? 0.4 : 1;
+  ctx.save(); ctx.globalAlpha = base * hide;
+  if (v > 0.05) { ctx.strokeStyle = `rgba(230,210,180,${0.55 * v})`; ctx.lineCap = 'round'; const back = Math.atan2(-e.vy, -e.vx); for (let k = 0; k < 9; k++) { const off = (k - 4) * 0.12; ctx.lineWidth = Math.max(1, r * (k % 3 ? 0.03 : 0.05)); ctx.beginPath(); ctx.moveTo(e.x + Math.cos(back + off) * r * 0.5, e.y + Math.sin(back + off) * r * 0.5);
+      for (let i = 1; i <= 10; i++) { const u = i / 10, d = r * (0.5 + u * 1.8), wv = Math.sin(t * 3 - u * 6 + k) * r * 0.15 * u; ctx.lineTo(e.x + Math.cos(back + off) * d - Math.sin(back) * wv, e.y + Math.sin(back + off) * d + Math.cos(back) * wv); } ctx.stroke(); } } // tentacles only show while it moves
+  const pulse = 1 + 0.05 * Math.sin(t * 2.2), g = ctx.createRadialGradient(e.x - r * 0.2, e.y - r * 0.25, r * 0.1, e.x, e.y, r * pulse); g.addColorStop(0, 'rgba(250,240,220,.85)'); g.addColorStop(0.6, `hsla(${L.hue},${L.sat}%,${L.lig}%,.55)`); g.addColorStop(1, `hsla(${L.hue},${L.sat}%,${L.lig - 10}%,.15)`);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(e.x, e.y, r * pulse, 0, 7); ctx.fill(); ctx.strokeStyle = 'rgba(255,245,225,.5)'; ctx.lineWidth = Math.max(1, r * 0.03); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,240,215,.35)'; for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283 + t * 0.1; ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.x + Math.cos(a) * r * 0.85, e.y + Math.sin(a) * r * 0.85); ctx.stroke(); } // radial canals
+  if (e.digest > 0) { ctx.globalAlpha = base * 0.8; ctx.fillStyle = 'rgba(60,30,20,.6)'; ctx.beginPath(); ctx.ellipse(e.x, e.y, r * 0.3 * Math.min(1, e.digest / 3), r * 0.18 * Math.min(1, e.digest / 3), t, 0, 7); ctx.fill(); } // something being digested inside
+  ctx.restore();
+}
+function abduct(e) { // swallow a Tiny or Small creature underneath while floating
+  if (!(e.air > 0.5 || e.floatT > 0)) { if (e === G.player) floatText(e.x, e.y - e.r, 'you must be floating', '#ddd'); return false; }
+  let best = null, bd = (e.r * 1.2) ** 2; for (const o of G.creatures) { if (o === e || !o.alive || allied(o, e) || !!o.ug !== !!e.ug || o.def.size >= 22) continue; const d = d2(o, e); if (d < bd) { bd = d; best = o; } }
+  if (!best) { if (e === G.player) floatText(e.x, e.y - e.r, 'nothing small enough beneath you', '#ddd'); return false; }
+  best.swallowed = true; kill(best, e); e.digest = 6; if (e.food != null) e.food = Math.min(100, e.food + 35); if (e === G.player) banner('🎐 You swallowed a ' + best.def.name + ' and are digesting it…', '#e8d8b8'); return true;
+}
+// ---- the Bloodtongue: drinks blood with a long tongue, scaled and clawed
+function startDrink(e) { let best = null, bd = 320 * 320; const fx = Math.cos(e.ang), fy = Math.sin(e.ang); for (const o of G.creatures) { if (o === e || !o.alive || allied(o, e) || !!o.ug !== !!e.ug) continue; const dx = o.x - e.x, dy = o.y - e.y, d = dx * dx + dy * dy; if (d < bd && (dx * fx + dy * fy) > 0) { bd = d; best = o; } }
+  e.tongue = { t: 0, tgt: best, x: e.x + fx * 300, y: e.y + fy * 300, col: '#8a1a28' }; if (!best) return true; best.fx.stun = Math.max(best.fx.stun || 0, 1.8); e.drink = { tgt: best, t: 3 }; return true; }
+function updateDrink(e, dt) { const D = e.drink; if (!D) return; D.t -= dt; const o = D.tgt; if (D.t <= 0 || !o.alive || d2(o, e) > 380 * 380) { e.drink = null; return; }
+  const amt = e.dmg * 0.55 * dt; o.hp -= amt; o.fx.stun = Math.max(o.fx.stun || 0, 0.15); e.hp = Math.min(e.maxhp, e.hp + amt * 0.8); if (e.food != null) { e.food = Math.min(100, e.food + amt * 0.7); e.water = Math.min(100, e.water + amt * 0.7); }
+  if (o.hp <= 0) kill(o, e); if (Math.random() < dt * 8) G.parts.push({ x: o.x, y: o.y, vx: (e.x - o.x) * 1.5, vy: (e.y - o.y) * 1.5, life: 0.5, c: '#a01828', s: 3 }); }
+function drawBloodtongue(e) { // a swollen belly that fills as it feeds, and a lizard-like tongue flicker
+  const { r, a, at } = decoFrame(e), full = e.food != null ? e.food / 100 : 0.6, [bx, by] = at(-0.1, 0);
+  ctx.fillStyle = `rgba(140,40,50,${0.25 + 0.35 * full})`; ctx.beginPath(); ctx.ellipse(bx, by, r * (0.25 + 0.2 * full), r * (0.18 + 0.2 * full), a, 0, 7); ctx.fill();
+  const f = ((G.t + e.id * 0.37) % 1.4); if (f < 0.25 && !e.tongue) { const k = Math.sin(f / 0.25 * Math.PI), [sx, sy] = at(1.05, 0), [tx, ty] = at(1.05 + 0.45 * k, 0); ctx.strokeStyle = '#c03048'; ctx.lineWidth = Math.max(1, r * 0.04); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(tx, ty); ctx.stroke(); for (const s of [-1, 1]) { const [fx2, fy2] = at(1.05 + 0.45 * k + 0.08, s * 0.06); ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(fx2, fy2); ctx.stroke(); } }
 }
 function inObstacle(x, y, pad = 0) { for (const o of G.obstacles) if ((x - o.x) ** 2 + (y - o.y) ** 2 < (o.r + pad) ** 2) return true; return false; }
 function updateTerrain(dt) {
@@ -5756,7 +5818,10 @@ function tryRebirth(t) {
 function hurt(t, amt, src) {
   if (!t.alive || t.fx.burrow > 0) return;
   amt = facePlate(t, src, amt); if (amt <= 0) return;
+  if (t.def.scaleArmor && Math.random() < 0.25) { if (t === G.player) floatText(t.x, t.y - t.r, 'glanced off your scales', '#c8c0b0'); return; }
   if (src && src.def && src.def.poisonFangs && src !== t) t.poisonT = Math.max(t.poisonT || 0, 3);
+  if (src && src.def && src.def.sharpClaws && src !== t) t.bleed = Math.max(t.bleed || 0, 2.5);
+  if (src && src.def && src.def.bloodDrinker && src !== t && src.alive) { src.hp = Math.min(src.maxhp, src.hp + amt * 0.25); if (src.food != null) { src.food = Math.min(100, src.food + amt * 0.4); src.water = Math.min(100, src.water + amt * 0.4); } }
   if (t.def.quillUser && t.quills === 0) amt *= 1.5;
   if (shellBlocks(t, src)) { if (t === G.player && Math.random() < 0.3) floatText(t.x, t.y - t.r, 'safe in its rock shell', '#d8c8a8'); return; }
   if (src && allied(t, src)) return;
@@ -5966,7 +6031,8 @@ function update(dt) {
   G.t += dt;
   if (G.foodGone) { G.food = G.food.filter(f => !f.gone); G.foodGone = false; }
   { const FG = new Map(); for (const f of G.food) { const k = (f.x / 256 | 0) + (f.y / 256 | 0) * 4096; let b = FG.get(k); if (!b) FG.set(k, b = []); b.push(f); } G.fgrid = FG; }
-  { let M = 60; for (const e of G.creatures) if (e.alive && e.r > M) M = e.r; M += 40; G.ogrid = sgBuild(G.obstacles, M); G.zgrid = sgBuild(G.zones, M); G.lgrid = G.lava ? sgBuild(G.lava, M) : null; }
+  { let M = 60; for (const e of G.creatures) if (e.alive && e.r > M) M = e.r; M = Math.ceil((M + 40) / 40) * 40; const sig = M + '|' + G.obstacles.length + '|' + G.zones.length + '|' + (G.lava ? G.lava.length : 0) + '|' + (G.open ? Math.floor(G.t) : 0); // the grids only change when the map does
+    if (G.gridSig !== sig) { G.gridSig = sig; G.ogrid = sgBuild(G.obstacles, M); G.zgrid = sgBuild(G.zones, M); G.lgrid = G.lava ? sgBuild(G.lava, M) : null; } }
   if (G.traps) for (const t of G.traps) { if (t.cd > 0) t.cd -= dt; if (t.fired > 0) t.fired -= dt; }
   if (G.open && G.player) { const bp = biomeAt(G.player.x, G.player.y); if (bp !== G.planet) { G.planet = bp; G.P = PLANETS[bp]; banner('Entering ' + G.P.full, '#9fe3ff'); } }
   updateWorldEvents(dt);
@@ -5987,7 +6053,7 @@ function update(dt) {
   }
   // Sandstorms on Dune
   if (G.reveal > 0) G.reveal -= dt;
-  updateTerrain(dt); if (G.sol) { solWeather(dt); updateMigrations(dt); updateCorpses(dt); updateQuicksand(dt); updateWebs(dt); updateGroves(dt); }
+  updateTerrain(dt); if (G.sol) { solWeather(dt); updateMigrations(dt); updateCorpses(dt); updateQuicksand(dt); updateWebs(dt); updateGroves(dt); updateDust(dt); }
   updateTerrain2(dt);
   updateDisaster(dt);
   for (let i = G.food.length - 1; i >= 0; i--) { const f = G.food[i]; if (f.life != null && (f.life -= dt) <= 0) G.food.splice(i, 1); }
@@ -6029,7 +6095,7 @@ function update(dt) {
     if (e.fx.slow > 0) sp *= 0.45;
     if (e.fx.stun > 0) sp = 0;
     if (e.fx.burrow > 0) sp *= 0.7;
-    if (G.sol) { sp *= staminaStep(e, dt); if (e.bastionT > 0) { e.bastionT -= dt; sp *= 0.12; e.fx.shield = Math.max(e.fx.shield || 0, 0.2); } if (e.def.hopper && e.lvl >= 2) sp *= 0.3 + 0.7 * Math.max(0, Math.sin(G.t * 5 + e.id)); if (e.swipeT > 0) e.swipeT -= dt; e.stillT = Math.hypot(e.vx, e.vy) < 25 ? (e.stillT || 0) + dt : 0; }
+    if (G.sol) { sp *= staminaStep(e, dt); if (e.bastionT > 0) { e.bastionT -= dt; sp *= 0.12; e.fx.shield = Math.max(e.fx.shield || 0, 0.2); } if (e.def.hopper && e.lvl >= 2) sp *= 0.3 + 0.7 * Math.max(0, Math.sin(G.t * 5 + e.id)); if (e.swipeT > 0) e.swipeT -= dt; if (e.floatT > 0) { e.floatT -= dt; if (e.floatT <= 0 && e === G.player) floatText(e.x, e.y - e.r, 'your float runs out', '#e8d8b8'); } if (e.digest > 0) { e.digest -= dt; e.hp = Math.min(e.maxhp, e.hp + e.maxhp * 0.02 * dt); } e.stillT = Math.hypot(e.vx, e.vy) < 25 ? (e.stillT || 0) + dt : 0; }
     if (e.fx.invis > 0) sp *= 1.15;
     if (e.fx.dash > 0) sp *= 3;
     // planet hazards
@@ -6652,7 +6718,7 @@ function envPre(e, dt) {
   { let over = null; if (mv.fly && !e.ug) for (const o of sgNear(G.obstacles, G.ogrid, e.x, e.y)) if ((e.x - o.x) ** 2 + (e.y - o.y) ** 2 < (o.r + e.r * 0.3) ** 2) { over = o; break; }
     if (mv.fly) { // fliers land and tuck their wings when they stop, and take off again as soon as they move
       const mov = Math.hypot(e.vx || 0, e.vy || 0) > 25 || (e.cast && G.t - e.cast < 0.6); e.stillT = mov ? 0 : (e.stillT || 0) + dt;
-      const aloft = !(G.sol && e.exhausted) && (mov || e.stillT < 0.35) || (over && over.k === 'volcano'); e.air = (e.air == null ? 1 : e.air) + ((aloft ? 1 : 0) - (e.air == null ? 1 : e.air)) * Math.min(1, dt * (aloft ? 7 : 3.5));
+      const aloft = (G.sol && e.floatT > 0) || !(G.sol && e.exhausted) && (mov || e.stillT < 0.35) || (over && over.k === 'volcano'); e.air = (e.air == null ? 1 : e.air) + ((aloft ? 1 : 0) - (e.air == null ? 1 : e.air)) * Math.min(1, dt * (aloft ? 7 : 3.5));
       if (e.air < 0.5 && over) e.perch = over; } // a landed flier over a rock or tree sits on top of it
     e.overObst = !!over && !(e.air < 0.5); const tgt = mv.fly ? (e.air < 0.5 ? (over ? 0.75 : 0) : over ? 1 : 0.55) : e.perch ? 0.75 : 0; e.alt = (e.alt || 0) + (tgt - (e.alt || 0)) * Math.min(1, dt * (e.climbT > 0 ? 2.2 : 6)); }
   if (wasPerch && !e.perch) { e.pounce = 1.6; if (e === G.player) floatText(e.x, e.y - e.r, 'POUNCE READY', '#ffcf8a'); }
@@ -6683,6 +6749,7 @@ function envCollide(e, mv) {
 function obstacleBlocks(e, o, mv) { if (mv.fly && o.k !== 'volcano') return false; if (mv.climb && CLIMBABLE[o.k]) return false; return true; }
 function seesThrough(a, b) { // can a notice b?
   if (b.def.darkLove && (b.stillT || 0) > 0.8 && inDark(b)) return d2(a, b) < 60 * 60;
+  if (b.def.translucent && !(b.cdBite > -1)) return d2(a, b) < (inDust(b) ? 40 : 150) ** 2;
   if (hasAd(b, 'camo') && Math.hypot(b.vx || 0, b.vy || 0) < 25 && !(b.cdBite > -1)) return d2(a, b) < 90 * 90;
   if ((a.inCave || null) !== (b.inCave || null)) return d2(a, b) < 110 * 110;
   if (b.inCover && !(b.cdBite > -0.6)) return d2(a, b) < 120 * 120;
@@ -7424,6 +7491,7 @@ function immune(e, k) { return !!(e.def.immune && e.def.immune.includes(k)); }
 // AI: trappers lurk by traps, cave dwellers lurk in caves, herds migrate
 function lurkTarget(e) {
   if (G.sol && e.def.lavaDweller && !e.inLava) { const l = nearestLava(e); if (l) return l; }
+  if (G.sol && e.def.nocturnal && !e.isPlayer && !isNight() && G.caves.length) { let b = null, bd = 1e18; for (const c of G.caves) { if (c.inner) continue; const d = (c.x - e.x) ** 2 + (c.y - e.y) ** 2; if (d < bd) { bd = d; b = c; } } if (b) return b; } // night animals rest in caves by day
   if (G.sol && e.def.smell && !e.isPlayer) { const c = nearestCorpse(e, 2600); if (c) return c; }
   if (G.sol && !G.noHazard) { const m = migTarget(e); if (m) return m; }
   if (has(e, 'trapper') && G.traps && G.traps.length) { let best = null, bd = 1000 * 1000; for (const t of G.traps) { const d = d2(t, e); if (d < bd) { bd = d; best = t; } } if (best) { const a = (e.phase || 0) * 3; return { x: best.x + Math.cos(a) * (best.r + 70), y: best.y + Math.sin(a) * (best.r + 70) }; } }
@@ -8063,7 +8131,7 @@ function render() {
   }
   LOD_HI = zoom > 0.55;
   if (!p.ug) {
-  if (G.sol) drawSolSky(vx0, vy0, vx1, vy1);
+  if (G.sol) { drawSolSky(vx0, vy0, vx1, vy1); drawDust(vx0, vy0, vx1, vy1); }
   for (const c of G.cover) if (c.x + c.r > vx0 && c.x - c.r < vx1 && c.y + c.r > vy0 && c.y - c.r < vy1) drawCover(c, p.inCover === c);
   for (const c of G.caves) if (c.x + c.R + 40 > vx0 && c.x - c.R - 40 < vx1 && c.y + c.R + 40 > vy0 && c.y - c.R - 40 < vy1) drawCaveRoof(c, p.inCave === c || (!!p.inCave && p.inCave.parent === c));
   drawDisasterWorld(vx0, vy0, vx1, vy1);
@@ -8277,13 +8345,17 @@ function drawHUD() {
   const sc = ms / WORLD;
   const ZC = { spring: '#3fb8e0', meadow: '#9be36a', crater: '#5a2010', dustdevil: '#e0a070', fissure: '#2a1a0a', sanctum: '#ffd86a', oasis: '#3fb8e0', quicksand: '#b0844c', lake: '#d6f1ff', mist: G.planet === 'heaven' ? '#ffffff' : '#4a2f7a', grove: '#5fe08a', geyser: '#ffffff', vent: '#ff7a2a' };
   if (p.ug && G.under) { ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(mx, my, ms, ms); ctx.strokeStyle = '#c8a07a'; ctx.lineCap = 'round'; for (const t of G.under.tunnels) { ctx.lineWidth = Math.max(1.5, t.w * sc); ctx.beginPath(); ctx.moveTo(mx + t.x1 * sc, my + t.y1 * sc); ctx.lineTo(mx + t.x2 * sc, my + t.y2 * sc); ctx.stroke(); } ctx.fillStyle = '#c8a07a'; for (const c of G.under.caverns) { ctx.beginPath(); ctx.arc(mx + c.x * sc, my + c.y * sc, Math.max(2, c.R * sc), 0, 7); ctx.fill(); } ctx.fillStyle = '#ffe7a8'; for (const s2 of G.under.shafts) { ctx.beginPath(); ctx.arc(mx + s2.x * sc, my + s2.y * sc, 2, 0, 7); ctx.fill(); } } else
-  if (G.sol && !p.ug) { drawSolMinimap(mx, my, ms); if (!G.noHazard) drawMigrationMinimap(p, mx, my, ms / WORLD); }
-  for (const z of G.zones) { if (G.sol && (z.k === 'heartglow' || z.k === 'brush')) continue; ctx.fillStyle = ZC[z.k] || '#888'; ctx.globalAlpha = 0.55; ctx.beginPath(); ctx.arc(mx + z.x * sc, my + z.y * sc, Math.max(1.5, z.r * sc), 0, 7); ctx.fill(); }
+  if (G.sol && !p.ug) { const key = ms + '|' + G.zones.length + '|' + Math.floor(G.t / 4); if (!G.mmCache || G.mmCache.key !== key) { const cv2 = G.mmCache && G.mmCache.cv.width === Math.ceil(ms * DPR) ? G.mmCache.cv : document.createElement('canvas'); cv2.width = cv2.height = Math.ceil(ms * DPR); const c0 = ctx; ctx = cv2.getContext('2d'); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, ms, ms);
+      drawSolMinimap(0, 0, ms); const s2 = ms / WORLD; for (const z of G.zones) { if (z.k === 'heartglow' || z.k === 'brush') continue; ctx.fillStyle = ZC[z.k] || '#888'; ctx.globalAlpha = 0.55; ctx.beginPath(); ctx.arc(z.x * s2, z.y * s2, Math.max(1.5, z.r * s2), 0, 7); ctx.fill(); }
+      ctx.globalAlpha = 0.8; for (const o of G.obstacles) { if (o.r * s2 < 0.6 && o.k !== 'volcano') continue; ctx.fillStyle = o.k === 'volcano' ? '#ff5a2a' : 'rgba(0,0,0,.7)'; ctx.beginPath(); ctx.arc(o.x * s2, o.y * s2, Math.max(1.2, o.r * s2), 0, 7); ctx.fill(); }
+      ctx.globalAlpha = 1; for (const c of G.caves) { if (c.inner) continue; ctx.fillStyle = 'rgba(150,110,70,.95)'; ctx.beginPath(); ctx.arc(c.x * s2, c.y * s2, Math.max(2, c.R * s2), 0, 7); ctx.fill(); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(c.x * s2, c.y * s2, Math.max(1, c.R * s2 * 0.5), 0, 7); ctx.fill(); }
+      ctx = c0; G.mmCache = { key, cv: cv2 }; } ctx.drawImage(G.mmCache.cv, mx, my, ms, ms); if (!G.noHazard) drawMigrationMinimap(p, mx, my, ms / WORLD); } // the map's fixed parts are drawn once every few seconds, not every frame
+  if (!(G.sol && !p.ug)) for (const z of G.zones) { if (G.sol && (z.k === 'heartglow' || z.k === 'brush')) continue; ctx.fillStyle = ZC[z.k] || '#888'; ctx.globalAlpha = 0.55; ctx.beginPath(); ctx.arc(mx + z.x * sc, my + z.y * sc, Math.max(1.5, z.r * sc), 0, 7); ctx.fill(); }
   if (G.open) for (const t of G.tiles) { ctx.fillStyle = PLANETS[t.pid].bg; ctx.globalAlpha = 0.55; ctx.fillRect(mx + t.x0 * sc, my + t.y0 * sc, OW_T * sc, OW_T * sc); ctx.globalAlpha = 1; }
   if (G.wev && G.wev.mx != null) { ctx.strokeStyle = WEV_INFO[G.wev.id].col; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(mx + G.wev.mx * sc, my + G.wev.my * sc, 4 + 3 * Math.abs(Math.sin(G.t * 4)), 0, 7); ctx.stroke(); }
   if (G.lairs) for (const L of G.lairs) { const al = L.boss && L.boss.alive, m2 = L.pid === 'mega'; ctx.fillStyle = al ? (m2 ? '#ffcf5a' : '#ff3a2a') : 'rgba(255,120,100,.4)'; ctx.save(); ctx.translate(mx + L.x * sc, my + L.y * sc); ctx.rotate(Math.PI / 4); const q = m2 ? 5 : 3.5; ctx.fillRect(-q, -q, q * 2, q * 2); ctx.restore(); }
-  for (const c of G.caves) { ctx.fillStyle = 'rgba(150,110,70,.95)'; ctx.beginPath(); ctx.arc(mx + c.x * sc, my + c.y * sc, Math.max(2, c.R * sc), 0, 7); ctx.fill(); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(mx + (c.x + Math.cos(c.ent) * c.R) * sc, my + (c.y + Math.sin(c.ent) * c.R) * sc, 1.6, 0, 7); ctx.fill(); }
-  for (const o of G.obstacles) { ctx.fillStyle = o.k === 'volcano' ? '#ff5a2a' : 'rgba(0,0,0,.7)'; ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.arc(mx + o.x * sc, my + o.y * sc, Math.max(1.2, o.r * sc), 0, 7); ctx.fill(); }
+  if (!(G.sol && !p.ug)) for (const c of G.caves) { ctx.fillStyle = 'rgba(150,110,70,.95)'; ctx.beginPath(); ctx.arc(mx + c.x * sc, my + c.y * sc, Math.max(2, c.R * sc), 0, 7); ctx.fill(); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(mx + (c.x + Math.cos(c.ent) * c.R) * sc, my + (c.y + Math.sin(c.ent) * c.R) * sc, 1.6, 0, 7); ctx.fill(); }
+  if (!(G.sol && !p.ug)) for (const o of G.obstacles) { ctx.fillStyle = o.k === 'volcano' ? '#ff5a2a' : 'rgba(0,0,0,.7)'; ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.arc(mx + o.x * sc, my + o.y * sc, Math.max(1.2, o.r * sc), 0, 7); ctx.fill(); }
   ctx.globalAlpha = 1;
   if (G.royale) { ctx.strokeStyle = '#ff5a5a'; ctx.beginPath(); ctx.arc(mx + G.zone.x * sc, my + G.zone.y * sc, G.zone.r * sc, 0, 7); ctx.stroke(); }
   if (G.reveal > 0 || hasAd(p, 'ears')) for (const e of G.creatures) if (e.alive && e !== p && !!e.ug === !!p.ug && (G.reveal > 0 || d2(e, p) < 1400 * 1400)) { ctx.fillStyle = e.isBot ? '#ffcf5a' : '#ff6b6b'; ctx.fillRect(mx + e.x * sc - 1, my + e.y * sc - 1, 2, 2); }
