@@ -1760,6 +1760,7 @@ function refundRemoved() {
   for (const id of BASIC_IDS) if (!save.owned.includes(id)) save.owned.push(id); // everyone owns the free starters
   let dna = 0, adna = 0, n = 0;
   save.owned = save.owned.filter(id => { const r = REMOVED_CREATURES[id]; if (!r || ALIEN[id]) return true; dna += r[0]; adna += r[1]; n++; return false; });
+  save.owned = save.owned.filter(id => ALIEN[id]); // drop any creature that no longer exists (older saves)
   if (!ALIEN[save.equipped]) save.equipped = DEFAULT_ID;
   for (const k of ['skinSel', 'primordial', 'primoOn', 'skins']) if (save[k] && typeof save[k] === 'object' && !Array.isArray(save[k])) for (const id in save[k]) if (REMOVED_CREATURES[id] && !ALIEN[id]) delete save[k][id];
   if (!n) return;
@@ -8642,7 +8643,7 @@ function refreshMenu() {
   $('eventNote').innerHTML = ev ? `<b style="color:${ev.col}">Live holiday event: ${ev.name}!</b> Collect ${ev.icon} ${ev.cur} in matches to adopt ${ALIENS.filter(a => a.kind === 'event' && (a.ev || a.id) === ev.id && !(a.cost && a.cost.holBoss)).length} holiday creatures (priced by rarity). Defeat the holiday boss for a chance at its exclusive creature.` : 'No holiday event is live right now. Event aliens return on their holidays.';
 }
 $('nameIn').addEventListener('input', e => { save.name = e.target.value.trim(); persist(); });
-$('bOffline').onclick = () => modal('Open World', 'One huge map where all eight worlds meet, with world bosses guarding each region. Play alone, or online with other explorers: everyone who hurts a boss shares the rewards by contribution.', [['Play offline', () => startMatch({ mode: 'open' })], ['Play online', () => { renderOnline(); showScreen('online'); const u = $('srvIn').value.trim(); if (u) connectOnline(u, 'open'); else $('onlineStatus').textContent = 'Enter your server address, then press Join Open World.'; }], ['Cancel', null]]);
+$('bOffline').onclick = () => startMatch({ mode: 'open' }); // online play is off until the server is rebuilt for Solkar
 $('bStory').onclick = () => { renderStory(); showScreen('story'); };
 $('bOnline').onclick = () => { renderOnline(); showScreen('online'); };
 $('bLab').onclick = () => { renderLab(); showScreen('lab'); };
